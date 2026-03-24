@@ -90,14 +90,14 @@ function buildHistories(
 ): { historyByRange: HistoryByRange; weeklyChangePercent: number } {
   const now = Date.now();
 
-  const h1D = generateSeriesFromEnd(currentPrice, 24, 0.0001, 0.001, hourMs, now);
-  const h7D = generateSeriesFromEnd(currentPrice, 7, dailyTrendPercent * 0.012, 0.003, dayMs, now);
+  const h1D = generateSeriesFromEnd(currentPrice, 24, 0.0001, 0.0022, hourMs, now);
+  const h7D = generateSeriesFromEnd(currentPrice, 7, dailyTrendPercent * 0.012, Math.max(volatility, 0.006), dayMs, now);
   const first7D = h7D[0]!.value;
   const weeklyChangePercent = ((currentPrice - first7D) / first7D) * 100;
 
-  const h1M = generateSeriesFromEnd(currentPrice, 30, dailyTrendPercent * 0.004, 0.002, dayMs, now);
-  const h6M = generateSeriesFromEnd(currentPrice, 26, dailyTrendPercent * 0.003, 0.004, weekMs, now);
-  const h1Y = generateSeriesFromEnd(currentPrice, 52, dailyTrendPercent * 0.0015, 0.005, weekMs, now);
+  const h1M = generateSeriesFromEnd(currentPrice, 30, dailyTrendPercent * 0.004, Math.max(volatility, 0.004), dayMs, now);
+  const h6M = generateSeriesFromEnd(currentPrice, 26, dailyTrendPercent * 0.003, Math.max(volatility, 0.007), weekMs, now);
+  const h1Y = generateSeriesFromEnd(currentPrice, 52, dailyTrendPercent * 0.0015, Math.max(volatility, 0.008), weekMs, now);
 
   return {
     historyByRange: { "1D": h1D, "7D": h7D, "1M": h1M, "6M": h6M, "1Y": h1Y },
@@ -119,7 +119,7 @@ export async function getGoldPrice(): Promise<GoldMarketData> {
       : GOLD_24K_BASE;
   const changePercent = api?.changePercent ?? 0.42;
 
-  const { historyByRange, weeklyChangePercent } = buildHistories(price24K, 0.04, 0.002);
+  const { historyByRange, weeklyChangePercent } = buildHistories(price24K, 0.04, 0.008);
   const price22K = Math.round(price24K * 0.9167 * 100) / 100;
   const price18K = Math.round(price24K * 0.75 * 100) / 100;
   const pricePerOz = Math.round(price24K * 31.1035 * 100) / 100;
@@ -151,7 +151,7 @@ export async function getSilverPrice(): Promise<SilverMarketData> {
       : SILVER_BASE;
   const changePercent = api?.changePercent ?? -0.18;
 
-  const { historyByRange } = buildHistories(pricePerGram, -0.02, 0.004);
+  const { historyByRange } = buildHistories(pricePerGram, -0.02, 0.014);
   const pricePerKg = Math.round(pricePerGram * 1000 * 100) / 100;
 
   return {
@@ -168,7 +168,7 @@ export async function getSilverPrice(): Promise<SilverMarketData> {
 
 /** Diamond: average 1ct in QAR. */
 export function getDiamondIndex(): DiamondMarketData {
-  const { historyByRange } = buildHistories(DIAMOND_1CT_BASE, 0.03, 0.0015);
+  const { historyByRange } = buildHistories(DIAMOND_1CT_BASE, 0.03, 0.006);
   const h1D = historyByRange["1D"];
   const avg1Ct = DIAMOND_1CT_BASE;
   const first1D = h1D?.[0]?.value ?? avg1Ct;

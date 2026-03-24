@@ -133,6 +133,21 @@ export function MarketPricesClient({
   const chartData =
     activeTab === "gold" ? goldChartData : activeTab === "silver" ? silverChartData : diamondChartData;
 
+  /** Y-axis from actual lows/highs in the series (not a flat scale); small padding for readability */
+  const priceYDomain = useMemo((): [number, number] => {
+    if (!chartData.length) return [0, 1];
+    const values = chartData.map((d) => d.value).filter((v) => typeof v === "number" && !Number.isNaN(v));
+    if (!values.length) return [0, 1];
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    if (min === max) {
+      const bump = Math.max(Math.abs(min) * 0.015, 0.01);
+      return [min - bump, max + bump];
+    }
+    const pad = (max - min) * 0.08;
+    return [min - pad, max + pad];
+  }, [chartData]);
+
   return (
     <>
       {/* Hero */}
@@ -290,6 +305,8 @@ export function MarketPricesClient({
                       stroke="var(--masa-gray)"
                     />
                     <YAxis
+                      domain={priceYDomain}
+                      allowDataOverflow={false}
                       tickFormatter={(v) => format(v)}
                       tick={{ fontSize: 11, fill: "var(--masa-gray)" }}
                       stroke="var(--masa-gray)"
@@ -306,11 +323,17 @@ export function MarketPricesClient({
                       labelFormatter={(label) => label}
                     />
                     <Line
-                      type="monotone"
+                      type="stepAfter"
                       dataKey="value"
                       stroke="var(--primary)"
                       strokeWidth={2}
-                      dot={false}
+                      isAnimationActive={false}
+                      dot={
+                        chartData.length <= 32
+                          ? { r: 3, fill: "var(--primary)", stroke: "#fff", strokeWidth: 1 }
+                          : false
+                      }
+                      activeDot={{ r: 5 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
