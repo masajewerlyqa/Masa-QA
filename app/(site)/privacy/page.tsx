@@ -1,0 +1,78 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { getServerLanguage } from "@/lib/language-server";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy | MASA Luxury Jewelry",
+  description:
+    "Privacy policy for MASA luxury jewelry marketplace. How we collect, use and protect your data.",
+};
+
+export default function PrivacyPage() {
+  const isArabic = getServerLanguage() === "ar";
+  return (
+    <div>
+      <section
+        className="relative py-20 md:py-28 bg-white overflow-hidden"
+        aria-labelledby="privacy-hero-heading"
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-masa-light/50 to-transparent" aria-hidden />
+        <div className="relative max-w-content mx-auto px-4 md:px-6 text-center">
+          <p className="font-sans text-masa-gray text-sm uppercase tracking-[0.2em] mb-4">
+            {isArabic ? "قانوني" : "Legal"}
+          </p>
+          <h1
+            id="privacy-hero-heading"
+            className="text-4xl md:text-5xl lg:text-6xl text-primary font-luxury tracking-tight mb-6"
+          >
+            {isArabic ? "سياسة الخصوصية" : "Privacy Policy"}
+          </h1>
+          <div className="w-12 h-px bg-primary/30 mx-auto mb-6" aria-hidden />
+          <p className="text-masa-gray font-sans text-lg max-w-xl mx-auto leading-relaxed">
+            {isArabic ? "كيف نجمع بياناتك الشخصية ونستخدمها ونحميها." : "How we collect, use and protect your personal information."}
+          </p>
+        </div>
+      </section>
+
+      <section className="py-16 md:py-24 bg-masa-light/40 border-t border-primary/10">
+        <div className="max-w-content mx-auto px-4 md:px-6">
+          <div className="max-w-3xl mx-auto space-y-10 font-sans text-masa-gray text-sm leading-relaxed">
+            <div>
+              <h2 className="font-luxury text-xl text-primary mb-3">{isArabic ? "البيانات التي نجمعها" : "Information we collect"}</h2>
+              <p>
+                We collect information you provide when you register, place orders, contact us, or use our services. This may include name, email, phone, address, payment details (processed by secure providers), and preferences. We also collect technical data such as IP address and device information to improve our service and security.
+              </p>
+            </div>
+            <div>
+              <h2 className="font-luxury text-xl text-primary mb-3">{isArabic ? "كيف نستخدمها" : "How we use it"}</h2>
+              <p>
+                We use your information to process orders, communicate with you, improve our marketplace, prevent fraud, and comply with legal obligations. With your consent, we may send you marketing about new arrivals and offers. You can opt out at any time.
+              </p>
+            </div>
+            <div>
+              <h2 className="font-luxury text-xl text-primary mb-3">{isArabic ? "المشاركة" : "Sharing"}</h2>
+              <p>
+                We share information with sellers as needed to fulfil your orders, with payment and delivery partners, and where required by law. We do not sell your personal data to third parties for their marketing.
+              </p>
+            </div>
+            <div>
+              <h2 className="font-luxury text-xl text-primary mb-3">{isArabic ? "الأمان" : "Security"}</h2>
+              <p>
+                We use industry-standard measures to protect your data. Payment information is handled by certified payment processors. Access to personal data is limited and audited.
+              </p>
+            </div>
+            <div>
+              <h2 className="font-luxury text-xl text-primary mb-3">{isArabic ? "حقوقك" : "Your rights"}</h2>
+              <p>
+                Depending on your location, you may have the right to access, correct, delete, or restrict use of your data, or to object to certain processing. Contact us to exercise these rights.
+              </p>
+            </div>
+            <p className="pt-4">
+              {isArabic ? "للاستفسار حول هذه السياسة،" : "For questions about this policy,"} <Link href="/contact" className="text-primary hover:underline">{isArabic ? "تواصل معنا" : "contact us"}</Link>. {isArabic ? "قد نقوم بتحديث هذه السياسة من وقت لآخر." : "We may update this policy from time to time; the latest version is always on this page."}
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

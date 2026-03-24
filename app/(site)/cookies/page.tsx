@@ -1,0 +1,72 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { getServerLanguage } from "@/lib/language-server";
+
+export const metadata: Metadata = {
+  title: "Cookie Policy | MASA Luxury Jewelry",
+  description:
+    "How MASA uses cookies and similar technologies on its luxury jewelry marketplace.",
+};
+
+export default function CookiesPage() {
+  const isArabic = getServerLanguage() === "ar";
+  return (
+    <div>
+      <section
+        className="relative py-20 md:py-28 bg-white overflow-hidden"
+        aria-labelledby="cookies-hero-heading"
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-masa-light/50 to-transparent" aria-hidden />
+        <div className="relative max-w-content mx-auto px-4 md:px-6 text-center">
+          <p className="font-sans text-masa-gray text-sm uppercase tracking-[0.2em] mb-4">
+            {isArabic ? "قانوني" : "Legal"}
+          </p>
+          <h1
+            id="cookies-hero-heading"
+            className="text-4xl md:text-5xl lg:text-6xl text-primary font-luxury tracking-tight mb-6"
+          >
+            {isArabic ? "سياسة ملفات تعريف الارتباط" : "Cookie Policy"}
+          </h1>
+          <div className="w-12 h-px bg-primary/30 mx-auto mb-6" aria-hidden />
+          <p className="text-masa-gray font-sans text-lg max-w-xl mx-auto leading-relaxed">
+            {isArabic ? "كيف نستخدم ملفات تعريف الارتباط والتقنيات المشابهة في MASA." : "How we use cookies and similar technologies on MASA."}
+          </p>
+        </div>
+      </section>
+
+      <section className="py-16 md:py-24 bg-masa-light/40 border-t border-primary/10">
+        <div className="max-w-content mx-auto px-4 md:px-6">
+          <div className="max-w-3xl mx-auto space-y-10 font-sans text-masa-gray text-sm leading-relaxed">
+            <div>
+              <h2 className="font-luxury text-xl text-primary mb-3">{isArabic ? "ما هي ملفات تعريف الارتباط" : "What are cookies"}</h2>
+              <p>
+                Cookies are small text files stored on your device when you visit a website. They help the site remember your preferences, keep you signed in, and understand how the site is used so we can improve it.
+              </p>
+            </div>
+            <div>
+              <h2 className="font-luxury text-xl text-primary mb-3">{isArabic ? "الملفات التي نستخدمها" : "Cookies we use"}</h2>
+              <p>
+                We use essential cookies that are necessary for the site to work (e.g. authentication, security, load balancing). We may use analytics cookies to understand how visitors use MASA (e.g. pages viewed, flows) in an aggregated way. We may use preference cookies to remember settings like currency or region. Where we use non-essential cookies, we will seek your consent where required by law.
+              </p>
+            </div>
+            <div>
+              <h2 className="font-luxury text-xl text-primary mb-3">{isArabic ? "ملفات الطرف الثالث" : "Third-party cookies"}</h2>
+              <p>
+                Our payment and analytics partners may set their own cookies when you use their features on our site. Their use is governed by their respective privacy and cookie policies.
+              </p>
+            </div>
+            <div>
+              <h2 className="font-luxury text-xl text-primary mb-3">{isArabic ? "إدارة ملفات الارتباط" : "Managing cookies"}</h2>
+              <p>
+                You can control or delete cookies through your browser settings. Blocking essential cookies may affect how the site works (e.g. you may not stay signed in). For more on your choices, see our <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
+              </p>
+            </div>
+            <p className="pt-4">
+              {isArabic ? "لديك أسئلة؟" : "Questions?"} <Link href="/contact" className="text-primary hover:underline">{isArabic ? "تواصل معنا" : "Contact us"}</Link>. {isArabic ? "قد يتم تحديث هذه السياسة من وقت لآخر." : "We may update this policy from time to time; the latest version is on this page."}
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

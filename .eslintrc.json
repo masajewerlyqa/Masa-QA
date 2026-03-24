@@ -1,0 +1,10 @@
+{
+  "extends": [
+    "next/core-web-vitals"
+  ],
+  "ignorePatterns": [
+    "masa-003/**",
+    ".next/**"
+  ]
+}
+
