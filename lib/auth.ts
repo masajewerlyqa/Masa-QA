@@ -26,41 +26,47 @@ const profileSelect =
   "id, role, full_name, avatar_url, email, phone, phone_verified_at, newsletter_opt_in";
 
 async function getCurrentUserWithProfileImpl(): Promise<GetCurrentUserResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
+    if (!user) {
+      return { user: null, profile: null };
+    }
+
+    let { data: profile } = await supabase.from("profiles").select(profileSelect).eq("id", user.id).maybeSingle();
+
+    // Missing profile: OAuth lag or rare trigger miss — repair without blocking the session.
+    // Rare: trigger missed profile row — repair so layout/nav never see "logged in" without a role.
+    if (!profile) {
+      await ensureProfileForAuthUser(user);
+      const retry = await supabase.from("profiles").select(profileSelect).eq("id", user.id).maybeSingle();
+      profile = retry.data;
+    }
+
+    const normalizedProfile =
+      profile && typeof profile === "object"
+        ? ({
+            ...profile,
+            newsletter_opt_in: Boolean((profile as { newsletter_opt_in?: boolean }).newsletter_opt_in),
+          } as Profile)
+        : null;
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        emailConfirmedAt: user.email_confirmed_at ?? null,
+      },
+      profile: normalizedProfile,
+    };
+  } catch (error) {
+    // Never crash the entire route tree when auth bootstrap fails in production.
+    console.error("[auth] getCurrentUserWithProfile failed:", error);
     return { user: null, profile: null };
   }
-
-  let { data: profile } = await supabase.from("profiles").select(profileSelect).eq("id", user.id).maybeSingle();
-
-  // Missing profile: OAuth lag or rare trigger miss — repair without blocking the session.
-  // Rare: trigger missed profile row — repair so layout/nav never see "logged in" without a role.
-  if (!profile) {
-    await ensureProfileForAuthUser(user);
-    const retry = await supabase.from("profiles").select(profileSelect).eq("id", user.id).maybeSingle();
-    profile = retry.data;
-  }
-
-  const normalizedProfile =
-    profile && typeof profile === "object"
-      ? ({
-          ...profile,
-          newsletter_opt_in: Boolean((profile as { newsletter_opt_in?: boolean }).newsletter_opt_in),
-        } as Profile)
-      : null;
-
-  return {
-    user: {
-      id: user.id,
-      email: user.email,
-      emailConfirmedAt: user.email_confirmed_at ?? null,
-    },
-    profile: normalizedProfile,
-  };
 }
 
 export const getCurrentUserWithProfile = cache(getCurrentUserWithProfileImpl);

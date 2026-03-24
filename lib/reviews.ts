@@ -46,7 +46,9 @@ export async function getProductReviews(productId: string, limit: number = 20): 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("reviews")
-    .select("id, rating, title, body, created_at, profiles!inner(full_name)")
+    .select(
+      "id, rating, title, body, created_at, profiles!reviews_customer_id_fkey(full_name)"
+    )
     .eq("product_id", productId)
     .eq("status", "approved")
     .order("created_at", { ascending: false })
@@ -108,7 +110,9 @@ export async function getCustomerReviewForProduct(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("reviews")
-    .select("id, rating, title, body, created_at, status, profiles(full_name)")
+    .select(
+      "id, rating, title, body, created_at, status, profiles!reviews_customer_id_fkey(full_name)"
+    )
     .eq("product_id", productId)
     .eq("customer_id", customerId)
     .limit(1)
