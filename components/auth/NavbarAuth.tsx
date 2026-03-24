@@ -19,15 +19,21 @@ type NavbarAuthProps = {
   user: SessionUser | null;
   profile: Profile | null;
   notificationCount?: number;
+  /** Close mobile menu / drawer after navigating */
+  onNavigate?: () => void;
 };
 
-export function NavbarAuth({ user, profile, notificationCount = 0 }: NavbarAuthProps) {
+export function NavbarAuth({ user, profile, notificationCount = 0, onNavigate }: NavbarAuthProps) {
   const { t } = useI18n();
   const router = useRouter();
 
   if (!user || !profile) {
     return (
-      <Link href="/login" aria-label={t("auth.register.signIn")}>
+      <Link
+        href="/login"
+        aria-label={t("auth.register.signIn")}
+        onClick={() => onNavigate?.()}
+      >
         <Button variant="ghost" size="icon">
           <User className="w-5 h-5" />
         </Button>
@@ -52,7 +58,11 @@ export function NavbarAuth({ user, profile, notificationCount = 0 }: NavbarAuthP
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[11rem] font-sans">
         <DropdownMenuItem asChild>
-          <Link href="/account" className="flex items-center gap-2 cursor-pointer">
+          <Link
+            href="/account"
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => onNavigate?.()}
+          >
             <User className="w-4 h-4" />
             <span className="flex flex-col">
               <span>{t("mobileNav.profile")}</span>
@@ -63,13 +73,21 @@ export function NavbarAuth({ user, profile, notificationCount = 0 }: NavbarAuthP
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={dashboardHref} className="flex items-center gap-2 cursor-pointer">
+          <Link
+            href={dashboardHref}
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => onNavigate?.()}
+          >
             <LayoutDashboard className="w-4 h-4" />
             <span>{t("dashboard.nav.overview")}</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/notifications" className="flex items-center gap-2 cursor-pointer">
+          <Link
+            href="/notifications"
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => onNavigate?.()}
+          >
             <Bell className="w-4 h-4" />
             {t("account.notifications.title")}
             {notificationCount > 0 && (
@@ -83,6 +101,7 @@ export function NavbarAuth({ user, profile, notificationCount = 0 }: NavbarAuthP
         <DropdownMenuItem
           onSelect={(e) => {
             e.preventDefault();
+            onNavigate?.();
             handleSignOut();
           }}
           className="flex items-center gap-2 cursor-pointer text-masa-gray focus:text-masa-dark"

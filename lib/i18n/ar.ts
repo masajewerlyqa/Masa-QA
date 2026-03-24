@@ -44,6 +44,7 @@ export const ar = {
     returns: "الإرجاع",
     contact: "تواصل معنا",
     faq: "الأسئلة الشائعة",
+    account: "الحساب",
   },
   marketplace: {
     discover: "اكتشف",

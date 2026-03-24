@@ -20,6 +20,7 @@ import {
   Ruler,
   Truck,
   RotateCcw,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -293,6 +294,33 @@ export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notifi
             </div>
 
             <div className="p-4 font-sans">
+              <p className="text-xs text-masa-gray uppercase tracking-wider mb-2 px-3">{t("navbar.account")}</p>
+              {!user || !profile ? (
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-3 py-3 rounded-lg text-masa-dark hover:bg-masa-light transition-colors mb-4 border border-primary/10"
+                >
+                  <User className="w-5 h-5 text-primary shrink-0" />
+                  <span className="text-sm font-medium">{t("auth.register.signIn")}</span>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-3 px-3 py-3 rounded-lg bg-masa-light/80 border border-primary/10 mb-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-masa-gray">{t("mobileNav.profile")}</p>
+                    <p className="text-sm font-medium text-masa-dark truncate">
+                      {profile.full_name?.trim() || profile.email || "—"}
+                    </p>
+                  </div>
+                  <NavbarAuth
+                    user={user}
+                    profile={profile}
+                    notificationCount={notificationCount}
+                    onNavigate={() => setMobileMenuOpen(false)}
+                  />
+                </div>
+              )}
+
               <div className="space-y-1">
                 <MobileMenuLink href="/discover" icon={Search} label={t("navbar.marketplace")} onClick={() => setMobileMenuOpen(false)} />
                 <MobileMenuLink href="/market-prices" icon={TrendingUp} label={t("navbar.marketPrices")} onClick={() => setMobileMenuOpen(false)} />
@@ -322,8 +350,8 @@ export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notifi
 
               <div className="my-4 border-t border-primary/10" />
 
-              <div className="px-3 flex items-center gap-3">
-                <CurrencyDropdown />
+              <div className="px-3 flex flex-wrap items-center gap-3">
+                <CurrencyDropdown onCurrencySelected={() => setMobileMenuOpen(false)} />
                 <span className="text-xs text-masa-gray">|</span>
                 <button type="button" className="text-sm text-masa-dark hover:text-primary transition-colors" aria-label={isArabic ? t("navbar.switchToEnglish") : t("navbar.switchToArabic")} onClick={() => setLanguage(language === "ar" ? "en" : "ar")}>
                   {language === "ar" ? t("common.english") : t("common.arabic")}

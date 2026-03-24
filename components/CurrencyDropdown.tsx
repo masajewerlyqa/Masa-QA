@@ -19,9 +19,15 @@ const LABELS: Record<Currency, string> = {
 type CurrencyDropdownProps = {
   triggerClassName?: string;
   contentClassName?: string;
+  /** e.g. close mobile drawer after picking a currency */
+  onCurrencySelected?: () => void;
 };
 
-export function CurrencyDropdown({ triggerClassName, contentClassName }: CurrencyDropdownProps) {
+export function CurrencyDropdown({
+  triggerClassName,
+  contentClassName,
+  onCurrencySelected,
+}: CurrencyDropdownProps) {
   const { currency, setCurrency } = useCurrency();
   const { isArabic } = useI18n();
 
@@ -36,13 +42,19 @@ export function CurrencyDropdown({ triggerClassName, contentClassName }: Currenc
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className={`min-w-[120px] font-sans ${contentClassName ?? ""}`}>
         <DropdownMenuItem
-          onClick={() => setCurrency("USD")}
+          onClick={() => {
+            setCurrency("USD");
+            onCurrencySelected?.();
+          }}
           className="cursor-pointer"
         >
           USD $
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => setCurrency("QAR")}
+          onClick={() => {
+            setCurrency("QAR");
+            onCurrencySelected?.();
+          }}
           className="cursor-pointer"
         >
           QAR ر.ق

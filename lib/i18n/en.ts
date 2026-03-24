@@ -44,6 +44,7 @@ export const en = {
     returns: "Returns",
     contact: "Contact Us",
     faq: "FAQ",
+    account: "Account",
   },
   marketplace: {
     discover: "Discover",
