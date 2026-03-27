@@ -5,8 +5,17 @@ import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getSellerStore, getSellerProductById } from "@/lib/seller";
 import { createClient } from "@/lib/supabase/server";
 import { productFormSchema, type ProductFormValues } from "@/lib/validations/product";
+import { computeDynamicProductPrice } from "@/lib/pricing";
 
 export type ActionResult = { ok: boolean; error?: string; productId?: string };
+
+function mapSchemaMismatchError(message?: string): string | undefined {
+  if (!message) return undefined;
+  if (message.includes("craftsmanship_margin") && message.includes("schema cache")) {
+    return "Database is missing products.craftsmanship_margin. Run migration 033_products_market_pricing_fields.sql and retry.";
+  }
+  return undefined;
+}
 
 function slugify(text: string): string {
   return text
@@ -39,6 +48,13 @@ export async function createProduct(formData: ProductFormValues, imageUrls: stri
 
   const supabase = await createClient();
   const slug = uniqueSlug(parsed.data.title);
+  const dynamicPrice = await computeDynamicProductPrice({
+    metalType: parsed.data.metal_type,
+    goldKarat: parsed.data.gold_karat,
+    weight: parsed.data.weight,
+    craftsmanshipMargin: parsed.data.craftsmanship_margin,
+    storedPrice: 0,
+  });
 
   const { data: product, error: insertError } = await supabase
     .from("products")
@@ -48,17 +64,18 @@ export async function createProduct(formData: ProductFormValues, imageUrls: stri
       slug,
       description: parsed.data.description?.trim() || null,
       category: parsed.data.category,
-      price: parsed.data.price,
+      price: dynamicPrice.finalPriceUsd,
       metal_type: parsed.data.metal_type.trim() || null,
       gold_karat: parsed.data.gold_karat?.trim() || null,
       weight: parsed.data.weight ?? null,
+      craftsmanship_margin: parsed.data.craftsmanship_margin ?? 0,
       stock_quantity: parsed.data.stock_quantity,
       status: parsed.data.status,
     })
     .select("id")
     .single();
 
-  if (insertError) return { ok: false, error: insertError.message };
+  if (insertError) return { ok: false, error: mapSchemaMismatchError(insertError.message) ?? insertError.message };
   if (!product) return { ok: false, error: "Failed to create product" };
 
   for (let i = 0; i < imageUrls.length; i++) {
@@ -94,6 +111,13 @@ export async function updateProduct(productId: string, formData: ProductFormValu
   if (!existing) return { ok: false, error: "Product not found or you cannot edit it" };
 
   const supabase = await createClient();
+  const dynamicPrice = await computeDynamicProductPrice({
+    metalType: parsed.data.metal_type,
+    goldKarat: parsed.data.gold_karat,
+    weight: parsed.data.weight,
+    craftsmanshipMargin: parsed.data.craftsmanship_margin,
+    storedPrice: existing.price,
+  });
 
   const { error: updateError } = await supabase
     .from("products")
@@ -101,17 +125,18 @@ export async function updateProduct(productId: string, formData: ProductFormValu
       name: parsed.data.title,
       description: parsed.data.description?.trim() || null,
       category: parsed.data.category,
-      price: parsed.data.price,
+      price: dynamicPrice.finalPriceUsd,
       metal_type: parsed.data.metal_type.trim() || null,
       gold_karat: parsed.data.gold_karat?.trim() || null,
       weight: parsed.data.weight ?? null,
+      craftsmanship_margin: parsed.data.craftsmanship_margin ?? 0,
       stock_quantity: parsed.data.stock_quantity,
       status: parsed.data.status,
     })
     .eq("id", productId)
     .eq("store_id", store.id);
 
-  if (updateError) return { ok: false, error: updateError.message };
+  if (updateError) return { ok: false, error: mapSchemaMismatchError(updateError.message) ?? updateError.message };
 
   const toRemove = existing.product_images.filter((i) => !imageUrls.includes(i.url));
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,8 @@ import type { MarketplaceFilters } from "@/lib/data";
 
 type FilterSidebarProps = {
   filters: MarketplaceFilters;
+  /** Bounds for the slider for the current filter context (USD); optional */
+  priceExtent?: { minPrice: number; maxPrice: number };
   selected: {
     brands: string[];
     metals: string[];
@@ -22,23 +24,34 @@ type FilterSidebarProps = {
   };
 };
 
-export function FilterSidebar({ filters, selected }: FilterSidebarProps) {
+export function FilterSidebar({ filters, priceExtent: _priceExtent, selected }: FilterSidebarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { formatPrice } = useCurrency();
   const { t } = useI18n();
+
+  // Keep the slider capped by marketplace-wide bounds so users can always access full range.
+  const sliderMin = filters.minPrice;
+  const sliderMax = filters.maxPrice;
+  const safeMax = sliderMax > sliderMin ? sliderMax : sliderMin + 1;
+
   const [priceRange, setPriceRange] = useState<[number, number]>([
-    selected.minPrice ?? filters.minPrice ?? 0,
-    selected.maxPrice ?? filters.maxPrice ?? filters.minPrice ?? 0,
+    selected.minPrice ?? sliderMin,
+    selected.maxPrice ?? safeMax,
   ]);
 
   useEffect(() => {
-    setPriceRange([
-      selected.minPrice ?? filters.minPrice ?? 0,
-      selected.maxPrice ?? filters.maxPrice ?? filters.maxPrice ?? filters.minPrice ?? 0,
-    ]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected.minPrice, selected.maxPrice, filters.minPrice, filters.maxPrice]);
+    const lo = selected.minPrice ?? sliderMin;
+    const hi = selected.maxPrice ?? safeMax;
+    setPriceRange([lo, hi]);
+  }, [selected.minPrice, selected.maxPrice, sliderMin, safeMax]);
+
+  const sliderStep = useMemo(() => {
+    const span = safeMax - sliderMin;
+    if (span <= 0) return 1;
+    const s = span / 60;
+    return Math.max(0.01, Math.round(s * 100) / 100);
+  }, [safeMax, sliderMin]);
 
   function updateParams(updater: (params: URLSearchParams) => void) {
     const params = new URLSearchParams(searchParams.toString());
@@ -70,9 +83,17 @@ export function FilterSidebar({ filters, selected }: FilterSidebarProps) {
   }
 
   function applyPriceRange(range: [number, number]) {
+    const lo = sliderMin;
+    const hi = safeMax;
+    const eps = Math.max((hi - lo) * 1e-9, 1e-6);
     updateParams((params) => {
-      params.set("priceMin", String(range[0]));
-      params.set("priceMax", String(range[1]));
+      if (range[0] <= lo + eps && range[1] >= hi - eps) {
+        params.delete("priceMin");
+        params.delete("priceMax");
+      } else {
+        params.set("priceMin", String(range[0]));
+        params.set("priceMax", String(range[1]));
+      }
     });
   }
 
@@ -172,15 +193,23 @@ export function FilterSidebar({ filters, selected }: FilterSidebarProps) {
           <div>
             <h4 className="mb-3 text-sm font-medium text-masa-dark">{t("marketplace.priceRange")}</h4>
             <Slider
-              min={filters.minPrice}
-              max={filters.maxPrice || filters.minPrice + 1}
-              step={Math.max(1, Math.round((filters.maxPrice - filters.minPrice) / 20) || 1)}
-              value={priceRange}
-              onValueChange={(val) => setPriceRange([val[0], val[1]])}
-              onValueCommit={(val) => applyPriceRange([val[0], val[1]])}
+              min={sliderMin}
+              max={safeMax}
+              step={sliderStep}
+              value={[Math.min(Math.max(priceRange[0], sliderMin), safeMax), Math.min(Math.max(priceRange[1], sliderMin), safeMax)]}
+              onValueChange={(val) => {
+                const lo = val[0] ?? sliderMin;
+                const hi = val[1] ?? safeMax;
+                setPriceRange([lo, hi]);
+              }}
+              onValueCommit={(val) => {
+                const lo = val[0] ?? sliderMin;
+                const hi = val[1] ?? safeMax;
+                applyPriceRange([lo, hi]);
+              }}
               className="mb-3"
             />
-            <div className="flex justify-between text-sm text-masa-gray">
+            <div className="flex justify-between text-sm text-masa-gray mb-3">
               <span>{formatPrice(priceRange[0])}</span>
               <span>{formatPrice(priceRange[1])}</span>
             </div>

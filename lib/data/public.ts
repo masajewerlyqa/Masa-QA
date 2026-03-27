@@ -6,6 +6,9 @@ import { isDiscountValid, computeDiscountedPrice, type DiscountType } from "@/li
 import { getServerLanguage } from "@/lib/language-server";
 import type { Language } from "@/lib/language";
 import { localizeProductCategory, localizeProductMetal, localizeProductText } from "@/lib/i18n/product-localization";
+import { getPricingMarketSnapshot } from "@/lib/pricing";
+import { computeDynamicMarketPriceUsd, type PricingMarketSnapshot } from "@/lib/pricing-engine";
+import { QAR_TO_USD } from "@/lib/market-prices";
 
 const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
@@ -22,6 +25,7 @@ type ProductRow = {
   metal_type: string | null;
   gold_karat: string | null;
   weight: number | null;
+  craftsmanship_margin: number | null;
   created_at: string;
   updated_at: string;
   stock_quantity: number;
@@ -89,7 +93,121 @@ export type MarketplaceFilterInput = {
   sort?: MarketplaceSortOption;
 };
 
-function mapProductRow(row: ProductRow, language: Language): Product {
+const MARKETPLACE_PAGE = 280;
+const MARKETPLACE_MAX_ROWS_SCAN = 12000;
+
+const MARKETPLACE_PRODUCT_SELECT =
+  "id, store_id, name, slug, description, price, compare_at_price, category, metal_type, gold_karat, weight, craftsmanship_margin, created_at, updated_at, stock_quantity, status, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, stores!inner(id, name, slug, status), product_images(url, sort_order), reviews(rating)";
+
+export type MarketplacePriceBoundsInput = Pick<
+  MarketplaceFilterInput,
+  "category" | "brands" | "metals" | "karats" | "search" | "onSale"
+>;
+
+/** Min/max list price (USD) for products matching non-price filters — drives slider bounds on Discover. */
+export async function getMarketplacePriceBoundsForFilters(
+  input: MarketplacePriceBoundsInput
+): Promise<{ minPrice: number; maxPrice: number } | null> {
+  const supabase = await createClient();
+  const { data: approvedRows } = await supabase.from("stores").select("id").eq("status", "approved");
+  const approvedIds = (approvedRows ?? []).map((r: { id: string }) => r.id).filter(Boolean);
+  if (approvedIds.length === 0) return null;
+
+  let q = supabase.from("products").select("min_price:min(price), max_price:max(price)");
+
+  if (input.brands && input.brands.length > 0) {
+    q = q.in("store_id", input.brands);
+  } else {
+    q = q.in("store_id", approvedIds);
+  }
+
+  if (input.category && input.category !== "all") {
+    q = q.ilike("category", input.category);
+  }
+  if (input.metals && input.metals.length > 0) {
+    q = q.in("metal_type", input.metals);
+  }
+  if (input.karats && input.karats.length > 0) {
+    q = q.in("gold_karat", input.karats);
+  }
+  if (input.search && input.search.trim()) {
+    const term = `%${input.search.trim()}%`;
+    q = q.or(`name.ilike.${term},description.ilike.${term}`);
+  }
+  if (input.onSale) {
+    q = q.eq("discount_active", true);
+  }
+
+  const { data, error } = await q.single();
+  if (error || !data) return null;
+  const row = data as { min_price?: number | null; max_price?: number | null };
+  let minPrice = Number(row.min_price ?? 0) || 0;
+  let maxPrice = Number(row.max_price ?? 0) || 0;
+  if (!Number.isFinite(minPrice)) minPrice = 0;
+  if (!Number.isFinite(maxPrice)) maxPrice = 0;
+
+  if (maxPrice <= minPrice) {
+    let minQ = supabase.from("products").select("price").limit(1).order("price", { ascending: true });
+    let maxQ = supabase.from("products").select("price").limit(1).order("price", { ascending: false });
+
+    if (input.brands && input.brands.length > 0) {
+      minQ = minQ.in("store_id", input.brands);
+      maxQ = maxQ.in("store_id", input.brands);
+    } else {
+      minQ = minQ.in("store_id", approvedIds);
+      maxQ = maxQ.in("store_id", approvedIds);
+    }
+
+    if (input.category && input.category !== "all") {
+      minQ = minQ.ilike("category", input.category);
+      maxQ = maxQ.ilike("category", input.category);
+    }
+    if (input.metals && input.metals.length > 0) {
+      minQ = minQ.in("metal_type", input.metals);
+      maxQ = maxQ.in("metal_type", input.metals);
+    }
+    if (input.karats && input.karats.length > 0) {
+      minQ = minQ.in("gold_karat", input.karats);
+      maxQ = maxQ.in("gold_karat", input.karats);
+    }
+    if (input.search && input.search.trim()) {
+      const term = `%${input.search.trim()}%`;
+      minQ = minQ.or(`name.ilike.${term},description.ilike.${term}`);
+      maxQ = maxQ.or(`name.ilike.${term},description.ilike.${term}`);
+    }
+    if (input.onSale) {
+      minQ = minQ.eq("discount_active", true);
+      maxQ = maxQ.eq("discount_active", true);
+    }
+
+    const [minRowRes, maxRowRes] = await Promise.all([minQ.maybeSingle(), maxQ.maybeSingle()]);
+    const minFromRows = Number((minRowRes.data as { price?: number } | null)?.price ?? NaN);
+    const maxFromRows = Number((maxRowRes.data as { price?: number } | null)?.price ?? NaN);
+    if (Number.isFinite(minFromRows)) minPrice = minFromRows;
+    if (Number.isFinite(maxFromRows)) maxPrice = maxFromRows;
+  }
+
+  if (maxPrice <= minPrice) {
+    maxPrice = minPrice + 1;
+  }
+  return { minPrice, maxPrice };
+}
+
+function hasActivePriceFilter(minPrice?: number, maxPrice?: number): boolean {
+  return (
+    (typeof minPrice === "number" && Number.isFinite(minPrice)) ||
+    (typeof maxPrice === "number" && Number.isFinite(maxPrice))
+  );
+}
+
+/** Filter by price shown to customers (after discounts), not raw DB `price` only. */
+function productMeetsPriceFilter(price: number, minPrice?: number, maxPrice?: number): boolean {
+  if (typeof minPrice === "number" && Number.isFinite(minPrice) && price < minPrice) return false;
+  if (typeof maxPrice === "number" && Number.isFinite(maxPrice) && price > maxPrice) return false;
+  return true;
+}
+
+function mapProductRow(row: ProductRow, language: Language, marketSnapshot: PricingMarketSnapshot | null): Product {
   const images = (row.product_images ?? [])
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((i) => i.url);
@@ -116,7 +234,18 @@ function mapProductRow(row: ProductRow, language: Language): Product {
   const averageRating =
     reviewCount > 0 ? Math.round((approvedRatings.reduce((s, r) => s + r, 0) / reviewCount) * 10) / 10 : undefined;
 
-  const basePrice = Number(row.price);
+  const dynamic = computeDynamicMarketPriceUsd(
+    {
+      metalType: row.metal_type,
+      goldKarat: row.gold_karat,
+      weight: row.weight,
+      craftsmanshipMargin: row.craftsmanship_margin,
+      storedPrice: row.price,
+    },
+    marketSnapshot ?? {},
+    QAR_TO_USD
+  );
+  const basePrice = Number(dynamic.finalPriceUsd);
   const hasValidDiscount =
     row.discount_active === true &&
     row.discount_type != null &&
@@ -167,10 +296,11 @@ function mapProductRow(row: ProductRow, language: Language): Product {
 export async function getPublicProducts(options?: { category?: string; limit?: number }): Promise<Product[]> {
   const language = getServerLanguage();
   const supabase = await createClient();
+  const marketSnapshot = await getPricingMarketSnapshot();
   let query = supabase
     .from("products")
     .select(
-      "id, store_id, name, slug, description, price, compare_at_price, category, metal_type, gold_karat, weight, created_at, updated_at, stock_quantity, status, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, stores!inner(name, slug, status), product_images(url, sort_order), reviews(rating)"
+      "id, store_id, name, slug, description, price, compare_at_price, category, metal_type, gold_karat, weight, craftsmanship_margin, created_at, updated_at, stock_quantity, status, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, stores!inner(name, slug, status), product_images(url, sort_order), reviews(rating)"
     )
     .eq("stores.status", "approved")
     .order("created_at", { ascending: false });
@@ -184,95 +314,71 @@ export async function getPublicProducts(options?: { category?: string; limit?: n
 
   const { data, error } = await query;
   if (error) return [];
-  return (data ?? []).map((row) => mapProductRow(row, language));
+  return (data ?? []).map((row) => mapProductRow(row, language, marketSnapshot));
 }
 
-/** Public products for marketplace with search and structured filters. */
-export async function getPublicProductsForMarketplace(
-  filters: MarketplaceFilterInput
-): Promise<Product[]> {
-  const language = getServerLanguage();
-  const supabase = await createClient();
+async function fetchMarketplaceProductRowsPage(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  filters: MarketplaceFilterInput,
+  rangeFrom: number,
+  rangeTo: number
+): Promise<ProductRow[]> {
   let query = supabase
     .from("products")
-    .select(
-      "id, store_id, name, slug, description, price, compare_at_price, category, metal_type, gold_karat, weight, created_at, updated_at, stock_quantity, status, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, stores!inner(id, name, slug, status), product_images(url, sort_order), reviews(rating)"
-    )
+    .select(MARKETPLACE_PRODUCT_SELECT)
     .eq("stores.status", "approved");
 
   if (filters.category && filters.category !== "all") {
     query = query.ilike("category", filters.category);
   }
-
   if (filters.brands && filters.brands.length > 0) {
     query = query.in("store_id", filters.brands);
   }
-
   if (filters.metals && filters.metals.length > 0) {
     query = query.in("metal_type", filters.metals);
   }
-
   if (filters.karats && filters.karats.length > 0) {
     query = query.in("gold_karat", filters.karats);
   }
-
-  if (typeof filters.minPrice === "number") {
-    query = query.gte("price", filters.minPrice);
-  }
-
-  if (typeof filters.maxPrice === "number") {
-    query = query.lte("price", filters.maxPrice);
-  }
-
   if (filters.search && filters.search.trim()) {
     const term = `%${filters.search.trim()}%`;
-    query = query.or(
-      `name.ilike.${term},description.ilike.${term},stores.name.ilike.${term}`
-    );
+    query = query.or(`name.ilike.${term},description.ilike.${term},stores.name.ilike.${term}`);
   }
-
   if (filters.onSale) {
     query = query.eq("discount_active", true);
   }
 
-  query = query.order("created_at", { ascending: false });
-  const limit = Math.min(Math.max(filters.limit ?? 24, 1), 100);
-  const offset = filters.offset ?? 0;
-  const rangeSize = filters.onSale ? Math.min((offset + limit) * 2, 200) : limit;
-  const rangeStart = filters.onSale ? 0 : offset;
-  query = query.range(rangeStart, rangeStart + rangeSize - 1);
-
+  query = query.order("created_at", { ascending: false }).range(rangeFrom, rangeTo);
   const { data, error } = await query;
   if (error) return [];
-  let rows = data ?? [];
-  if (filters.onSale) {
-    rows = rows.filter(
-      (row: ProductRow) =>
-        row.discount_active === true &&
-        row.discount_type != null &&
-        row.discount_value != null &&
-        isDiscountValid(
-          true,
-          row.discount_start_at,
-          row.discount_end_at
-        )
-    );
-    rows = rows.slice(offset, offset + limit);
-  }
-  let products = rows.map((r: ProductRow) => mapProductRow(r, language));
-  const sortOption = filters.sort ?? "default";
+  return (data ?? []) as ProductRow[];
+}
+
+function filterRowsValidOnSale(rows: ProductRow[]): ProductRow[] {
+  return rows.filter(
+    (row: ProductRow) =>
+      row.discount_active === true &&
+      row.discount_type != null &&
+      row.discount_value != null &&
+      isDiscountValid(true, row.discount_start_at, row.discount_end_at)
+  );
+}
+
+function applyMarketplaceSort(products: Product[], sortOption: MarketplaceSortOption): Product[] {
   if (sortOption === "highest_discount") {
-    products = products
+    return products
       .filter((p) => p.originalPrice != null && p.originalPrice > p.price && p.originalPrice > 0)
       .sort(
         (a, b) =>
           (b.originalPrice! - b.price) / b.originalPrice! -
           (a.originalPrice! - a.price) / a.originalPrice!
       );
-  } else if (sortOption === "lowest_price") {
-    products.sort((a, b) => a.price - b.price);
-  } else if (sortOption === "ending_soon") {
-    products.sort((a, b) => {
+  }
+  if (sortOption === "lowest_price") {
+    return [...products].sort((a, b) => a.price - b.price);
+  }
+  if (sortOption === "ending_soon") {
+    return [...products].sort((a, b) => {
       const aEnd = a.discountEndAt ? new Date(a.discountEndAt).getTime() : Number.MAX_SAFE_INTEGER;
       const bEnd = b.discountEndAt ? new Date(b.discountEndAt).getTime() : Number.MAX_SAFE_INTEGER;
       return aEnd - bEnd;
@@ -281,21 +387,79 @@ export async function getPublicProductsForMarketplace(
   return products;
 }
 
+/** Public products for marketplace with search and structured filters. */
+export async function getPublicProductsForMarketplace(
+  filters: MarketplaceFilterInput
+): Promise<Product[]> {
+  const language = getServerLanguage();
+  const supabase = await createClient();
+  const marketSnapshot = await getPricingMarketSnapshot();
+  const limit = Math.min(Math.max(filters.limit ?? 24, 1), 100);
+  const offset = filters.offset ?? 0;
+  const priceFilter = hasActivePriceFilter(filters.minPrice, filters.maxPrice);
+  const sortOption = filters.sort ?? "default";
+  const needFullCatalogSort =
+    priceFilter &&
+    (sortOption === "lowest_price" || sortOption === "highest_discount" || sortOption === "ending_soon");
+
+  if (priceFilter) {
+    const collected: Product[] = [];
+    for (let start = 0; start < MARKETPLACE_MAX_ROWS_SCAN; start += MARKETPLACE_PAGE) {
+      const end = start + MARKETPLACE_PAGE - 1;
+      let rows = await fetchMarketplaceProductRowsPage(supabase, filters, start, end);
+      if (rows.length === 0) break;
+      if (filters.onSale) {
+        rows = filterRowsValidOnSale(rows);
+      }
+      for (const r of rows) {
+        const p = mapProductRow(r, language, marketSnapshot);
+        if (productMeetsPriceFilter(p.price, filters.minPrice, filters.maxPrice)) {
+          collected.push(p);
+        }
+      }
+      if (!needFullCatalogSort && collected.length >= limit + offset) {
+        break;
+      }
+      if (rows.length < MARKETPLACE_PAGE) {
+        break;
+      }
+    }
+    let products = applyMarketplaceSort(collected, sortOption);
+    products = products.slice(offset, offset + limit);
+    return products;
+  }
+
+  let rows = await fetchMarketplaceProductRowsPage(
+    supabase,
+    filters,
+    filters.onSale ? 0 : offset,
+    filters.onSale ? Math.min((offset + limit) * 2, 200) - 1 : offset + limit - 1
+  );
+  if (filters.onSale) {
+    rows = filterRowsValidOnSale(rows);
+    rows = rows.slice(offset, offset + limit);
+  }
+  let products = rows.map((r: ProductRow) => mapProductRow(r, language, marketSnapshot));
+  products = applyMarketplaceSort(products, sortOption);
+  return products;
+}
+
 /** Single public product by id; null if not found or not visible (draft, deleted, or store inactive). */
 export async function getPublicProductById(id: string): Promise<Product | null> {
   const language = getServerLanguage();
   const supabase = await createClient();
+  const marketSnapshot = await getPricingMarketSnapshot();
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, store_id, name, slug, description, price, compare_at_price, category, metal_type, gold_karat, weight, created_at, updated_at, stock_quantity, status, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, stores!inner(name, slug, status), product_images(url, sort_order), reviews(rating)"
+      "id, store_id, name, slug, description, price, compare_at_price, category, metal_type, gold_karat, weight, craftsmanship_margin, created_at, updated_at, stock_quantity, status, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, stores!inner(name, slug, status), product_images(url, sort_order), reviews(rating)"
     )
     .eq("id", id)
     .eq("stores.status", "approved")
     .single();
 
   if (error || !data) return null;
-  return mapProductRow(data as ProductRow, language);
+  return mapProductRow(data as ProductRow, language, marketSnapshot);
 }
 
 /** Related products: same store or same category, excluding current product. Used on product detail for "You may also like". */
@@ -307,10 +471,11 @@ export async function getRelatedProducts(
 ): Promise<Product[]> {
   const language = getServerLanguage();
   const supabase = await createClient();
+  const marketSnapshot = await getPricingMarketSnapshot();
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, store_id, name, slug, description, price, compare_at_price, category, metal_type, gold_karat, weight, created_at, updated_at, stock_quantity, status, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, stores!inner(name, slug, status), product_images(url, sort_order), reviews(rating)"
+      "id, store_id, name, slug, description, price, compare_at_price, category, metal_type, gold_karat, weight, craftsmanship_margin, created_at, updated_at, stock_quantity, status, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, stores!inner(name, slug, status), product_images(url, sort_order), reviews(rating)"
     )
     .neq("id", productId)
     .eq("stores.status", "approved")
@@ -319,24 +484,25 @@ export async function getRelatedProducts(
     .limit(limit);
 
   if (error) return [];
-  return (data ?? []).map((row) => mapProductRow(row, language));
+  return (data ?? []).map((row) => mapProductRow(row, language, marketSnapshot));
 }
 
 /** Public products for a store (same visibility rules). */
 export async function getPublicProductsByStore(storeId: string): Promise<Product[]> {
   const language = getServerLanguage();
   const supabase = await createClient();
+  const marketSnapshot = await getPricingMarketSnapshot();
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, store_id, name, slug, description, price, compare_at_price, category, metal_type, gold_karat, weight, created_at, updated_at, stock_quantity, status, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, stores!inner(name, slug, status), product_images(url, sort_order), reviews(rating)"
+      "id, store_id, name, slug, description, price, compare_at_price, category, metal_type, gold_karat, weight, craftsmanship_margin, created_at, updated_at, stock_quantity, status, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, stores!inner(name, slug, status), product_images(url, sort_order), reviews(rating)"
     )
     .eq("store_id", storeId)
     .eq("stores.status", "approved")
     .order("created_at", { ascending: false });
 
   if (error) return [];
-  return (data ?? []).map((row) => mapProductRow(row, language));
+  return (data ?? []).map((row) => mapProductRow(row, language, marketSnapshot));
 }
 
 /** Featured section: first N public products. */
@@ -348,10 +514,11 @@ export async function getFeaturedPublicProducts(limit: number = 4): Promise<Prod
 export async function getDiscountedProducts(limit: number = 10): Promise<Product[]> {
   const language = getServerLanguage();
   const supabase = await createClient();
+  const marketSnapshot = await getPricingMarketSnapshot();
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, store_id, name, slug, description, price, compare_at_price, category, metal_type, gold_karat, weight, created_at, updated_at, stock_quantity, status, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, stores!inner(name, slug, status), product_images(url, sort_order), reviews(rating)"
+      "id, store_id, name, slug, description, price, compare_at_price, category, metal_type, gold_karat, weight, craftsmanship_margin, created_at, updated_at, stock_quantity, status, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, stores!inner(name, slug, status), product_images(url, sort_order), reviews(rating)"
     )
     .eq("discount_active", true)
     .eq("stores.status", "approved")
@@ -368,12 +535,24 @@ export async function getDiscountedProducts(limit: number = 10): Promise<Product
       isDiscountValid(active, row.discount_start_at, row.discount_end_at)
     );
   });
-  return valid.slice(0, limit).map((r) => mapProductRow(r as ProductRow, language));
+  return valid.slice(0, limit).map((r) => mapProductRow(r as ProductRow, language, marketSnapshot));
 }
 
 /** Distinct filter values and price range for marketplace filters (only active stores with visible products). */
 export async function getMarketplaceFilters(): Promise<MarketplaceFilters> {
   const supabase = await createClient();
+
+  const { data: approvedStores } = await supabase.from("stores").select("id").eq("status", "approved");
+  const approvedStoreIds = (approvedStores ?? []).map((r: { id: string }) => r.id).filter(Boolean);
+
+  const pricePromise =
+    approvedStoreIds.length > 0
+      ? supabase
+          .from("products")
+          .select("min_price:min(price), max_price:max(price)")
+          .in("store_id", approvedStoreIds)
+          .single()
+      : Promise.resolve({ data: { min_price: 0, max_price: 0 }, error: null as null });
 
   const [categoryRes, metalRes, karatRes, priceRes, storeIdsRes] = await Promise.all([
     supabase
@@ -388,10 +567,7 @@ export async function getMarketplaceFilters(): Promise<MarketplaceFilters> {
       .from("products")
       .select("gold_karat")
       .not("gold_karat", "is", null),
-    supabase
-      .from("products")
-      .select("min_price:min(price), max_price:max(price)")
-      .single(),
+    pricePromise,
     supabase
       .from("products")
       .select("store_id"),
@@ -430,8 +606,37 @@ export async function getMarketplaceFilters(): Promise<MarketplaceFilters> {
     )
   ).sort();
 
-  const minPrice = Number((priceRes.data as any)?.min_price ?? 0) || 0;
-  const maxPrice = Number((priceRes.data as any)?.max_price ?? 0) || 0;
+  let minPrice = Number((priceRes.data as any)?.min_price ?? 0) || 0;
+  let maxPrice = Number((priceRes.data as any)?.max_price ?? 0) || 0;
+  if (!Number.isFinite(minPrice)) minPrice = 0;
+  if (!Number.isFinite(maxPrice)) maxPrice = 0;
+
+  if (maxPrice <= minPrice && approvedStoreIds.length > 0) {
+    const [minRowRes, maxRowRes] = await Promise.all([
+      supabase
+        .from("products")
+        .select("price")
+        .in("store_id", approvedStoreIds)
+        .order("price", { ascending: true })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("products")
+        .select("price")
+        .in("store_id", approvedStoreIds)
+        .order("price", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    const minFromRows = Number((minRowRes.data as { price?: number } | null)?.price ?? NaN);
+    const maxFromRows = Number((maxRowRes.data as { price?: number } | null)?.price ?? NaN);
+    if (Number.isFinite(minFromRows)) minPrice = minFromRows;
+    if (Number.isFinite(maxFromRows)) maxPrice = maxFromRows;
+  }
+
+  if (maxPrice <= minPrice) {
+    maxPrice = minPrice + 1;
+  }
 
   const brands = (brandRes.data ?? []).map((row: { id: string; name: string; slug: string }) => ({
     id: row.id,

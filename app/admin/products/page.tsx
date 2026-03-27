@@ -35,6 +35,21 @@ export default async function AdminProductsPage() {
       render: (row) => <FormattedPrice usd={Number(row.price)} />,
     },
     {
+      key: "market_linked",
+      header: t(language, "admin.products.marketLinked", "Market linked"),
+      render: (row) =>
+        row.market_linked ? (
+          <Badge variant="secondary">{t(language, "admin.products.marketLinkedYes", "Live market")}</Badge>
+        ) : (
+          <Badge variant="outline">{t(language, "admin.products.marketLinkedNo", "Fallback")}</Badge>
+        ),
+    },
+    {
+      key: "craftsmanship_margin",
+      header: t(language, "admin.products.craftsmanshipMargin", "Craftsmanship margin"),
+      render: (row) => <FormattedPrice usd={Number(row.craftsmanship_margin ?? 0)} />,
+    },
+    {
       key: "category",
       header: t(language, "admin.products.category"),
       render: (row) => row.category ?? "—",

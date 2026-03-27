@@ -35,6 +35,7 @@ export function DiscoverClient({
   wishlistIds = [],
   search = "",
   filters,
+  priceExtent,
   selectedFilters,
 }: {
   initialProducts: Product[];
@@ -42,6 +43,8 @@ export function DiscoverClient({
   wishlistIds?: string[];
   search?: string;
   filters: MarketplaceFilters;
+  /** Slider bounds for current filters (USD); falls back to global catalog range */
+  priceExtent?: { minPrice: number; maxPrice: number };
   selectedFilters: {
     brands: string[];
     metals: string[];
@@ -146,14 +149,14 @@ export function DiscoverClient({
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Desktop filter sidebar — hidden on mobile */}
         <div className="hidden lg:block">
-          <FilterSidebar filters={filters} selected={selectedFilters} />
+          <FilterSidebar filters={filters} priceExtent={priceExtent} selected={selectedFilters} />
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 md:pb-6 border-b border-primary/10">
             <div className="flex items-center gap-2">
               {/* Mobile filter button */}
-              <MobileFilterDrawer filters={filters} selected={selectedFilters} />
+              <MobileFilterDrawer filters={filters} priceExtent={priceExtent} selected={selectedFilters} />
               <p className="text-sm text-masa-gray font-sans hidden sm:block">
                 {t("marketplace.showing")} <span className="text-masa-dark">1-{products.length}</span>{" "}
                 {t("marketplace.of")} <span className="text-masa-dark">{products.length}</span>{" "}

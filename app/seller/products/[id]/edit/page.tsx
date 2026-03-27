@@ -5,6 +5,7 @@ import { getCurrentUserWithProfile } from "@/lib/auth";
 import { ProductForm } from "@/components/seller/ProductForm";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
+import { getPricingMarketSnapshot } from "@/lib/pricing";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -29,6 +30,7 @@ export default async function EditProductPage({ params }: PageProps) {
   }
 
   const product = await getSellerProductById(id, store.id);
+  const marketSnapshot = await getPricingMarketSnapshot();
   if (!product) {
     notFound();
   }
@@ -41,7 +43,7 @@ export default async function EditProductPage({ params }: PageProps) {
           {t(language, "seller.products.editProductSubtitle").replace("{name}", product.name)}
         </p>
       </div>
-      <ProductForm storeId={store.id} mode="edit" product={product} />
+      <ProductForm storeId={store.id} mode="edit" product={product} marketSnapshot={marketSnapshot} />
     </div>
   );
 }

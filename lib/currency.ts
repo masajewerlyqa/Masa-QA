@@ -13,6 +13,13 @@ export function convertPrice(priceUSD: number, toCurrency: Currency): number {
   return Math.round(priceUSD * USD_TO_QAR * 100) / 100;
 }
 
+/** Convert a displayed amount (USD or QAR) back to USD for filters / API. */
+export function displayAmountToUsd(amount: number, fromCurrency: Currency): number {
+  if (!Number.isFinite(amount)) return 0;
+  if (fromCurrency === "USD") return amount;
+  return Math.round((amount / USD_TO_QAR) * 1e6) / 1e6;
+}
+
 /** Format as per spec: USD "$ 120.00", QAR "ر.ق 436.80" */
 export function formatPrice(priceUSD: number, currency: Currency): string {
   const amount = currency === "USD" ? priceUSD : convertPrice(priceUSD, "QAR");

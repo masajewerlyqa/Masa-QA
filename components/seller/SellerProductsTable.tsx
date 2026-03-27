@@ -162,7 +162,15 @@ export function SellerProductsTable({ products }: Props) {
                           <span className="text-masa-gray text-sm ml-1">({t("seller.products.was")} <FormattedPrice usd={basePrice} />)</span>
                         </span>
                       ) : (
-                        <FormattedPrice usd={basePrice} />
+                        <div>
+                          <FormattedPrice usd={basePrice} />
+                          <div className="text-xs text-masa-gray">
+                            {t("seller.products.marketBased", "Market-based")}
+                            {" · "}
+                            {t("seller.products.margin", "Margin")}{" "}
+                            <FormattedPrice usd={Number(product.craftsmanship_margin ?? 0)} />
+                          </div>
+                        </div>
                       )}
                     </TableCell>
                     <TableCell>

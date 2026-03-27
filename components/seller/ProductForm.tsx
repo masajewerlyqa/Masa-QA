@@ -12,6 +12,9 @@ import { productFormSchema, PRODUCT_STATUSES, CATEGORIES, type ProductFormValues
 import { createProduct, updateProduct, type ActionResult } from "@/app/seller/products/actions";
 import type { SellerProductDetail } from "@/lib/seller-types";
 import { useI18n } from "@/components/useI18n";
+import { computeDynamicMarketPriceUsd, type PricingMarketSnapshot } from "@/lib/pricing-engine";
+
+const QAR_TO_USD = 1 / 3.64;
 
 const BUCKET = "product-images";
 const MAX_IMAGES = 8;
@@ -21,18 +24,20 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 type ProductFormProps = {
   storeId: string;
   mode: "create";
+  marketSnapshot: PricingMarketSnapshot | null;
   product?: never;
 };
 
 type ProductFormEditProps = {
   storeId: string;
   mode: "edit";
+  marketSnapshot: PricingMarketSnapshot | null;
   product: SellerProductDetail;
 };
 
 export function ProductForm(props: ProductFormProps | ProductFormEditProps) {
   const { isArabic } = useI18n();
-  const { storeId, mode } = props;
+  const { storeId, mode, marketSnapshot } = props;
   const product = props.mode === "edit" ? props.product : null;
   const localizeOption = (value: string) => {
     const v = value.toLowerCase().replace(/\s+/g, "_");
@@ -64,10 +69,10 @@ export function ProductForm(props: ProductFormProps | ProductFormEditProps) {
         title: product.name,
         description: product.description ?? "",
         category: (product.category as ProductFormValues["category"]) ?? "Other",
-        price: Number(product.price),
         metal_type: product.metal_type ?? "",
         gold_karat: product.gold_karat ?? "",
         weight: product.weight ?? undefined,
+        craftsmanship_margin: product.craftsmanship_margin ?? 0,
         stock_quantity: product.stock_quantity,
         status: (product.status as ProductFormValues["status"]) ?? "draft",
       }
@@ -75,13 +80,32 @@ export function ProductForm(props: ProductFormProps | ProductFormEditProps) {
         title: "",
         description: "",
         category: "Other",
-        price: 0,
         metal_type: "",
         gold_karat: "",
         weight: undefined,
+        craftsmanship_margin: 0,
         stock_quantity: 0,
         status: "draft",
       };
+
+  const [metalTypeValue, setMetalTypeValue] = useState(defaultValues.metal_type ?? "");
+  const [goldKaratValue, setGoldKaratValue] = useState(defaultValues.gold_karat ?? "");
+  const [weightValue, setWeightValue] = useState<string>(defaultValues.weight != null ? String(defaultValues.weight) : "");
+  const [craftsmanshipMarginValue, setCraftsmanshipMarginValue] = useState<string>(
+    defaultValues.craftsmanship_margin != null ? String(defaultValues.craftsmanship_margin) : "0"
+  );
+
+  const preview = computeDynamicMarketPriceUsd(
+    {
+      metalType: metalTypeValue,
+      goldKarat: goldKaratValue,
+      weight: weightValue ? Number(weightValue) : null,
+      craftsmanshipMargin: craftsmanshipMarginValue ? Number(craftsmanshipMarginValue) : 0,
+      storedPrice: product?.price ?? 0,
+    },
+    marketSnapshot ?? {},
+    QAR_TO_USD
+  );
 
   async function handleUpload(files: FileList | null): Promise<string[]> {
     if (!files?.length) return [];
@@ -137,10 +161,10 @@ export function ProductForm(props: ProductFormProps | ProductFormEditProps) {
       title: (form.elements.namedItem("title") as HTMLInputElement)?.value,
       description: (form.elements.namedItem("description") as HTMLTextAreaElement)?.value,
       category: (form.elements.namedItem("category") as HTMLSelectElement)?.value,
-      price: (form.elements.namedItem("price") as HTMLInputElement)?.value,
       metal_type: (form.elements.namedItem("metal_type") as HTMLInputElement)?.value,
       gold_karat: (form.elements.namedItem("gold_karat") as HTMLInputElement)?.value,
       weight: (form.elements.namedItem("weight") as HTMLInputElement)?.value || undefined,
+      craftsmanship_margin: (form.elements.namedItem("craftsmanship_margin") as HTMLInputElement)?.value || 0,
       stock_quantity: (form.elements.namedItem("stock_quantity") as HTMLInputElement)?.value,
       status: (form.elements.namedItem("status") as HTMLSelectElement)?.value,
     };
@@ -231,18 +255,15 @@ export function ProductForm(props: ProductFormProps | ProductFormEditProps) {
               {fieldErrors.category && <p className="text-sm text-red-600">{fieldErrors.category}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="price">{isArabic ? "السعر ($)" : "Price ($)"}</Label>
-              <Input
-                id="price"
-                name="price"
-                type="number"
-                step="0.01"
-                min={0}
-                placeholder="12500"
-                defaultValue={defaultValues.price || ""}
-                className={fieldErrors.price ? "border-red-500" : ""}
-              />
-              {fieldErrors.price && <p className="text-sm text-red-600">{fieldErrors.price}</p>}
+              <Label>{isArabic ? "السعر النهائي (محسوب تلقائياً)" : "Final price (auto-calculated)"}</Label>
+              <div className="rounded-md border border-primary/20 bg-masa-light px-3 py-2 text-sm">
+                <div className="font-medium text-primary">${preview.finalPriceUsd.toFixed(2)}</div>
+                <div className="text-xs text-masa-gray mt-1">
+                  {isArabic
+                    ? "تسعير مرتبط بالسوق: قيمة المعدن/الألماس الحية + هامش الصياغة"
+                    : "Market-based pricing: live material value + craftsmanship margin"}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -254,6 +275,7 @@ export function ProductForm(props: ProductFormProps | ProductFormEditProps) {
                 name="metal_type"
                 placeholder={isArabic ? "مثال: ذهب، فضة، بلاتين" : "e.g. Gold, Silver, Platinum"}
                 defaultValue={defaultValues.metal_type}
+                onChange={(e) => setMetalTypeValue(e.target.value)}
                 className={fieldErrors.metal_type ? "border-red-500" : ""}
               />
               {fieldErrors.metal_type && <p className="text-sm text-red-600">{fieldErrors.metal_type}</p>}
@@ -265,7 +287,9 @@ export function ProductForm(props: ProductFormProps | ProductFormEditProps) {
                 name="gold_karat"
                 placeholder={isArabic ? "مثال: 18K, 24K" : "e.g. 18K, 24K"}
                 defaultValue={defaultValues.gold_karat}
+                onChange={(e) => setGoldKaratValue(e.target.value)}
               />
+              {fieldErrors.gold_karat && <p className="text-sm text-red-600">{fieldErrors.gold_karat}</p>}
             </div>
           </div>
 
@@ -277,13 +301,40 @@ export function ProductForm(props: ProductFormProps | ProductFormEditProps) {
                 name="weight"
                 type="number"
                 step="0.01"
-                min={0}
-                placeholder={isArabic ? "اختياري" : "Optional"}
+                min={0.01}
+                placeholder={isArabic ? "مثال: 12.5" : "e.g. 12.5"}
                 defaultValue={defaultValues.weight ?? ""}
+                onChange={(e) => setWeightValue(e.target.value)}
                 className={fieldErrors.weight ? "border-red-500" : ""}
               />
               {fieldErrors.weight && <p className="text-sm text-red-600">{fieldErrors.weight}</p>}
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="craftsmanship_margin">
+                {isArabic ? "هامش الصياغة / العمل ($)" : "Craftsmanship / labor margin ($)"}
+              </Label>
+              <Input
+                id="craftsmanship_margin"
+                name="craftsmanship_margin"
+                type="number"
+                step="0.01"
+                min={0}
+                defaultValue={defaultValues.craftsmanship_margin ?? 0}
+                onChange={(e) => setCraftsmanshipMarginValue(e.target.value)}
+                className={fieldErrors.craftsmanship_margin ? "border-red-500" : ""}
+              />
+              <p className="text-xs text-masa-gray">
+                {isArabic
+                  ? "اختياري. إذا تُرك فارغاً أو 0، يتم استخدام تسعير السوق فقط."
+                  : "Optional. Leave empty or 0 to use pure market-based pricing."}
+              </p>
+              {fieldErrors.craftsmanship_margin && (
+                <p className="text-sm text-red-600">{fieldErrors.craftsmanship_margin}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="stock_quantity">{isArabic ? "كمية المخزون" : "Stock quantity"}</Label>
               <Input

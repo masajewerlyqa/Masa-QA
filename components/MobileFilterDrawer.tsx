@@ -9,6 +9,7 @@ import type { MarketplaceFilters } from "@/lib/data";
 
 type MobileFilterDrawerProps = {
   filters: MarketplaceFilters;
+  priceExtent?: { minPrice: number; maxPrice: number };
   selected: {
     brands: string[];
     metals: string[];
@@ -19,16 +20,23 @@ type MobileFilterDrawerProps = {
   };
 };
 
-export function MobileFilterDrawer({ filters, selected }: MobileFilterDrawerProps) {
+export function MobileFilterDrawer({ filters, priceExtent, selected }: MobileFilterDrawerProps) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
+
+  const lo = filters.minPrice;
+  const hi = filters.maxPrice;
+  const eps = Math.max((hi - lo) * 1e-9, 1e-6);
+  const priceRangeActive =
+    selected.minPrice != null &&
+    selected.maxPrice != null &&
+    (selected.minPrice > lo + eps || selected.maxPrice < hi - eps);
 
   const activeCount = [
     selected.brands.length > 0,
     selected.metals.length > 0,
     selected.karats.length > 0,
-    selected.minPrice != null,
-    selected.maxPrice != null,
+    priceRangeActive,
     selected.onSale === true,
   ].filter(Boolean).length;
 
@@ -68,7 +76,7 @@ export function MobileFilterDrawer({ filters, selected }: MobileFilterDrawerProp
               </button>
             </div>
             <div className="p-4">
-              <FilterSidebar filters={filters} selected={selected} />
+              <FilterSidebar filters={filters} priceExtent={priceExtent} selected={selected} />
             </div>
             <div className="sticky bottom-0 bg-white border-t border-primary/10 p-4">
               <Button

@@ -6,6 +6,9 @@ import "server-only";
  */
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserWithProfile } from "@/lib/auth";
+import { getPricingMarketSnapshot } from "@/lib/pricing";
+import { computeDynamicMarketPriceUsd } from "@/lib/pricing-engine";
+import { QAR_TO_USD } from "@/lib/market-prices";
 import type {
   StoreRow,
   ProductRow,
@@ -112,9 +115,10 @@ export async function getSellerStats(storeId: string): Promise<SellerStats> {
 /** Get products for a store (excludes soft-deleted). Optional limit for overview/dashboard. */
 export async function getSellerProducts(storeId: string, limit?: number): Promise<ProductRow[]> {
   const supabase = await createClient();
+  const marketSnapshot = await getPricingMarketSnapshot();
   let query = supabase
     .from("products")
-    .select("id, store_id, name, slug, description, category, price, metal_type, gold_karat, weight, stock_quantity, status, deleted_at, discount_type, discount_value, discount_start_at, discount_end_at, discount_active")
+    .select("id, store_id, name, slug, description, category, price, metal_type, gold_karat, weight, craftsmanship_margin, stock_quantity, status, deleted_at, discount_type, discount_value, discount_start_at, discount_end_at, discount_active")
     .eq("store_id", storeId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
@@ -133,10 +137,24 @@ export async function getSellerProducts(storeId: string, limit?: number): Promis
     list.push(img.url);
     imagesByProduct.set(img.product_id, list);
   }
-  return products.map((p) => ({
-    ...p,
-    image_urls: imagesByProduct.get(p.id) ?? [],
-  })) as ProductRow[];
+  return products.map((p) => {
+    const dynamic = computeDynamicMarketPriceUsd(
+      {
+        metalType: p.metal_type,
+        goldKarat: p.gold_karat,
+        weight: p.weight,
+        craftsmanshipMargin: p.craftsmanship_margin,
+        storedPrice: p.price,
+      },
+      marketSnapshot ?? {},
+      QAR_TO_USD
+    );
+    return {
+      ...p,
+      price: dynamic.finalPriceUsd,
+      image_urls: imagesByProduct.get(p.id) ?? [],
+    };
+  }) as ProductRow[];
 }
 
 /** Get a single product by id for edit; must belong to seller's store. */
@@ -145,9 +163,10 @@ export async function getSellerProductById(
   storeId: string
 ): Promise<import("@/lib/seller-types").SellerProductDetail | null> {
   const supabase = await createClient();
+  const marketSnapshot = await getPricingMarketSnapshot();
   const { data: product } = await supabase
     .from("products")
-    .select("id, store_id, name, slug, description, category, price, metal_type, gold_karat, weight, stock_quantity, status, deleted_at, discount_type, discount_value, discount_start_at, discount_end_at, discount_active")
+    .select("id, store_id, name, slug, description, category, price, metal_type, gold_karat, weight, craftsmanship_margin, stock_quantity, status, deleted_at, discount_type, discount_value, discount_start_at, discount_end_at, discount_active")
     .eq("id", productId)
     .eq("store_id", storeId)
     .is("deleted_at", null)
@@ -158,8 +177,20 @@ export async function getSellerProductById(
     .select("id, url, alt, sort_order")
     .eq("product_id", productId)
     .order("sort_order", { ascending: true });
+  const dynamic = computeDynamicMarketPriceUsd(
+    {
+      metalType: product.metal_type,
+      goldKarat: product.gold_karat,
+      weight: product.weight,
+      craftsmanshipMargin: product.craftsmanship_margin,
+      storedPrice: product.price,
+    },
+    marketSnapshot ?? {},
+    QAR_TO_USD
+  );
   return {
     ...product,
+    price: dynamic.finalPriceUsd,
     image_urls: (productImages ?? []).map((i) => i.url),
     product_images: (productImages ?? []).map((i) => ({
       id: i.id,

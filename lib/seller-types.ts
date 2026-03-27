@@ -31,6 +31,7 @@ export type ProductRow = {
   metal_type: string | null;
   gold_karat: string | null;
   weight: number | null;
+  craftsmanship_margin: number | null;
   stock_quantity: number;
   status: string;
   deleted_at: string | null;

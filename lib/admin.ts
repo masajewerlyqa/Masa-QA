@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCurrentUserWithProfile } from "@/lib/auth";
+import { getPricingMarketSnapshot } from "@/lib/pricing";
+import { computeDynamicMarketPriceUsd } from "@/lib/pricing-engine";
+import { QAR_TO_USD } from "@/lib/market-prices";
 
 export type AdminMetrics = {
   totalUsers: number;
@@ -566,6 +569,8 @@ export type AdminProductRow = {
   name: string;
   store_name: string;
   price: number;
+  craftsmanship_margin: number;
+  market_linked: boolean;
   category: string | null;
   status: string;
 };
@@ -585,9 +590,10 @@ export async function getAdminProducts(limit: number = 500): Promise<AdminProduc
   if (profile?.role !== "admin") return [];
 
   const service = createServiceClient();
+  const marketSnapshot = await getPricingMarketSnapshot();
   const { data: productRows, error } = await service
     .from("products")
-    .select("id, name, store_id, price, status, category")
+    .select("id, name, store_id, price, status, category, metal_type, gold_karat, weight, craftsmanship_margin")
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -598,14 +604,29 @@ export async function getAdminProducts(limit: number = 500): Promise<AdminProduc
   const stores = (storesData ?? []) as { id: string; name: string }[];
   const storeMap = new Map(stores.map((s) => [s.id, s.name ?? ""]));
 
-  return (productRows as any[]).map((row) => ({
-    id: row.id,
-    name: row.name ?? "—",
-    store_name: storeMap.get(row.store_id) ?? "—",
-    price: Number(row.price) ?? 0,
-    category: row.category ?? null,
-    status: row.status ?? "draft",
-  }));
+  return (productRows as any[]).map((row) => {
+    const dynamic = computeDynamicMarketPriceUsd(
+      {
+        metalType: row.metal_type,
+        goldKarat: row.gold_karat,
+        weight: row.weight,
+        craftsmanshipMargin: row.craftsmanship_margin,
+        storedPrice: row.price,
+      },
+      marketSnapshot ?? {},
+      QAR_TO_USD
+    );
+    return {
+      id: row.id,
+      name: row.name ?? "—",
+      store_name: storeMap.get(row.store_id) ?? "—",
+      price: Number(dynamic.finalPriceUsd) ?? 0,
+      craftsmanship_margin: Number(row.craftsmanship_margin ?? 0),
+      market_linked: dynamic.marketLinked,
+      category: row.category ?? null,
+      status: row.status ?? "draft",
+    };
+  });
 }
 
 /** All orders for admin. Caller must be admin. */
