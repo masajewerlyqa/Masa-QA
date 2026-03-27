@@ -55,6 +55,24 @@ type StoreRow = {
   longitude?: number | string | null;
 };
 
+type AggregatePriceValue = number | { price?: number | null }[] | null | undefined;
+type AggregatePriceRow = {
+  min_price?: AggregatePriceValue;
+  max_price?: AggregatePriceValue;
+};
+
+function extractAggregatePrice(value: AggregatePriceValue): number {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+  if (Array.isArray(value)) {
+    const nested = value[0]?.price;
+    const num = Number(nested ?? NaN);
+    return Number.isFinite(num) ? num : 0;
+  }
+  return 0;
+}
+
 export type MarketplaceBrand = {
   id: string;
   name: string;
@@ -140,9 +158,9 @@ export async function getMarketplacePriceBoundsForFilters(
 
   const { data, error } = await q.single();
   if (error || !data) return null;
-  const row = data as { min_price?: number | null; max_price?: number | null };
-  let minPrice = Number(row.min_price ?? 0) || 0;
-  let maxPrice = Number(row.max_price ?? 0) || 0;
+  const row = data as AggregatePriceRow;
+  let minPrice = extractAggregatePrice(row.min_price);
+  let maxPrice = extractAggregatePrice(row.max_price);
   if (!Number.isFinite(minPrice)) minPrice = 0;
   if (!Number.isFinite(maxPrice)) maxPrice = 0;
 
@@ -606,8 +624,9 @@ export async function getMarketplaceFilters(): Promise<MarketplaceFilters> {
     )
   ).sort();
 
-  let minPrice = Number((priceRes.data as any)?.min_price ?? 0) || 0;
-  let maxPrice = Number((priceRes.data as any)?.max_price ?? 0) || 0;
+  const aggregate = (priceRes.data ?? null) as AggregatePriceRow | null;
+  let minPrice = extractAggregatePrice(aggregate?.min_price);
+  let maxPrice = extractAggregatePrice(aggregate?.max_price);
   if (!Number.isFinite(minPrice)) minPrice = 0;
   if (!Number.isFinite(maxPrice)) maxPrice = 0;
 
