@@ -609,7 +609,12 @@ export const en = {
   seller: {
     overview: {
       dashboard: "Dashboard",
-      noStoreYet: "You do not have a store yet. Create one to start selling.",
+      noStoreYet:
+        "You do not have a store linked to your account yet. This usually means the store was not created when your application was approved.",
+      repairStoreHint:
+        "If your seller application is already approved, you can create your store from that application now. If the button fails, ask an admin to re-open and approve your application, or contact support.",
+      repairStoreButton: "Create my store from approved application",
+      repairStoreError: "Could not create your store. Try again or contact support.",
       backHome: "Back to home",
       dashboardOverview: "Dashboard Overview",
       welcomeBack: "Welcome back, {storeName}",

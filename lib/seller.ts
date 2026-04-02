@@ -56,30 +56,45 @@ export async function getSellerStore(): Promise<StoreRow | null> {
   const storeSelect =
     "id, owner_id, name, slug, description, logo_url, banner_url, status, location, contact_email, contact_phone, social_links, latitude, longitude, " +
     "business_timezone, working_days, opening_time_local, closing_time_local, seller_plan";
-  const { data: owned } = await supabase
+
+  const { data: ownedRows, error: ownedErr } = await supabase
     .from("stores")
     .select(storeSelect)
     .eq("owner_id", user.id)
-    .limit(1)
-    .maybeSingle();
+    .limit(1);
 
+  if (ownedErr) {
+    console.error("[getSellerStore] stores by owner_id failed:", ownedErr.message);
+  }
+  const owned = ownedRows?.[0];
   if (owned) return normalizeStoreRow(owned as unknown as Record<string, unknown>);
 
-  const { data: memberRow } = await supabase
+  const { data: memberRows, error: memberErr } = await supabase
     .from("store_members")
     .select("store_id")
     .eq("user_id", user.id)
-    .limit(1)
-    .maybeSingle();
+    .limit(1);
 
-  if (!memberRow) return null;
+  if (memberErr) {
+    console.error("[getSellerStore] store_members failed:", memberErr.message);
+    return null;
+  }
 
-  const { data: store } = await supabase
+  const memberRow = memberRows?.[0];
+  if (!memberRow?.store_id) return null;
+
+  const { data: storeRows, error: storeErr } = await supabase
     .from("stores")
     .select(storeSelect)
     .eq("id", memberRow.store_id)
-    .single();
+    .limit(1);
 
+  if (storeErr) {
+    console.error("[getSellerStore] store by member failed:", storeErr.message);
+    return null;
+  }
+
+  const store = storeRows?.[0];
   return store ? normalizeStoreRow(store as unknown as Record<string, unknown>) : null;
 }
 
