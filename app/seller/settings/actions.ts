@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getSellerStore } from "@/lib/seller";
 import { createClient } from "@/lib/supabase/server";
+import { parseSellerPlanId } from "@/lib/seller-plans";
+import { notifyAdminsSellerPlanUpgradeRequest } from "@/lib/notifications";
 
 export type ActionResult = { ok: boolean; error?: string };
 
@@ -68,5 +70,35 @@ export async function updateStoreSettings(payload: StoreSettingsPayload): Promis
 
   revalidatePath("/seller");
   revalidatePath("/seller/settings");
+  return { ok: true };
+}
+
+/** Basic stores can request Premium; notifies MASA admins for manual review and approval. */
+export async function requestSellerPlanUpgradeAction(): Promise<ActionResult> {
+  const { user, profile } = await getCurrentUserWithProfile();
+  if (!user || profile?.role !== "seller") {
+    return { ok: false, error: "Unauthorized" };
+  }
+
+  const store = await getSellerStore();
+  if (!store) {
+    return { ok: false, error: "Store not found" };
+  }
+
+  const plan = parseSellerPlanId(store.seller_plan) ?? "basic";
+  if (plan !== "basic") {
+    return { ok: false, error: "Already on Premium" };
+  }
+
+  try {
+    await notifyAdminsSellerPlanUpgradeRequest({
+      storeId: store.id,
+      storeName: store.name ?? "Store",
+      ownerEmail: profile.email ?? user.email ?? null,
+    });
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed to notify" };
+  }
+
   return { ok: true };
 }

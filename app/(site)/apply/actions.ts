@@ -120,7 +120,7 @@ export async function finalizeSellerApplicationAction(raw: unknown): Promise<Fin
   }
 
   try {
-    await notifyAdminsNewSellerApplication();
+    await notifyAdminsNewSellerApplication(planId);
   } catch (e) {
     console.error("[apply] notify admins failed", e);
   }

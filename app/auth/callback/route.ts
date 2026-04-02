@@ -23,6 +23,10 @@ export async function GET(request: Request) {
   let next = searchParams.get("next") ?? "/account";
   if (!next.startsWith("/") || next.startsWith("//")) next = "/account";
 
+  const pendingSellerPlanRaw = searchParams.get("pending_seller_plan");
+  const pendingSellerPlanFromOAuth =
+    pendingSellerPlanRaw === "basic" || pendingSellerPlanRaw === "premium" ? pendingSellerPlanRaw : null;
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -54,6 +58,8 @@ export async function GET(request: Request) {
         data: { user },
       } = await supabase.auth.getUser();
 
+      let safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/account";
+
       if (user?.email) {
         const { ensureProfileForAuthUser, enrichProfileFromOAuthMetadata } = await import("@/lib/auth/profile-sync");
         await ensureProfileForAuthUser(user);
@@ -64,9 +70,21 @@ export async function GET(request: Request) {
         if (applyPath) {
           const { data: prof } = await service.from("profiles").select("role").eq("id", user.id).maybeSingle();
           if (prof && (prof as { role: string }).role === "customer") {
+            const patch: Record<string, unknown> = {
+              role: "pending_seller",
+              updated_at: new Date().toISOString(),
+            };
+            if (pendingSellerPlanFromOAuth) {
+              patch.pending_seller_plan = pendingSellerPlanFromOAuth;
+            }
+            await service.from("profiles").update(patch).eq("id", user.id);
+          } else if (prof && pendingSellerPlanFromOAuth) {
             await service
               .from("profiles")
-              .update({ role: "pending_seller", updated_at: new Date().toISOString() })
+              .update({
+                pending_seller_plan: pendingSellerPlanFromOAuth,
+                updated_at: new Date().toISOString(),
+              })
               .eq("id", user.id);
           }
         }
@@ -92,9 +110,21 @@ export async function GET(request: Request) {
           const { sendWelcomeEmailIfEligible } = await import("@/lib/auth/welcome-email");
           await sendWelcomeEmailIfEligible(user.id, user.email, fullName);
         }
-      }
 
-      const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/account";
+        // OAuth often sends `next=/account`; pending sellers should land on the application flow.
+        const { data: roleRow } = await service.from("profiles").select("role").eq("id", user.id).maybeSingle();
+        const role = (roleRow as { role?: string } | null)?.role;
+        if (role === "pending_seller") {
+          const onApplyFlow = safeNext === "/apply" || safeNext.startsWith("/apply/");
+          const genericAccount =
+            safeNext === "/" ||
+            safeNext === "/account" ||
+            (safeNext.startsWith("/account") && !safeNext.startsWith("/account/"));
+          if (genericAccount && !onApplyFlow) {
+            safeNext = "/apply";
+          }
+        }
+      }
       const verified =
         flowType === "signup" || flowType === "email_change" || flowType === "email_confirmation";
       const join = safeNext.includes("?") ? "&" : "?";

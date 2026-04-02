@@ -472,9 +472,18 @@ export const en = {
   },
   auth: {
     login: {
-      noAccount: "Don&apos;t have an account?",
+      noAccount: "Don't have an account?",
+      /** Footer link on /login → /register (buyer vs seller chosen on register page). */
+      registerLink: "Register",
       registerToShop: "Register to shop",
+      registerUnified: "Register",
       registerToSell: "Register to sell",
+      titleSeller: "Sign in to apply as a seller",
+      subtitleSeller:
+        "Use Google, Apple, or email. New sellers choose a plan when registering, then complete the application. The seller dashboard opens after admin approval.",
+      signInAsShopper: "Signing in to shop instead?",
+      goToShopperLogin: "Buyer sign-in",
+      goToSellerLogin: "Seller application sign-in",
     },
     register: {
       createAccount: "Create account",
@@ -484,7 +493,7 @@ export const en = {
       continueAsBuyer: "Continue as buyer",
       becomeSeller: "Become a seller",
       becomeSellerDesc:
-        "Apply to sell on MASA. You will complete a short application after creating your account.",
+        "Choose a plan, create your account, then complete your seller application for admin review.",
       continueAsSeller: "Continue as seller",
       alreadyHaveAccount: "Already have an account?",
       signIn: "Sign in",
@@ -497,6 +506,10 @@ export const en = {
       createAccountToApplySeller: "Create account to apply as seller",
       sellerNextStep:
         "Next you will complete your seller application. Access is granted after admin approval.",
+      sellerPickPlanTitle: "Choose your seller plan",
+      sellerPickPlanSubtitle: "Pick Basic or Premium before creating your account. Your choice is shared with MASA when you submit your application.",
+      selectedPlanLabel: "Selected plan",
+      sellerPlanRequired: "A seller plan (Basic or Premium) is required. Go back and select a plan.",
       joinMasa: "Join MASA luxury marketplace",
       changeAccountType: "Change account type",
       orRegisterWithEmail: "or register with email",
@@ -508,6 +521,26 @@ export const en = {
       creatingAccount: "Creating account...",
       createAccountBtn: "Create account",
       pleaseCheckDetails: "Please check your details",
+      terms: {
+        checkboxLabel: "I have read and agree to the",
+        linkLabel: "Terms & Conditions",
+        validationError: "You must accept the Terms & Conditions to continue.",
+        modalTitle: "Terms & Conditions",
+        modalClose: "Close",
+        versionNote: "Document version: {{version}}",
+        registrationBlocked:
+          "We could not create your account because Terms acceptance could not be recorded. Please try again or contact support.",
+      },
+      merchantTerms: {
+        checkboxLabel: "I have read and agree to the",
+        linkLabel: "Merchant Terms & Conditions",
+        validationError: "You must accept the Merchant Terms & Conditions to continue.",
+        modalTitle: "Merchant Terms & Conditions",
+        modalClose: "Close",
+        versionNote: "Document version: {{version}}",
+        registrationBlocked:
+          "We could not create your account because Merchant Terms acceptance could not be recorded. Please try again or contact support.",
+      },
     },
   },
   sellerOnboarding: {
@@ -721,6 +754,17 @@ export const en = {
       instagram: "Instagram",
       facebook: "Facebook",
       linkedin: "LinkedIn",
+      subscriptionPlan: "Subscription plan",
+      subscriptionPlanDesc:
+        "Your plan sets catalog limits and marketplace placement. It was chosen when you registered as a seller.",
+      planBasic: "Basic",
+      planPremium: "Premium",
+      requestUpgrade: "Request upgrade to Premium",
+      upgradeDescription:
+        "Sends a request to MASA to review and approve upgrading your store to Premium (featured placement, search priority, and more).",
+      upgradeSent: "Upgrade request sent. MASA will review and contact you.",
+      upgradeAlreadyPremium: "Your store is already on the Premium plan.",
+      upgradeFailed: "Could not send upgrade request. Try again or contact support.",
     },
     analytics: {
       title: "Analytics",
@@ -1045,6 +1089,8 @@ export const en = {
     signedInWithEmail: "Signed in with email",
     passwordResetHint:
       "Password reset links are sent to your email. Phone-based recovery can be enabled later without changing your account structure.",
+    settingsPendingSellerHint:
+      "Your application is pending admin review. Once approved, your account becomes Seller and you can set up your store and availability in the seller dashboard.",
     accountPage: {
       emailVerifiedBanner: "Your email is verified. Your MASA account is active.",
       passwordUpdatedBanner: "Your password was updated successfully.",
@@ -1065,7 +1111,7 @@ export const en = {
       roleLabels: {
         admin: "Administrator",
         seller: "Seller",
-        pending_seller: "Pending seller",
+        pending_seller: "Unapproved seller (pending approval)",
         customer: "Customer",
       },
       accountId: "Account ID",

@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateStoreSettings, type StoreSettingsPayload } from "./actions";
+import { updateStoreSettings, requestSellerPlanUpgradeAction, type StoreSettingsPayload } from "./actions";
+import { parseSellerPlanId } from "@/lib/seller-plans";
 import { createClient } from "@/lib/supabase/client";
 import type { StoreRow } from "@/lib/seller-types";
 import { useI18n } from "@/components/useI18n";
@@ -36,6 +37,10 @@ export function SellerSettingsForm({ store }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
+  const [upgradeMessage, setUpgradeMessage] = useState<string | null>(null);
+
+  const effectivePlan = parseSellerPlanId(store.seller_plan) ?? "basic";
 
   const [name, setName] = useState(store.name ?? "");
   const [slug, setSlug] = useState(store.slug ?? "");
@@ -155,6 +160,49 @@ export function SellerSettingsForm({ store }: Props) {
             {t("seller.settings.saved")}
           </div>
         )}
+
+        <Card className="border-primary/10 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-luxury text-primary">{t("seller.settings.subscriptionPlan")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 font-sans">
+            <p className="text-masa-dark font-medium">
+              {effectivePlan === "premium" ? t("seller.settings.planPremium") : t("seller.settings.planBasic")}
+            </p>
+            <p className="text-sm text-masa-gray leading-relaxed">{t("seller.settings.subscriptionPlanDesc")}</p>
+            {effectivePlan === "basic" ? (
+              <div className="space-y-2 pt-1">
+                <p className="text-xs text-masa-gray">{t("seller.settings.upgradeDescription")}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-primary/30"
+                  disabled={upgradeLoading}
+                  onClick={async () => {
+                    setUpgradeMessage(null);
+                    setUpgradeLoading(true);
+                    const res = await requestSellerPlanUpgradeAction();
+                    setUpgradeLoading(false);
+                    if (res.ok) {
+                      setUpgradeMessage(t("seller.settings.upgradeSent"));
+                    } else if (res.error === "Already on Premium") {
+                      setUpgradeMessage(t("seller.settings.upgradeAlreadyPremium"));
+                    } else {
+                      setUpgradeMessage(t("seller.settings.upgradeFailed"));
+                    }
+                  }}
+                >
+                  {upgradeLoading ? t("common.saving") : t("seller.settings.requestUpgrade")}
+                </Button>
+                {upgradeMessage ? (
+                  <p className="text-sm text-masa-dark" role="status">
+                    {upgradeMessage}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
 
         <Card className="border-primary/10 shadow-sm">
           <CardHeader>

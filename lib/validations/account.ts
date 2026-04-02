@@ -31,4 +31,15 @@ export const profileUpdateSchema = z.object({
 });
 
 export type RegisterAccountInput = z.infer<typeof registerAccountSchema>;
+
+/** Customer email signup must include explicit Terms acceptance (mirrors DB trigger). */
+export const registerCustomerTermsAcceptanceSchema = z.object({
+  acceptTerms: z.boolean().refine((v) => v === true, { message: "terms_required" }),
+});
+
+/** Seller email signup must include explicit Merchant Terms acceptance (mirrors DB trigger). */
+export const registerMerchantTermsAcceptanceSchema = z.object({
+  acceptMerchantTerms: z.boolean().refine((v) => v === true, { message: "merchant_terms_required" }),
+});
+
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;

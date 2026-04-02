@@ -24,9 +24,9 @@ export function SellerApplySignInCard() {
           <Link href="/login">{isArabic ? "تسجيل الدخول" : "Sign in"}</Link>
         </Button>
         <p className="text-center text-sm text-masa-gray">
-          {isArabic ? "ليس لديك حساب؟" : "Don&apos;t have an account?"}{" "}
-          <Link href="/register?intent=seller" className="text-primary hover:underline">
-            {isArabic ? "إنشاء حساب" : "Register"}
+          {isArabic ? "ليس لديك حساب؟" : "Don't have an account?"}{" "}
+          <Link href="/register" className="text-primary hover:underline">
+            {isArabic ? "تسجيل" : "Register"}
           </Link>
         </p>
       </CardContent>

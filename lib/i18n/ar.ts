@@ -465,8 +465,16 @@ export const ar = {
   auth: {
     login: {
       noAccount: "ليس لديك حساب؟",
+      registerLink: "تسجيل",
       registerToShop: "التسجيل للتسوق",
+      registerUnified: "تسجيل",
       registerToSell: "التسجيل للبيع",
+      titleSeller: "تسجيل الدخول للتقديم كبائع",
+      subtitleSeller:
+        "عبر Google أو Apple أو البريد. يختار البائعون الجدد خطة عند التسجيل ثم يكملون الطلب. لوحة البائع تُفتح بعد موافقة الإدارة.",
+      signInAsShopper: "تسجيل الدخول للتسوق؟",
+      goToShopperLogin: "دخول المشتري",
+      goToSellerLogin: "دخول طلب البائع",
     },
     register: {
       createAccount: "إنشاء حساب",
@@ -475,7 +483,7 @@ export const ar = {
       becomeBuyerDesc: "أنشئ حساباً للتصفح والإضافة للمفضلة والشراء من بائعي MASA.",
       continueAsBuyer: "المتابعة كمشتري",
       becomeSeller: "الانضمام كبائع",
-      becomeSellerDesc: "تقدم للبيع على MASA. ستكمل نموذجاً قصيراً بعد إنشاء الحساب.",
+      becomeSellerDesc: "اختر خطة، أنشئ حسابك، ثم أكمل طلب البائع لمراجعة الإدارة.",
       continueAsSeller: "المتابعة كبائع",
       alreadyHaveAccount: "لديك حساب بالفعل؟",
       signIn: "تسجيل الدخول",
@@ -486,6 +494,10 @@ export const ar = {
       continueToSignIn: "المتابعة إلى تسجيل الدخول",
       createAccountToApplySeller: "أنشئ حساباً للتقديم كبائع",
       sellerNextStep: "بعد ذلك ستكمل طلب الانضمام كبائع. يتم منح الوصول بعد موافقة الإدارة.",
+      sellerPickPlanTitle: "اختر خطة البائع",
+      sellerPickPlanSubtitle: "اختر الأساسية أو بريميوم قبل إنشاء الحساب. يُرسل اختيارك إلى MASA عند تقديم الطلب.",
+      selectedPlanLabel: "الخطة المختارة",
+      sellerPlanRequired: "يجب اختيار خطة بائع (أساسية أو بريميوم). ارجع واختر خطة.",
       joinMasa: "انضم إلى سوق MASA الفاخر",
       changeAccountType: "تغيير نوع الحساب",
       orRegisterWithEmail: "أو التسجيل عبر البريد الإلكتروني",
@@ -496,6 +508,26 @@ export const ar = {
       creatingAccount: "جارٍ إنشاء الحساب...",
       createAccountBtn: "إنشاء الحساب",
       pleaseCheckDetails: "يرجى مراجعة بياناتك",
+      terms: {
+        checkboxLabel: "لقد قرأت ووافقت على",
+        linkLabel: "الشروط والأحكام",
+        validationError: "يجب الموافقة على الشروط والأحكام للمتابعة.",
+        modalTitle: "الشروط والأحكام",
+        modalClose: "إغلاق",
+        versionNote: "إصدار الوثيقة: {{version}}",
+        registrationBlocked:
+          "تعذر إنشاء الحساب لأن قبول الشروط لم يُسجّل. حاول مرة أخرى أو تواصل مع الدعم.",
+      },
+      merchantTerms: {
+        checkboxLabel: "لقد قرأت ووافقت على",
+        linkLabel: "الشروط والأحكام للمتاجر",
+        validationError: "يجب الموافقة على شروط المتاجر للمتابعة.",
+        modalTitle: "الشروط والأحكام للمتاجر",
+        modalClose: "إغلاق",
+        versionNote: "إصدار الوثيقة: {{version}}",
+        registrationBlocked:
+          "تعذر إنشاء الحساب لأن قبول شروط المتاجر لم يُسجّل. حاول مرة أخرى أو تواصل مع الدعم.",
+      },
     },
   },
   sellerOnboarding: {
@@ -708,6 +740,17 @@ export const ar = {
       instagram: "إنستغرام",
       facebook: "فيسبوك",
       linkedin: "لينكدإن",
+      subscriptionPlan: "خطة الاشتراك",
+      subscriptionPlanDesc:
+        "تحدد الخطة حدود الكتالوج والظهور في السوق. تم اختيارها عند تسجيلك كبائع.",
+      planBasic: "أساسية",
+      planPremium: "بريميوم",
+      requestUpgrade: "طلب الترقية إلى بريميوم",
+      upgradeDescription:
+        "يُرسل طلباً إلى MASA لمراجعة والموافقة على ترقية متجرك إلى بريميوم (ظهور مميز، أولوية بحث، وغيرها).",
+      upgradeSent: "تم إرسال طلب الترقية. ستتواصل معك MASA بعد المراجعة.",
+      upgradeAlreadyPremium: "متجرك على خطة بريميوم بالفعل.",
+      upgradeFailed: "تعذر إرسال طلب الترقية. حاول مرة أخرى أو تواصل مع الدعم.",
     },
     analytics: {
       title: "التحليلات",
@@ -1032,6 +1075,8 @@ export const ar = {
     signedInWithEmail: "تم تسجيل الدخول بالبريد الإلكتروني",
     passwordResetHint:
       "يتم إرسال روابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني. يمكن تفعيل الاسترداد عبر الهاتف لاحقاً دون تغيير بنية حسابك.",
+    settingsPendingSellerHint:
+      "طلبك قيد مراجعة الإدارة. بعد الموافقة يصبح حسابك «بائعاً» ويمكنك إعداد متجرك وأوقات التوفر من لوحة البائع.",
     accountPage: {
       emailVerifiedBanner: "تم توثيق بريدك الإلكتروني بنجاح. حساب MASA الخاص بك نشط.",
       passwordUpdatedBanner: "تم تحديث كلمة المرور بنجاح.",
@@ -1052,7 +1097,7 @@ export const ar = {
       roleLabels: {
         admin: "مسؤول",
         seller: "بائع",
-        pending_seller: "بائع قيد الموافقة",
+        pending_seller: "بائع غير معتمد (بانتظار الموافقة)",
         customer: "عميل",
       },
       accountId: "معرّف الحساب",

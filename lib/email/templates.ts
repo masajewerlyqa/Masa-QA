@@ -219,6 +219,60 @@ function formatMultilineForEmail(s: string): string {
   return escapeHtml(s).replace(/\r\n/g, "\n").split("\n").join("<br/>");
 }
 
+/** Sent when an admin approves a seller application — links to seller dashboard. */
+export function sellerApplicationApprovedHtml(
+  contactName: string | null,
+  storeDisplayName: string | null,
+  language: unknown = "en"
+): string {
+  const lang = resolveEmailLanguage(language);
+  const base = getSiteUrl();
+  const dashboardUrl = `${base}/seller`;
+  const availabilityUrl = `${base}/seller/availability`;
+  const safeName = escapeHtmlText((contactName ?? "").trim() || (lang === "ar" ? "صديقنا البائع" : "there"));
+  const trimmedStore = (storeDisplayName ?? "").trim();
+  const ctaStyle = `display:inline-block;margin:20px 0;padding:12px 22px;background:${BRAND.primary};color:#fff;text-decoration:none;border-radius:6px;font-size:15px;font-weight:600;`;
+  const ulPad = lang === "ar" ? "padding-right:20px" : "padding-left:20px";
+  if (lang === "ar") {
+    const storeSentence = trimmedStore
+      ? `تم إنشاء متجرك <strong>${escapeHtmlText(trimmedStore)}</strong> وجاهز للإعداد في لوحة البائع.`
+      : "تم إنشاء متجرك وجاهز للإعداد في لوحة البائع.";
+    return wrap(
+      `<p style="margin:0 0 16px;">مرحباً ${safeName}،</p>
+    <p style="margin:0 0 16px;">تمت الموافقة على طلب الانضمام كبائع على <strong style="color:${BRAND.primary};">MASA</strong>. حسابك أصبح بائعاً. ${storeSentence}</p>
+    <p style="margin:0 0 12px;font-weight:600;">من لوحة البائع يمكنك:</p>
+    <ul style="margin:0 0 16px;${ulPad};line-height:1.7;">
+      <li>إضافة المنتجات وإدارتها</li>
+      <li>ضبط أوقات وأيام عمل المتجر والتوفر</li>
+      <li>تحديث إعدادات المتجر ومتابعة الطلبات</li>
+    </ul>
+    <p style="margin:0 0 8px;"><a href="${escapeHtmlText(dashboardUrl)}" style="${ctaStyle}">فتح لوحة البائع</a></p>
+    <p style="margin:0 0 16px;font-size:14px;"><a href="${escapeHtmlText(availabilityUrl)}" style="color:${BRAND.primary};">ضبط أوقات المتجر</a></p>
+    <p style="margin:0;color:${BRAND.muted};font-size:13px;">سجّل الدخول بنفس البريد إذا طُلب منك ذلك. قد يبقى ظهور متجرك في السوق رهناً بخطوات نشر إضافية من الإدارة — ويمكنك الآن إكمال كل الإعدادات.</p>`,
+      "تمت الموافقة — لوحة البائع جاهزة",
+      lang
+    );
+  }
+  const storeSentence = trimmedStore
+    ? `A store named <strong>${escapeHtmlText(trimmedStore)}</strong> has been created and is ready to set up in your dashboard.`
+    : "Your store has been created and is ready to set up in your dashboard.";
+  return wrap(
+    `<p style="margin:0 0 16px;">Dear ${safeName},</p>
+    <p style="margin:0 0 16px;">Great news — your seller application on <strong style="color:${BRAND.primary};">MASA</strong> has been approved. Your account is now a <strong>seller</strong> account. ${storeSentence}</p>
+    <p style="margin:0 0 12px;font-weight:600;">From your seller dashboard you can:</p>
+    <ul style="margin:0 0 16px;${ulPad};line-height:1.7;">
+      <li>Add and manage products</li>
+      <li>Set store hours and weekly availability</li>
+      <li>Update store settings and handle orders</li>
+    </ul>
+    <p style="margin:0 0 8px;"><a href="${escapeHtmlText(dashboardUrl)}" style="${ctaStyle}">Open seller dashboard</a></p>
+    <p style="margin:0 0 16px;font-size:14px;"><a href="${escapeHtmlText(availabilityUrl)}" style="color:${BRAND.primary};">Set store availability</a></p>
+    <p style="margin:0;color:${BRAND.muted};font-size:13px;">Sign in with the same email if prompted. Marketplace visibility may still depend on a separate admin step — you can fully configure products and hours now.</p>`,
+    "Your MASA seller application was approved",
+    lang
+  );
+}
+
 export function sellerApplicationReceivedHtml(
   planId: SellerPlanId,
   contactName: string | null,

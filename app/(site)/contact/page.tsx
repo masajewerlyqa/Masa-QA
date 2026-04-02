@@ -221,13 +221,58 @@ export default function ContactPage() {
             </details>
             <details className="group bg-white rounded-xl border border-primary/10 overflow-hidden">
               <summary className="font-sans font-medium text-masa-dark px-6 py-4 cursor-pointer list-none flex items-center justify-between gap-4 hover:bg-masa-light/50 transition-colors [&::-webkit-details-marker]:hidden">
+                {isArabic ? "كم تستغرق عملية توصيل الطلب؟" : "How long does order delivery take?"}
+                <span className="shrink-0 w-6 h-6 rounded-full border border-primary/20 flex items-center justify-center text-primary group-open:rotate-180 transition-transform">+</span>
+              </summary>
+              <div
+                className="px-6 pb-4 pt-0 font-sans text-masa-gray text-sm leading-relaxed border-t border-primary/5 space-y-3"
+                dir={isArabic ? "rtl" : "ltr"}
+              >
+                <p>
+                  {isArabic
+                    ? "يتم توصيل الطلب خلال ساعات من نفس اليوم وبأسرع وقت ممكن. وتختلف مدة التوصيل حسب:"
+                    : "Orders are delivered within hours on the same day whenever possible, as fast as conditions allow. Delivery time varies depending on:"}
+                </p>
+                <ul className={`list-disc space-y-1.5 ${isArabic ? "pr-5 mr-1" : "pl-5 ml-1"}`}>
+                  {isArabic ? (
+                    <>
+                      <li>توفر المنتج</li>
+                      <li>موقع المتجر</li>
+                      <li>موقع العميل</li>
+                      <li>أوقات المواسم والعروض</li>
+                      <li>أحوال جوية أو ظروف خارجية</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>Product availability</li>
+                      <li>Store location</li>
+                      <li>Customer location</li>
+                      <li>Peak seasons and promotional periods</li>
+                      <li>Weather or other external circumstances</li>
+                    </>
+                  )}
+                </ul>
+              </div>
+            </details>
+            <details className="group bg-white rounded-xl border border-primary/10 overflow-hidden">
+              <summary className="font-sans font-medium text-masa-dark px-6 py-4 cursor-pointer list-none flex items-center justify-between gap-4 hover:bg-masa-light/50 transition-colors [&::-webkit-details-marker]:hidden">
                 {isArabic ? "ما هي سياسة الإرجاع لديكم؟" : "What is your return policy?"}
                 <span className="shrink-0 w-6 h-6 rounded-full border border-primary/20 flex items-center justify-center text-primary group-open:rotate-180 transition-transform">+</span>
               </summary>
-              <div className="px-6 pb-4 pt-0 font-sans text-masa-gray text-sm leading-relaxed border-t border-primary/5">
-                {isArabic
-                  ? "تُحدَّد سياسات الإرجاع من كل بائع وتُعرض في صفحات المنتجات والمتاجر. يمكنك التواصل مع البائع أو فريق الدعم لدينا. نحرص على حلول عادلة وشفافة لجميع الأطراف."
-                  : "Return policies are set by each seller and shown on product and store pages. Contact the seller or our support team for returns. We aim to facilitate fair and transparent resolution for all parties."}
+              <div
+                className="px-6 pb-4 pt-0 font-sans text-masa-gray text-sm leading-relaxed border-t border-primary/5 space-y-2"
+                dir={isArabic ? "rtl" : "ltr"}
+              >
+                <p>
+                  {isArabic
+                    ? "لا تقدم منصة ماسا استرداداً نقدياً للمبالغ المدفوعة. أي استبدال أو تسوية غير نقدية يخضع لسياسة المتجر المعروضة على صفحة المتجر وفي الشروط والأحكام للعملاء."
+                    : "MASA does not offer cash refunds. Exchanges or non-cash resolutions are governed only by each store’s policy as shown on the store page and in our Customer Terms & Conditions."}
+                </p>
+                <p>
+                  {isArabic
+                    ? "راجع سياسة المتجر قبل الشراء؛ للمساعدة يمكنك التواصل مع المتجر أو فريق الدعم."
+                    : "Review the store’s policy before purchase; contact the store or our support team for assistance."}
+                </p>
               </div>
             </details>
             <details className="group bg-white rounded-xl border border-primary/10 overflow-hidden">

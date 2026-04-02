@@ -23,7 +23,7 @@ export type GetCurrentUserResult = {
  * Cached per-request so layout + page both calling it only trigger one auth + profile fetch.
  */
 const profileSelect =
-  "id, role, full_name, avatar_url, email, phone, phone_verified_at, newsletter_opt_in, preferred_language, pending_seller_plan";
+  "id, role, full_name, avatar_url, email, phone, phone_verified_at, newsletter_opt_in, preferred_language, pending_seller_plan, accepted_terms, accepted_terms_at, accepted_terms_version, accepted_merchant_terms, accepted_merchant_terms_at, accepted_merchant_terms_version";
 
 async function getCurrentUserWithProfileImpl(): Promise<GetCurrentUserResult> {
   try {
@@ -47,6 +47,14 @@ async function getCurrentUserWithProfileImpl(): Promise<GetCurrentUserResult> {
     }
 
     const rawPending = (profile as { pending_seller_plan?: string | null }).pending_seller_plan;
+    const rawTerms = profile as {
+      accepted_terms?: boolean | null;
+      accepted_terms_at?: string | null;
+      accepted_terms_version?: string | null;
+      accepted_merchant_terms?: boolean | null;
+      accepted_merchant_terms_at?: string | null;
+      accepted_merchant_terms_version?: string | null;
+    };
     const normalizedProfile =
       profile && typeof profile === "object"
         ? ({
@@ -56,6 +64,12 @@ async function getCurrentUserWithProfileImpl(): Promise<GetCurrentUserResult> {
               (profile as { preferred_language?: string }).preferred_language === "ar" ? "ar" : "en",
             pending_seller_plan:
               rawPending === "basic" || rawPending === "premium" ? rawPending : null,
+            accepted_terms: Boolean(rawTerms.accepted_terms),
+            accepted_terms_at: rawTerms.accepted_terms_at ?? null,
+            accepted_terms_version: rawTerms.accepted_terms_version ?? null,
+            accepted_merchant_terms: Boolean(rawTerms.accepted_merchant_terms),
+            accepted_merchant_terms_at: rawTerms.accepted_merchant_terms_at ?? null,
+            accepted_merchant_terms_version: rawTerms.accepted_merchant_terms_version ?? null,
           } as Profile)
         : null;
 

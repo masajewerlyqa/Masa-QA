@@ -5,6 +5,8 @@ import { getCurrentUserWithProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { requireServiceClient } from "@/lib/supabase/service";
 import { notifyApplicantApplicationApproved, notifyApplicantApplicationRejected } from "@/lib/notifications";
+import { sendSellerApplicationApprovedEmail } from "@/lib/email/transactional";
+import { resolveEmailLanguage } from "@/lib/email/email-language";
 
 export type ActionResult = { ok: boolean; error?: string };
 type SellerApplicationApproveRow = {
@@ -148,6 +150,28 @@ export async function approveApplication(applicationId: string): Promise<ActionR
 
   await notifyApplicantApplicationApproved(app.user_id);
 
+  const { data: applicantProfile } = await service
+    .from("profiles")
+    .select("email, preferred_language, full_name")
+    .eq("id", app.user_id)
+    .maybeSingle();
+  const prof = applicantProfile as { email?: string | null; preferred_language?: string | null; full_name?: string | null } | null;
+  const mailTo = (prof?.email ?? app.contact_email ?? "").trim();
+  if (mailTo) {
+    const storeDisplayName = (app.business_name ?? "").trim() || null;
+    const contactName = (prof?.full_name ?? "").trim() || null;
+    try {
+      await sendSellerApplicationApprovedEmail(
+        mailTo,
+        contactName,
+        storeDisplayName,
+        resolveEmailLanguage(prof?.preferred_language)
+      );
+    } catch (e) {
+      console.error("[admin] seller approval email failed", e);
+    }
+  }
+
   revalidatePath("/admin/seller-applications");
   revalidatePath("/admin/seller-applications/[id]");
   revalidatePath("/admin");
@@ -156,6 +180,7 @@ export async function approveApplication(applicationId: string): Promise<ActionR
   revalidatePath("/seller/orders");
   revalidatePath("/seller/analytics");
   revalidatePath("/seller/settings");
+  revalidatePath("/seller/availability");
   return { ok: true };
 }
 

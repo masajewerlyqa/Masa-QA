@@ -1,7 +1,9 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { SellerPlanSelection } from "@/components/seller/SellerPlanSelection";
 import { SellerApplicationExistingBlock } from "@/components/seller/SellerApplicationExistingBlock";
+import { parseSellerPlanId } from "@/lib/seller-plans";
 
 export default async function ApplyPage() {
   const { user } = await getCurrentUserWithProfile();
@@ -19,6 +21,11 @@ export default async function ApplyPage() {
           <SellerApplicationExistingBlock status={existing.status} />
         </div>
       );
+    }
+
+    const { data: prof } = await supabase.from("profiles").select("pending_seller_plan").eq("id", user.id).maybeSingle();
+    if (parseSellerPlanId(prof?.pending_seller_plan)) {
+      redirect("/apply/form");
     }
   }
 

@@ -11,6 +11,24 @@ import { useI18n } from "@/components/useI18n";
 import type { Profile } from "@/lib/auth-client";
 import type { PhoneVerificationPolicy } from "@/lib/auth/phone-verification";
 import { updateProfileAction, updateNewsletterOptInAction } from "./actions";
+import type { createTranslator } from "@/lib/i18n";
+
+function settingsRoleLabel(
+  role: Profile["role"],
+  t: ReturnType<typeof createTranslator>
+): string {
+  switch (role) {
+    case "admin":
+      return t("account.accountPage.roleLabels.admin");
+    case "seller":
+      return t("account.accountPage.roleLabels.seller");
+    case "pending_seller":
+      return t("account.accountPage.roleLabels.pending_seller");
+    case "customer":
+    default:
+      return t("account.accountPage.roleLabels.customer");
+  }
+}
 
 type Props = {
   profile: Profile;
@@ -75,6 +93,13 @@ export function AccountSettingsForm({ profile, email, phonePolicy }: Props) {
         </CardHeader>
         <CardContent>
           <form onSubmit={saveProfile} className="space-y-4 max-w-lg">
+            <div className="space-y-2 pb-4 border-b border-primary/10">
+              <Label>{t("account.accountPage.role")}</Label>
+              <p className="text-masa-dark font-medium font-sans">{settingsRoleLabel(profile.role, t)}</p>
+              {profile.role === "pending_seller" ? (
+                <p className="text-xs text-masa-gray font-sans leading-relaxed">{t("account.settingsPendingSellerHint")}</p>
+              ) : null}
+            </div>
             {message && (
               <div
                 role="status"

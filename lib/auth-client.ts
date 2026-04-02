@@ -27,6 +27,14 @@ export type Profile = {
   preferred_language?: "en" | "ar";
   /** Draft plan during Become a Seller; cleared after application is submitted. */
   pending_seller_plan?: "basic" | "premium" | null;
+  /** Customer email registration: Terms & Conditions acceptance. */
+  accepted_terms?: boolean;
+  accepted_terms_at?: string | null;
+  accepted_terms_version?: string | null;
+  /** Seller email registration: Merchant Terms acceptance. */
+  accepted_merchant_terms?: boolean;
+  accepted_merchant_terms_at?: string | null;
+  accepted_merchant_terms_version?: string | null;
 };
 
 /**

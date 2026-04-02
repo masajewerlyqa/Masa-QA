@@ -97,17 +97,45 @@ export async function createNotification(params: {
   });
 }
 
-/** Notify all admins of a new seller application. */
-export async function notifyAdminsNewSellerApplication(): Promise<void> {
+/** Notify all admins of a new seller application (plan is shown for triage). */
+export async function notifyAdminsNewSellerApplication(planId?: "basic" | "premium"): Promise<void> {
   const service = requireServiceClient();
   const { data: admins } = await service.from("profiles").select("id").eq("role", "admin");
   if (!admins?.length) return;
+  const planLabel =
+    planId === "premium" ? "Premium" : planId === "basic" ? "Basic" : "Unknown";
+  const body =
+    planId === "premium" || planId === "basic"
+      ? `A new seller application has been submitted (${planLabel} plan). Review the application to approve the store and plan.`
+      : "A new seller application has been submitted for review.";
   for (const admin of admins) {
     await createNotification({
       userId: admin.id,
       type: "new_seller_application",
       title: "New seller application",
-      body: "A new seller application has been submitted for review.",
+      body,
+      data: planId ? { sellerPlan: planId } : null,
+    });
+  }
+}
+
+/** Notify all admins that a seller requested upgrading from Basic to Premium (pending approval). */
+export async function notifyAdminsSellerPlanUpgradeRequest(params: {
+  storeId: string;
+  storeName: string;
+  ownerEmail: string | null;
+}): Promise<void> {
+  const service = requireServiceClient();
+  const { data: admins } = await service.from("profiles").select("id").eq("role", "admin");
+  if (!admins?.length) return;
+  const who = params.ownerEmail?.trim() ? params.ownerEmail.trim() : "Seller";
+  for (const admin of admins) {
+    await createNotification({
+      userId: admin.id,
+      type: "seller_plan_upgrade_request",
+      title: "Seller requested Premium upgrade",
+      body: `${who} (${params.storeName}) requested upgrading their store to Premium. Review and approve in admin tools.`,
+      data: { storeId: params.storeId, storeName: params.storeName },
     });
   }
 }
@@ -117,8 +145,9 @@ export async function notifyApplicantApplicationApproved(applicantUserId: string
   await createNotification({
     userId: applicantUserId,
     type: "seller_application_approved",
-    title: "Application approved",
-    body: "Your seller application has been approved. You can now create your store and add products.",
+    title: "Application approved — seller dashboard is open",
+    body: "Open your seller dashboard to add products, set store hours and weekly availability, and manage orders. Tap to go to the dashboard.",
+    data: { dashboardPath: "/seller" },
   });
 }
 

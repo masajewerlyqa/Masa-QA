@@ -12,6 +12,7 @@ import { SocialAuthButtons } from "./SocialAuthButtons";
 import { useI18n } from "@/components/useI18n";
 import { normalizeAuthError } from "@/lib/auth-error-messages";
 
+/** Single sign-in for buyers and sellers; `/api/auth/me` redirects by role after login. */
 export function LoginForm() {
   const router = useRouter();
   const { language, isArabic, t } = useI18n();
@@ -59,11 +60,15 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-md border-primary/10">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-luxury text-primary">{isArabic ? "مرحباً بعودتك" : "Welcome back"}</CardTitle>
-        <CardDescription className="font-sans">{isArabic ? "سجّل الدخول إلى حسابك في MASA" : "Sign in to your MASA account"}</CardDescription>
+        <CardTitle className="text-2xl font-luxury text-primary">
+          {isArabic ? "مرحباً بعودتك" : "Welcome back"}
+        </CardTitle>
+        <CardDescription className="font-sans">
+          {isArabic ? "سجّل الدخول إلى حسابك في MASA" : "Sign in to your MASA account"}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <SocialAuthButtons />
+        <SocialAuthButtons nextPath="/account" />
         <div className="relative py-2">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-primary/10" />
@@ -121,19 +126,12 @@ export function LoginForm() {
             {loading ? (isArabic ? "جارٍ تسجيل الدخول…" : "Signing in…") : isArabic ? "تسجيل الدخول" : "Sign in"}
           </Button>
         </form>
-        <div className="text-center text-sm text-masa-gray font-sans space-y-2">
-          <p>
-            {t("auth.login.noAccount")}{" "}
-            <Link href="/register" className="text-primary hover:underline font-medium">
-              {t("auth.login.registerToShop")}
-            </Link>
-          </p>
-          <p>
-            <Link href="/register?intent=seller" className="text-primary hover:underline font-medium">
-              {t("auth.login.registerToSell")}
-            </Link>
-          </p>
-        </div>
+        <p className="text-center text-sm text-masa-gray font-sans">
+          {t("auth.login.noAccount")}{" "}
+          <Link href="/register" className="text-primary hover:underline font-medium">
+            {t("auth.login.registerLink")}
+          </Link>
+        </p>
       </CardContent>
     </Card>
   );

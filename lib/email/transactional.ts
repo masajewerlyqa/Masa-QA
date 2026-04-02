@@ -7,6 +7,7 @@ import {
   orderStatusUpdateHtml,
   accountSecurityNoticeHtml,
   sellerApplicationReceivedHtml,
+  sellerApplicationApprovedHtml,
 } from "./templates";
 import type { SellerPlanId } from "@/lib/seller-plans";
 import { resolveEmailLanguage } from "./email-language";
@@ -25,6 +26,23 @@ export async function sendSellerApplicationReceivedEmail(
     subject: lang === "ar" ? "تم استلام طلب الانضمام كبائع — MASA" : "MASA Seller Application Received",
     html: sellerApplicationReceivedHtml(planId, contactName, lang),
     tags: [{ name: "category", value: "seller_application_received" }],
+  });
+}
+
+/** After admin approves application — dashboard + availability links. */
+export async function sendSellerApplicationApprovedEmail(
+  to: string,
+  contactName: string | null,
+  storeDisplayName: string | null,
+  language: unknown = "en"
+): Promise<SendEmailResult> {
+  const lang = resolveEmailLanguage(language);
+  return sendEmailWithRetry({
+    to,
+    subject:
+      lang === "ar" ? "تمت الموافقة — لوحة البائع جاهزة — MASA" : "You’re approved — open your MASA seller dashboard",
+    html: sellerApplicationApprovedHtml(contactName, storeDisplayName, lang),
+    tags: [{ name: "category", value: "seller_application_approved" }],
   });
 }
 

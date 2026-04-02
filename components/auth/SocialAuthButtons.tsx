@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/components/LanguageProvider";
+import type { SellerPlanId } from "@/lib/seller-plans";
 
 type Provider = "google" | "apple";
 
@@ -49,7 +50,14 @@ function providerLabel(p: Provider, isArabic: boolean): string {
   }
 }
 
-export function SocialAuthButtons({ nextPath = "/account" }: { nextPath?: string }) {
+export function SocialAuthButtons({
+  nextPath = "/account",
+  pendingSellerPlan,
+}: {
+  nextPath?: string;
+  /** When signing up as seller via OAuth, pass plan so it is stored on profile after redirect. */
+  pendingSellerPlan?: SellerPlanId;
+}) {
   const { isArabic } = useLanguage();
   const [loading, setLoading] = useState<Provider | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +69,12 @@ export function SocialAuthButtons({ nextPath = "/account" }: { nextPath?: string
       const supabase = createClient();
       const origin =
         typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || "";
-      const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+      const qs = new URLSearchParams();
+      qs.set("next", nextPath);
+      if (pendingSellerPlan && (nextPath === "/apply" || nextPath.startsWith("/apply/"))) {
+        qs.set("pending_seller_plan", pendingSellerPlan);
+      }
+      const redirectTo = `${origin}/auth/callback?${qs.toString()}`;
 
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,

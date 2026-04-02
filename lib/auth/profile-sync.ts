@@ -29,6 +29,36 @@ export async function ensureProfileForAuthUser(user: User): Promise<void> {
     typeof meta.registration_intent === "string" ? meta.registration_intent : null;
   const role = registrationIntent === "seller" ? "pending_seller" : "customer";
 
+  const signupChannel = typeof meta.signup_channel === "string" ? meta.signup_channel : null;
+  const termsMetaOk =
+    meta.customer_terms_accepted === "true" &&
+    typeof meta.customer_terms_version === "string" &&
+    meta.customer_terms_version.trim() !== "";
+  const termsAtRaw =
+    typeof meta.customer_terms_accepted_at === "string" && meta.customer_terms_accepted_at.trim()
+      ? meta.customer_terms_accepted_at
+      : null;
+  const recordCustomerTerms =
+    role === "customer" && signupChannel === "email" && termsMetaOk;
+
+  const merchantMetaOk =
+    meta.merchant_terms_accepted === "true" &&
+    typeof meta.merchant_terms_version === "string" &&
+    String(meta.merchant_terms_version).trim() !== "";
+  const merchantAtRaw =
+    typeof meta.merchant_terms_accepted_at === "string" && meta.merchant_terms_accepted_at.trim()
+      ? meta.merchant_terms_accepted_at
+      : null;
+  const recordMerchantTerms =
+    role === "pending_seller" && signupChannel === "email" && merchantMetaOk;
+
+  const pendingPlanRaw =
+    typeof meta.pending_seller_plan === "string" ? meta.pending_seller_plan.trim() : "";
+  const pendingSellerPlan =
+    role === "pending_seller" && (pendingPlanRaw === "basic" || pendingPlanRaw === "premium")
+      ? pendingPlanRaw
+      : null;
+
   const { error } = await service.from("profiles").insert({
     id: user.id,
     email: user.email ?? null,
@@ -37,6 +67,15 @@ export async function ensureProfileForAuthUser(user: User): Promise<void> {
     phone,
     role,
     newsletter_opt_in: newsletterOptIn,
+    accepted_terms: recordCustomerTerms,
+    accepted_terms_at: recordCustomerTerms ? termsAtRaw ?? new Date().toISOString() : null,
+    accepted_terms_version: recordCustomerTerms ? String(meta.customer_terms_version).trim() : null,
+    accepted_merchant_terms: recordMerchantTerms,
+    accepted_merchant_terms_at: recordMerchantTerms ? merchantAtRaw ?? new Date().toISOString() : null,
+    accepted_merchant_terms_version: recordMerchantTerms
+      ? String(meta.merchant_terms_version).trim()
+      : null,
+    pending_seller_plan: pendingSellerPlan,
   });
 
   if (error) {
