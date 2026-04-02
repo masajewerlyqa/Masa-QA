@@ -6,7 +6,6 @@ import { SellerOverviewClient } from "./SellerOverviewClient";
 import { Button } from "@/components/ui/button";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
-import { RepairStoreButton } from "./RepairStoreButton";
 
 export default async function SellerOverviewPage() {
   const language = getServerLanguage();
@@ -21,12 +20,9 @@ export default async function SellerOverviewPage() {
       <div className="p-6 md:p-8 max-w-2xl">
         <h1 className="text-3xl mb-2 text-primary font-luxury">{t(language, "seller.overview.dashboard")}</h1>
         <p className="text-masa-gray font-sans mb-6">{t(language, "seller.overview.noStoreYet")}</p>
-        <RepairStoreButton />
-        <div className="mt-8">
-          <Button asChild variant="outline" className="border-primary/20">
-            <Link href="/">{t(language, "seller.overview.backHome")}</Link>
-          </Button>
-        </div>
+        <Button asChild variant="outline" className="border-primary/20">
+          <Link href="/">{t(language, "seller.overview.backHome")}</Link>
+        </Button>
       </div>
     );
   }

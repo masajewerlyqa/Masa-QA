@@ -6,6 +6,7 @@ import "server-only";
  */
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { autoEnsureStoreFromApprovedApplication } from "@/lib/seller/ensure-store-from-application";
 import { loadProductEngagementStats, zeroEngagementStats } from "@/lib/product-engagement-stats";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getPricingMarketSnapshot } from "@/lib/pricing";
@@ -47,11 +48,8 @@ export type {
   SellerTopProductAnalytics,
 } from "@/lib/seller-types";
 
-/** Get the first store the current user owns or is a member of. Returns null if none. */
-export async function getSellerStore(): Promise<StoreRow | null> {
-  const { user, profile } = await getCurrentUserWithProfile();
-  if (!user || profile?.role !== "seller") return null;
-
+/** Load store for a user id (owner or member). No role check. */
+async function loadStoreForSellerUserId(userId: string): Promise<StoreRow | null> {
   const supabase = await createClient();
   const storeSelect =
     "id, owner_id, name, slug, description, logo_url, banner_url, status, location, contact_email, contact_phone, social_links, latitude, longitude, " +
@@ -60,7 +58,7 @@ export async function getSellerStore(): Promise<StoreRow | null> {
   const { data: ownedRows, error: ownedErr } = await supabase
     .from("stores")
     .select(storeSelect)
-    .eq("owner_id", user.id)
+    .eq("owner_id", userId)
     .limit(1);
 
   if (ownedErr) {
@@ -72,7 +70,7 @@ export async function getSellerStore(): Promise<StoreRow | null> {
   const { data: memberRows, error: memberErr } = await supabase
     .from("store_members")
     .select("store_id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .limit(1);
 
   if (memberErr) {
@@ -96,6 +94,24 @@ export async function getSellerStore(): Promise<StoreRow | null> {
 
   const store = storeRows?.[0];
   return store ? normalizeStoreRow(store as unknown as Record<string, unknown>) : null;
+}
+
+/**
+ * First store the current user owns or is a member of.
+ * If role is seller but no store exists, creates it from an approved seller application (same as admin approval).
+ */
+export async function getSellerStore(): Promise<StoreRow | null> {
+  const { user, profile } = await getCurrentUserWithProfile();
+  if (!user || profile?.role !== "seller") return null;
+
+  let store = await loadStoreForSellerUserId(user.id);
+  if (store) return store;
+
+  const healed = await autoEnsureStoreFromApprovedApplication(user.id);
+  if (healed) {
+    store = await loadStoreForSellerUserId(user.id);
+  }
+  return store;
 }
 
 /** Get stats for a store: product count, order count, total revenue, avg order value. */

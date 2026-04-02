@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { requireServiceClient } from "@/lib/supabase/service";
 
 /** Fields needed to create or link a store from an approved seller application. */
 export type ApprovedApplicationForStore = {
@@ -127,4 +128,32 @@ export async function ensureStoreAndOwnerMembership(
   }
 
   return { ok: true, storeId };
+}
+
+/**
+ * If the user is an approved seller but has no store row yet, create it from `seller_applications`.
+ * Used automatically when loading the seller dashboard (no manual button).
+ */
+export async function autoEnsureStoreFromApprovedApplication(userId: string): Promise<boolean> {
+  try {
+    const service = requireServiceClient();
+    const { data: app, error } = await service
+      .from("seller_applications")
+      .select(
+        "user_id, business_name, business_description, contact_email, contact_phone, store_location, logo_path, social_links, seller_plan"
+      )
+      .eq("user_id", userId)
+      .eq("status", "approved")
+      .maybeSingle();
+
+    if (error || !app) {
+      return false;
+    }
+
+    const result = await ensureStoreAndOwnerMembership(service, app as ApprovedApplicationForStore);
+    return result.ok;
+  } catch (e) {
+    console.error("[autoEnsureStoreFromApprovedApplication]", e);
+    return false;
+  }
 }
