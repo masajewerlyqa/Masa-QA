@@ -1,7 +1,8 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { requireServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 /** Fields needed to create or link a store from an approved seller application. */
 export type ApprovedApplicationForStore = {
@@ -130,30 +131,66 @@ export async function ensureStoreAndOwnerMembership(
   return { ok: true, storeId };
 }
 
+const APPLICATION_SELECT =
+  "user_id, business_name, business_description, contact_email, contact_phone, store_location, logo_path, social_links, seller_plan";
+
 /**
  * If the user is an approved seller but has no store row yet, create it from `seller_applications`.
- * Used automatically when loading the seller dashboard (no manual button).
+ * 1) Prefer service role (bypasses RLS) when SUPABASE_SERVICE_ROLE_KEY is set.
+ * 2) Otherwise use the logged-in user's session: RLS allows approved sellers to insert their own store.
  */
 export async function autoEnsureStoreFromApprovedApplication(userId: string): Promise<boolean> {
-  try {
-    const service = requireServiceClient();
-    const { data: app, error } = await service
-      .from("seller_applications")
-      .select(
-        "user_id, business_name, business_description, contact_email, contact_phone, store_location, logo_path, social_links, seller_plan"
-      )
-      .eq("user_id", userId)
-      .eq("status", "approved")
-      .maybeSingle();
+  const service = createServiceClient();
+  if (service) {
+    try {
+      const { data: app, error } = await service
+        .from("seller_applications")
+        .select(APPLICATION_SELECT)
+        .eq("user_id", userId)
+        .eq("status", "approved")
+        .maybeSingle();
 
-    if (error || !app) {
+      if (!error && app) {
+        const result = await ensureStoreAndOwnerMembership(service, app as ApprovedApplicationForStore);
+        if (result.ok) return true;
+        console.error("[autoEnsureStoreFromApprovedApplication] service ensure failed:", result.error);
+      } else if (error) {
+        console.error("[autoEnsureStoreFromApprovedApplication] service load application:", error.message);
+      }
+    } catch (e) {
+      console.error("[autoEnsureStoreFromApprovedApplication] service path:", e);
+    }
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || user.id !== userId) {
       return false;
     }
 
-    const result = await ensureStoreAndOwnerMembership(service, app as ApprovedApplicationForStore);
-    return result.ok;
+    const { data: app, error: appErr } = await supabase
+      .from("seller_applications")
+      .select(APPLICATION_SELECT)
+      .eq("user_id", user.id)
+      .eq("status", "approved")
+      .maybeSingle();
+
+    if (appErr || !app) {
+      if (appErr) console.error("[autoEnsureStoreFromApprovedApplication] user load application:", appErr.message);
+      return false;
+    }
+
+    const result = await ensureStoreAndOwnerMembership(supabase, app as ApprovedApplicationForStore);
+    if (!result.ok) {
+      console.error("[autoEnsureStoreFromApprovedApplication] user ensure failed:", result.error);
+      return false;
+    }
+    return true;
   } catch (e) {
-    console.error("[autoEnsureStoreFromApprovedApplication]", e);
+    console.error("[autoEnsureStoreFromApprovedApplication] user path:", e);
     return false;
   }
 }

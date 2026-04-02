@@ -48,24 +48,54 @@ export type {
   SellerTopProductAnalytics,
 } from "@/lib/seller-types";
 
+/** Columns added across migrations; older DBs may not have every column — try narrower selects on failure. */
+const STORE_SELECT_FULL =
+  "id, owner_id, name, slug, description, logo_url, banner_url, status, location, contact_email, contact_phone, social_links, latitude, longitude, " +
+  "business_timezone, working_days, opening_time_local, closing_time_local, seller_plan";
+
+const STORE_SELECT_NO_AVAILABILITY =
+  "id, owner_id, name, slug, description, logo_url, banner_url, status, location, contact_email, contact_phone, social_links, latitude, longitude, seller_plan";
+
+const STORE_SELECT_MINIMAL =
+  "id, owner_id, name, slug, description, logo_url, banner_url, status, location, contact_email, contact_phone, social_links, latitude, longitude";
+
+/** Oldest compatible projection if optional columns are not migrated yet. */
+const STORE_SELECT_CORE = "id, owner_id, name, slug, description, logo_url, banner_url, status";
+
+async function fetchStoreRowByOwnerId(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  const attempts = [STORE_SELECT_FULL, STORE_SELECT_NO_AVAILABILITY, STORE_SELECT_MINIMAL, STORE_SELECT_CORE];
+  for (const sel of attempts) {
+    const { data, error } = await supabase.from("stores").select(sel).eq("owner_id", userId).limit(1);
+    if (!error && data?.[0]) {
+      return data[0] as unknown as Record<string, unknown>;
+    }
+    if (error) {
+      console.warn("[getSellerStore] stores select retry:", error.message);
+    }
+  }
+  return null;
+}
+
+async function fetchStoreRowById(supabase: Awaited<ReturnType<typeof createClient>>, storeId: string) {
+  const attempts = [STORE_SELECT_FULL, STORE_SELECT_NO_AVAILABILITY, STORE_SELECT_MINIMAL, STORE_SELECT_CORE];
+  for (const sel of attempts) {
+    const { data, error } = await supabase.from("stores").select(sel).eq("id", storeId).limit(1);
+    if (!error && data?.[0]) {
+      return data[0] as unknown as Record<string, unknown>;
+    }
+    if (error) {
+      console.warn("[getSellerStore] store by id select retry:", error.message);
+    }
+  }
+  return null;
+}
+
 /** Load store for a user id (owner or member). No role check. */
 async function loadStoreForSellerUserId(userId: string): Promise<StoreRow | null> {
   const supabase = await createClient();
-  const storeSelect =
-    "id, owner_id, name, slug, description, logo_url, banner_url, status, location, contact_email, contact_phone, social_links, latitude, longitude, " +
-    "business_timezone, working_days, opening_time_local, closing_time_local, seller_plan";
 
-  const { data: ownedRows, error: ownedErr } = await supabase
-    .from("stores")
-    .select(storeSelect)
-    .eq("owner_id", userId)
-    .limit(1);
-
-  if (ownedErr) {
-    console.error("[getSellerStore] stores by owner_id failed:", ownedErr.message);
-  }
-  const owned = ownedRows?.[0];
-  if (owned) return normalizeStoreRow(owned as unknown as Record<string, unknown>);
+  const owned = await fetchStoreRowByOwnerId(supabase, userId);
+  if (owned) return normalizeStoreRow(owned);
 
   const { data: memberRows, error: memberErr } = await supabase
     .from("store_members")
@@ -81,19 +111,8 @@ async function loadStoreForSellerUserId(userId: string): Promise<StoreRow | null
   const memberRow = memberRows?.[0];
   if (!memberRow?.store_id) return null;
 
-  const { data: storeRows, error: storeErr } = await supabase
-    .from("stores")
-    .select(storeSelect)
-    .eq("id", memberRow.store_id)
-    .limit(1);
-
-  if (storeErr) {
-    console.error("[getSellerStore] store by member failed:", storeErr.message);
-    return null;
-  }
-
-  const store = storeRows?.[0];
-  return store ? normalizeStoreRow(store as unknown as Record<string, unknown>) : null;
+  const store = await fetchStoreRowById(supabase, memberRow.store_id);
+  return store ? normalizeStoreRow(store) : null;
 }
 
 /**
