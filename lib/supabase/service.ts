@@ -14,5 +14,19 @@ export function createServiceClient(): SupabaseClient | null {
   });
 }
 
+/**
+ * Same as {@link createServiceClient} but throws if URL or service role key is missing.
+ * Use in server code paths where a configured admin/service client is required (build type-check, Vercel).
+ */
+export function requireServiceClient(): SupabaseClient {
+  const client = createServiceClient();
+  if (!client) {
+    throw new Error(
+      "Supabase service client is not configured. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
+    );
+  }
+  return client;
+}
+
 /** Alias for readability in gold-scraper and similar modules. */
 export const createServiceRoleClient = createServiceClient;

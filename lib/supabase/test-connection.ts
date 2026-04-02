@@ -15,6 +15,13 @@ export type ConnectionTestResult = {
 export async function testSupabaseConnection(): Promise<ConnectionTestResult> {
   try {
     const supabase = createServiceClient();
+    if (!supabase) {
+      return {
+        ok: false,
+        message: "Supabase service client is not configured (missing URL or service role key)",
+        timestamp: new Date().toISOString(),
+      };
+    }
     // Simple health check: auth.getSession() or a minimal API call
     const { error } = await supabase.auth.getSession();
     if (error) {

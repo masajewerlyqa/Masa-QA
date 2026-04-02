@@ -1,7 +1,7 @@
 import "server-only";
 
 import { revalidatePath } from "next/cache";
-import { createServiceClient } from "@/lib/supabase/service";
+import { requireServiceClient } from "@/lib/supabase/service";
 import { appendOrderStatusEvent, deliverBuyerOrderStatusMessages } from "@/lib/orders/lifecycle";
 import { restoreInventoryForOrder } from "@/lib/orders/stock-restore";
 import { getProfileEmailLanguage } from "@/lib/email/profile-language";
@@ -20,8 +20,7 @@ export function autoCancelReasonMessage(lang: Language): string {
  * Idempotent per order. Call from cron or manual trigger.
  */
 export async function processOrdersPastSellerSla(): Promise<{ processed: number; errors: string[] }> {
-  const service = createServiceClient();
-  if (!service) return { processed: 0, errors: ["No service client"] };
+  const service = requireServiceClient();
 
   const now = new Date().toISOString();
   const errors: string[] = [];

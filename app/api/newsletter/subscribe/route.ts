@@ -26,6 +26,12 @@ export async function POST(req: Request) {
 
   try {
     const supabase = createServiceClient();
+    if (!supabase) {
+      return NextResponse.json(
+        { ok: false, error: "We could not subscribe you right now. Please try again." },
+        { status: 503 }
+      );
+    }
     const { error } = await supabase
       .from("newsletter_subscribers")
       .upsert({ email, source }, { onConflict: "email", ignoreDuplicates: false });

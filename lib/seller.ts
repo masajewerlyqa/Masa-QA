@@ -63,7 +63,7 @@ export async function getSellerStore(): Promise<StoreRow | null> {
     .limit(1)
     .maybeSingle();
 
-  if (owned) return normalizeStoreRow(owned as Record<string, unknown>);
+  if (owned) return normalizeStoreRow(owned as unknown as Record<string, unknown>);
 
   const { data: memberRow } = await supabase
     .from("store_members")
@@ -80,7 +80,7 @@ export async function getSellerStore(): Promise<StoreRow | null> {
     .eq("id", memberRow.store_id)
     .single();
 
-  return store ? normalizeStoreRow(store as Record<string, unknown>) : null;
+  return store ? normalizeStoreRow(store as unknown as Record<string, unknown>) : null;
 }
 
 /** Get stats for a store: product count, order count, total revenue, avg order value. */

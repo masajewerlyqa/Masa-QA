@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { requireServiceClient } from "@/lib/supabase/service";
 
 export type NotificationRow = {
   id: string;
@@ -87,7 +87,7 @@ export async function createNotification(params: {
   body?: string | null;
   data?: Record<string, unknown> | null;
 }): Promise<void> {
-  const service = createServiceClient();
+  const service = requireServiceClient();
   await service.from("notifications").insert({
     user_id: params.userId,
     type: params.type,
@@ -99,7 +99,7 @@ export async function createNotification(params: {
 
 /** Notify all admins of a new seller application. */
 export async function notifyAdminsNewSellerApplication(): Promise<void> {
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data: admins } = await service.from("profiles").select("id").eq("role", "admin");
   if (!admins?.length) return;
   for (const admin of admins) {
@@ -141,7 +141,7 @@ export async function notifyApplicantApplicationRejected(
 /** Notify store owners that they have a new order (one notification per store owner). */
 export async function notifySellersNewOrder(orderId: string, storeIds: string[]): Promise<void> {
   if (storeIds.length === 0) return;
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data: stores } = await service.from("stores").select("id, owner_id").in("id", storeIds);
   if (!stores?.length) return;
   const seen = new Set<string>();
@@ -160,7 +160,7 @@ export async function notifySellersNewOrder(orderId: string, storeIds: string[])
 
 /** Notify seller that a new review was submitted for their product. */
 export async function notifySellerNewReview(productId: string, productName: string): Promise<void> {
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data: product } = await service.from("products").select("store_id").eq("id", productId).single();
   if (!product) return;
   const { data: store } = await service.from("stores").select("owner_id").eq("id", product.store_id).single();
@@ -176,7 +176,7 @@ export async function notifySellerNewReview(productId: string, productName: stri
 
 /** Notify all admins that a new product review is pending moderation. */
 export async function notifyAdminsNewReviewPending(productId: string, productName: string): Promise<void> {
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data: admins } = await service.from("profiles").select("id").eq("role", "admin");
   if (!admins?.length) return;
   for (const admin of admins) {

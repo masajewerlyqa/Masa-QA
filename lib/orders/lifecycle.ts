@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createServiceClient } from "@/lib/supabase/service";
+import { requireServiceClient } from "@/lib/supabase/service";
 import { notifyBuyerOrderStatusUpdated, createNotification } from "@/lib/notifications";
 import { sendOrderStatusEmailWithRetry } from "@/lib/email/transactional";
 import { getProfileEmailLanguage } from "@/lib/email/profile-language";
@@ -21,7 +21,7 @@ export async function appendOrderStatusEvent(params: {
   source: "seller" | "admin" | "system" | "checkout";
   metadata?: Record<string, unknown> | null;
 }): Promise<boolean> {
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { error } = await service.from("order_status_events").insert({
     order_id: params.orderId,
     from_status: params.previousStatus,
@@ -62,7 +62,7 @@ export async function deliverBuyerOrderStatusMessages(params: {
   const label = t(emailLang, statusKey, formatStatusLabel(params.newStatus));
   let orderNumber = params.orderNumber ?? null;
   if (orderNumber == null) {
-    const service = createServiceClient();
+    const service = requireServiceClient();
     const { data: row } = await service.from("orders").select("order_number").eq("id", params.orderId).maybeSingle();
     orderNumber = (row as { order_number?: string | null } | null)?.order_number ?? null;
   }

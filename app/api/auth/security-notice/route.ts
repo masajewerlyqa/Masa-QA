@@ -8,7 +8,7 @@ import { resolveEmailLanguage } from "@/lib/email/email-language";
  * Trust boundary: requires valid Supabase session (same as other /api/auth/* routes).
  */
 export async function POST(request: Request) {
-  const { user } = await getCurrentUserWithProfile();
+  const { user, profile } = await getCurrentUserWithProfile();
   if (!user?.email) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }

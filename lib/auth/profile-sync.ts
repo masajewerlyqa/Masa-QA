@@ -1,14 +1,14 @@
 import "server-only";
 
 import type { User } from "@supabase/supabase-js";
-import { createServiceClient } from "@/lib/supabase/service";
+import { requireServiceClient } from "@/lib/supabase/service";
 
 /**
  * Ensures a `profiles` row exists for an authenticated Supabase user.
  * Called when auth exists but profile is missing (OAuth edge cases, replication lag).
  */
 export async function ensureProfileForAuthUser(user: User): Promise<void> {
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data: existing } = await service.from("profiles").select("id").eq("id", user.id).maybeSingle();
   if (existing) {
     await enrichProfileFromOAuthMetadata(user);
@@ -52,7 +52,7 @@ export async function ensureProfileForAuthUser(user: User): Promise<void> {
  * Enriches profile fields from OAuth metadata when missing (non-destructive).
  */
 export async function enrichProfileFromOAuthMetadata(user: User): Promise<void> {
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const meta = user.user_metadata ?? {};
   const fullName =
     (typeof meta.full_name === "string" && meta.full_name) ||

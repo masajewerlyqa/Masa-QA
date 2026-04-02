@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { requireServiceClient } from "@/lib/supabase/service";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getPricingMarketSnapshot } from "@/lib/pricing";
 import { computeDynamicMarketPriceUsd } from "@/lib/pricing-engine";
@@ -130,7 +130,7 @@ export async function getAdminCommissionBySeller(): Promise<CommissionBySellerRo
   const { profile } = await getCurrentUserWithProfile();
   if (profile?.role !== "admin") return [];
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data: orders } = await service
     .from("orders")
     .select("id, subtotal, discount_amount, commission_amount, seller_earnings")
@@ -210,7 +210,7 @@ export async function getAdminPlatformSnapshotMonthly(): Promise<AdminPlatformSn
   const { profile } = await getCurrentUserWithProfile();
   if (profile?.role !== "admin") return [];
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data: orders } = await service
     .from("orders")
     .select("created_at, total")
@@ -256,7 +256,7 @@ export async function getAdminOrderStatusBreakdown(): Promise<AdminOrderStatusRo
   const { profile } = await getCurrentUserWithProfile();
   if (profile?.role !== "admin") return [];
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data: orders } = await service.from("orders").select("status, total");
   if (!orders?.length) return [];
 
@@ -288,7 +288,7 @@ export async function getAdminCategoryRevenue(): Promise<AdminCategoryRevenueRow
   const { profile } = await getCurrentUserWithProfile();
   if (profile?.role !== "admin") return [];
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data: orderItems } = await service.from("order_items").select("product_id, total_price");
   if (!orderItems?.length) return [];
 
@@ -322,7 +322,7 @@ export async function getAdminTopSellersAnalytics(limit: number = 10): Promise<A
   const { profile } = await getCurrentUserWithProfile();
   if (profile?.role !== "admin") return [];
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data: orderItems } = await service.from("order_items").select("order_id, product_id, total_price");
   if (!orderItems?.length) return [];
 
@@ -363,7 +363,7 @@ export async function getAdminCommissionMonthly(): Promise<CommissionMonthlyRow[
   const { profile } = await getCurrentUserWithProfile();
   if (profile?.role !== "admin") return [];
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data: orders } = await service
     .from("orders")
     .select("id, created_at, commission_amount, seller_earnings")
@@ -454,7 +454,7 @@ export async function getAdminReviews(limit: number = 100): Promise<AdminReviewR
   const { profile } = await getCurrentUserWithProfile();
   if (profile?.role !== "admin") return [];
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
 
   // 1) Fetch only from reviews table (no joins – avoids PostgREST relation naming issues)
   const { data: reviewRows, error: reviewsError } = await service
@@ -610,7 +610,7 @@ export async function getAdminProducts(limit: number = 500): Promise<AdminProduc
   const { profile } = await getCurrentUserWithProfile();
   if (profile?.role !== "admin") return [];
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const marketSnapshot = await getPricingMarketSnapshot();
   const { data: productRows, error } = await service
     .from("products")
@@ -668,7 +668,7 @@ export async function getStoresWithMostCancelledOrders(
   const { profile } = await getCurrentUserWithProfile();
   if (profile?.role !== "admin") return [];
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
   if (!service) return [];
 
   const { data: cancelledOrders } = await service.from("orders").select("id").eq("status", "cancelled");
@@ -730,7 +730,7 @@ export async function getAdminOrders(limit: number = 200): Promise<AdminOrderRow
   const { profile } = await getCurrentUserWithProfile();
   if (profile?.role !== "admin") return [];
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data: orderRows, error } = await service
     .from("orders")
     .select("id, order_number, customer_id, total, status, created_at")
@@ -819,7 +819,7 @@ export async function getAdminSellers(): Promise<AdminSellerRow[]> {
   const { profile } = await getCurrentUserWithProfile();
   if (profile?.role !== "admin") return [];
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
 
   const { data: sellerProfiles, error: sellerError } = await service
     .from("profiles")
@@ -916,7 +916,7 @@ export async function getAdminPromoCodes(limit: number = 200): Promise<AdminProm
   const { profile } = await getCurrentUserWithProfile();
   if (profile?.role !== "admin") return [];
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data: rows, error } = await service
     .from("promo_codes")
     .select("id, code, type, value, store_id, min_order_amount, usage_limit, used_count, active, starts_at, expires_at, created_at")
@@ -989,7 +989,7 @@ export async function getAdminOrderById(orderId: string): Promise<AdminOrderDeta
   const { profile } = await getCurrentUserWithProfile();
   if (profile?.role !== "admin") return null;
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data: order, error } = await service
     .from("orders")
     .select("id, order_number, status, subtotal, shipping_cost, tax, total, discount_amount, promo_code, shipping_address, notes, payment_method, tracking_number, shipping_company, estimated_delivery, created_at, customer_id, delivery_country, delivery_city_area, delivery_building_type, delivery_zone_no, delivery_street_no, delivery_building_no, delivery_floor_no, delivery_apartment_no, delivery_landmark, delivery_phone, delivery_lat, delivery_lng, delivery_map_url")

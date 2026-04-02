@@ -6,7 +6,7 @@ import { getSellerStore, getSellerOrderById } from "@/lib/seller";
 import { appendOrderStatusEvent, deliverBuyerOrderStatusMessages } from "@/lib/orders/lifecycle";
 import { isAllowedSellerStatusTransition } from "@/lib/orders/order-transitions";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { requireServiceClient } from "@/lib/supabase/service";
 import { restoreInventoryForOrder } from "@/lib/orders/stock-restore";
 import type { OrderActionResult, TrackingInfo } from "@/app/seller/orders/constants";
 import {
@@ -91,7 +91,7 @@ export async function updateOrderStatus(
   });
 
   if (!eventOk) {
-    const service = createServiceClient();
+    const service = requireServiceClient();
     await service
       .from("orders")
       .update({

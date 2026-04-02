@@ -20,7 +20,7 @@ import { computeCommission } from "@/lib/commission";
 import { validateCartStoresForCheckout } from "@/lib/cart-store-availability";
 import { sellerResponseDeadlineIso } from "@/lib/orders/seller-sla";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { requireServiceClient } from "@/lib/supabase/service";
 
 export type CheckoutActionResult = { ok: boolean; error?: string; orderId?: string };
 
@@ -148,7 +148,7 @@ export async function createOrder(formData: FormData): Promise<CheckoutActionRes
     }
   }
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const stockPayload = cartWithProducts.map((item) => ({
     product_id: item.productId,
     quantity: item.quantity,
@@ -217,10 +217,10 @@ export async function createOrder(formData: FormData): Promise<CheckoutActionRes
   }
 
   if (appliedPromoId) {
-    const service = createServiceClient();
-    const { data: promoRow } = await service.from("promo_codes").select("used_count").eq("id", appliedPromoId).single();
+    const promoService = requireServiceClient();
+    const { data: promoRow } = await promoService.from("promo_codes").select("used_count").eq("id", appliedPromoId).single();
     const nextCount = ((promoRow as { used_count: number } | null)?.used_count ?? 0) + 1;
-    await service.from("promo_codes").update({ used_count: nextCount }).eq("id", appliedPromoId);
+    await promoService.from("promo_codes").update({ used_count: nextCount }).eq("id", appliedPromoId);
   }
 
   const storeIds = Array.from(new Set(cartWithProducts.map((i) => i.product.storeId)));

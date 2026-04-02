@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { requireServiceClient } from "@/lib/supabase/service";
 import { notifyApplicantApplicationApproved, notifyApplicantApplicationRejected } from "@/lib/notifications";
 
 export type ActionResult = { ok: boolean; error?: string };
@@ -83,7 +83,7 @@ export async function approveApplication(applicationId: string): Promise<ActionR
     return { ok: false, error: updateAppError.message };
   }
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
 
   const { error: profileError } = await service
     .from("profiles")
@@ -197,7 +197,7 @@ export async function rejectApplication(
     return { ok: false, error: updateError.message };
   }
 
-  const service = createServiceClient();
+  const service = requireServiceClient();
   await service
     .from("profiles")
     .update({ role: "customer", updated_at: new Date().toISOString() })

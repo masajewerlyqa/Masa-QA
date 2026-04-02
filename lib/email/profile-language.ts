@@ -1,12 +1,12 @@
 import "server-only";
 
-import { createServiceClient } from "@/lib/supabase/service";
+import { requireServiceClient } from "@/lib/supabase/service";
 import { resolveEmailLanguage } from "./email-language";
 import type { Language } from "@/lib/language";
 
 /** Load stored preference for transactional email (defaults to en). */
 export async function getProfileEmailLanguage(userId: string): Promise<Language> {
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data, error } = await service
     .from("profiles")
     .select("preferred_language")

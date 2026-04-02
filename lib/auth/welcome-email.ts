@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createServiceClient } from "@/lib/supabase/service";
+import { requireServiceClient } from "@/lib/supabase/service";
 import { sendWelcomeEmail } from "@/lib/email/transactional";
 import { resolveEmailLanguage } from "@/lib/email/email-language";
 
@@ -13,7 +13,7 @@ export async function sendWelcomeEmailIfEligible(
   email: string,
   fullNameFallback: string | null
 ): Promise<{ sent: boolean; skipped: boolean }> {
-  const service = createServiceClient();
+  const service = requireServiceClient();
   const { data: row, error } = await service
     .from("profiles")
     .select("welcome_email_sent_at, full_name, preferred_language")

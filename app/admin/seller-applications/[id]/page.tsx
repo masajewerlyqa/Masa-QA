@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { requireServiceClient } from "@/lib/supabase/service";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { ApplicationActions } from "../ApplicationActions";
 import { getServerLanguage } from "@/lib/language-server";
@@ -71,7 +71,7 @@ export default async function SellerApplicationDetailPage({
   // Signed URLs for private storage (admin only, via service role)
   let logoUrl: string | null = null;
   let licenseUrl: string | null = null;
-  const service = createServiceClient();
+  const service = requireServiceClient();
   if (row.logo_path) {
     const { data: logo } = await service.storage
       .from(BUCKET_LOGOS)

@@ -1,11 +1,10 @@
 import "server-only";
 
-import { createServiceClient } from "@/lib/supabase/service";
+import { requireServiceClient } from "@/lib/supabase/service";
 
 /** Restore product stock when an order is cancelled (seller reject or SLA). */
 export async function restoreInventoryForOrder(orderId: string): Promise<{ ok: boolean; error?: string }> {
-  const service = createServiceClient();
-  if (!service) return { ok: false, error: "Service unavailable" };
+  const service = requireServiceClient();
 
   const { data: items, error: fetchErr } = await service
     .from("order_items")
