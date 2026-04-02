@@ -10,6 +10,7 @@ import { getCurrentUserWithProfile } from "@/lib/auth";
 import { ApplicationActions } from "../ApplicationActions";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
+import { formatDateTime } from "@/lib/date-format";
 
 const BUCKET_LOGOS = "store-logos";
 const BUCKET_LICENSES = "store-licenses";
@@ -25,6 +26,7 @@ type ApplicationRow = {
   contact_phone: string | null;
   contact_full_name: string | null;
   store_location: string | null;
+  seller_plan: string | null;
   license_path: string | null;
   logo_path: string | null;
   social_links: Record<string, string> | null;
@@ -34,21 +36,6 @@ type ApplicationRow = {
   profiles: { full_name: string | null; email: string | null } | null;
   reviewer: { full_name: string | null; email: string | null } | null;
 };
-
-function formatDate(iso: string | null) {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 export default async function SellerApplicationDetailPage({
   params,
@@ -67,7 +54,7 @@ export default async function SellerApplicationDetailPage({
     .from("seller_applications")
     .select(
       "id, user_id, status, business_name, business_description, contact_email, contact_phone, " +
-        "contact_full_name, store_location, license_path, logo_path, social_links, " +
+        "contact_full_name, store_location, seller_plan, license_path, logo_path, social_links, " +
         "created_at, reviewed_at, review_notes, " +
         "profiles:profiles!seller_applications_user_id_fkey(full_name, email), " +
         "reviewer:profiles!seller_applications_reviewed_by_fkey(full_name, email)"
@@ -112,7 +99,7 @@ export default async function SellerApplicationDetailPage({
           </Link>
           <h1 className="text-3xl font-luxury text-primary">{t(language, "admin.applications.details")}</h1>
           <p className="text-masa-gray font-sans mt-1">
-            {row.business_name} · {formatDate(row.created_at)}
+            {row.business_name} · {formatDateTime(row.created_at, language)}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -145,6 +132,16 @@ export default async function SellerApplicationDetailPage({
             <DetailRow label={t(language, "admin.applications.email")} value={row.contact_email} />
             <DetailRow label={t(language, "common.phone")} value={row.contact_phone} />
             <DetailRow label={t(language, "admin.applications.storeLocation")} value={row.store_location} />
+            <DetailRow
+              label={t(language, "admin.applications.sellerPlan")}
+              value={
+                row.seller_plan === "premium"
+                  ? t(language, "sellerOnboarding.premiumName")
+                  : row.seller_plan === "basic"
+                    ? t(language, "sellerOnboarding.basicName")
+                    : null
+              }
+            />
           </CardContent>
         </Card>
 
@@ -246,7 +243,10 @@ export default async function SellerApplicationDetailPage({
               </p>
             </CardHeader>
             <CardContent className="space-y-3 font-sans">
-              <DetailRow label={t(language, "admin.applications.reviewedAt")} value={formatDate(row.reviewed_at)} />
+              <DetailRow
+                label={t(language, "admin.applications.reviewedAt")}
+                value={row.reviewed_at ? formatDateTime(row.reviewed_at, language) : "—"}
+              />
               <DetailRow label={t(language, "admin.applications.reviewedBy")} value={row.reviewer?.full_name ?? row.reviewer?.email ?? "—"} />
               {row.review_notes && (
                 <DetailRow label={t(language, "admin.applications.notes")} value={row.review_notes} />

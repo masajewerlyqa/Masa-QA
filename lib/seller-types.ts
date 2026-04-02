@@ -18,6 +18,12 @@ export type StoreRow = {
   social_links: Record<string, string> | null;
   latitude: number | null;
   longitude: number | null;
+  business_timezone: string;
+  working_days: number[] | null;
+  opening_time_local: string | null;
+  closing_time_local: string | null;
+  /** Set when store is approved; drives catalog limits and placement flags. */
+  seller_plan: string | null;
 };
 
 export type ProductRow = {
@@ -41,6 +47,15 @@ export type ProductRow = {
   discount_start_at: string | null;
   discount_end_at: string | null;
   discount_active: boolean;
+  created_at: string;
+  /** Units sold (excl. cancelled/refunded orders). */
+  units_sold: number;
+  /** Wishlist saves for this product. */
+  wishlist_count: number;
+  /** Line revenue USD (excl. cancelled/refunded). */
+  revenue_usd: number;
+  /** Units on orders with status cancelled. */
+  units_cancelled: number;
 };
 
 /** Full product for edit form (includes product_images). */
@@ -57,6 +72,7 @@ export type SellerStats = {
 
 export type SellerOrderRow = {
   id: string;
+  order_number: string | null;
   status: string;
   total: number;
   created_at: string;
@@ -64,11 +80,13 @@ export type SellerOrderRow = {
   item_summary: string;
   /** This store's earnings share for this order (after commission). */
   store_earnings?: number;
+  seller_response_deadline: string | null;
 };
 
 /** Single order detail for seller (only items from their store). */
 export type SellerOrderDetail = {
   id: string;
+  order_number: string | null;
   status: string;
   subtotal: number;
   shipping_cost: number;
@@ -112,6 +130,12 @@ export type SellerOrderDetail = {
   delivery_lat: number | null;
   delivery_lng: number | null;
   delivery_map_url: string | null;
+  /** Message stored when seller sets status to cancelled (shown to buyer). */
+  seller_cancellation_reason: string | null;
+  platform_cancellation_reason: string | null;
+  seller_response_deadline: string | null;
+  cancellation_source: "seller" | "system" | "customer" | null;
+  auto_cancelled_at: string | null;
 };
 
 export type RevenueByMonth = { month: string; revenue: number };

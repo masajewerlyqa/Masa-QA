@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useI18n } from "@/components/useI18n";
 
 export function FooterNewsletter() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState(t("newsletter.invalidEmail"));
@@ -18,7 +18,7 @@ export function FooterNewsletter() {
       const res = await fetch("/api/newsletter/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, source: "footer" }),
+        body: JSON.stringify({ email, source: "footer", language }),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!res.ok) {

@@ -8,6 +8,7 @@ import { getCustomerOrder } from "@/lib/customer";
 import { FormattedPrice } from "@/components/FormattedPrice";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
+import { formatOrderDisplayRef } from "@/lib/order-display";
 
 interface PageProps {
   searchParams: Promise<{ orderId?: string }>;
@@ -69,8 +70,8 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
           <CardHeader>
             <CardTitle className="font-luxury text-primary text-lg">{t(language, "checkout.success.orderNumber")}</CardTitle>
           </CardHeader>
-          <CardContent className="font-mono text-sm text-masa-dark break-all">
-            {order.id}
+          <CardContent className="font-mono text-sm text-masa-dark tracking-wide">
+            {formatOrderDisplayRef(order)}
           </CardContent>
         </Card>
 

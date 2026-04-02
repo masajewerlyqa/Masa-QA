@@ -23,7 +23,7 @@ export type GetCurrentUserResult = {
  * Cached per-request so layout + page both calling it only trigger one auth + profile fetch.
  */
 const profileSelect =
-  "id, role, full_name, avatar_url, email, phone, phone_verified_at, newsletter_opt_in";
+  "id, role, full_name, avatar_url, email, phone, phone_verified_at, newsletter_opt_in, preferred_language, pending_seller_plan";
 
 async function getCurrentUserWithProfileImpl(): Promise<GetCurrentUserResult> {
   try {
@@ -46,11 +46,16 @@ async function getCurrentUserWithProfileImpl(): Promise<GetCurrentUserResult> {
       profile = retry.data;
     }
 
+    const rawPending = (profile as { pending_seller_plan?: string | null }).pending_seller_plan;
     const normalizedProfile =
       profile && typeof profile === "object"
         ? ({
             ...profile,
             newsletter_opt_in: Boolean((profile as { newsletter_opt_in?: boolean }).newsletter_opt_in),
+            preferred_language:
+              (profile as { preferred_language?: string }).preferred_language === "ar" ? "ar" : "en",
+            pending_seller_plan:
+              rawPending === "basic" || rawPending === "premium" ? rawPending : null,
           } as Profile)
         : null;
 

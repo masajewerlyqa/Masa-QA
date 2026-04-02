@@ -21,7 +21,7 @@ interface HomeFeaturedProductsSectionProps {
 export function HomeFeaturedProductsSection({
   products,
   wishlistIds,
-  title = "Latest from the Marketplace",
+  title = "Latest pieces",
   subtitle = "Handpicked luxury pieces from verified sellers",
   viewAllLabel = "View All",
 }: HomeFeaturedProductsSectionProps) {

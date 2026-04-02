@@ -1,57 +1,29 @@
 /**
  * Market prices service for gold, silver, and diamond (Qatar / GCC).
- * Uses GoldAPI.io for real gold/silver when GOLDAPI_KEY is set; otherwise mock.
+ * Gold & silver: GoldAPI.io when GOLDAPI_KEY is set; else mock. Optional scraper if GOLD_PRICE_USE_SCRAPER=true.
  * Diamond remains mock (Rapaport etc. later). All prices in QAR.
  * 24K = pure gold; 22K = 91.67% gold; 18K = 75% gold.
  */
 
 import { fetchGoldFromApi, fetchSilverFromApi, usdPerOzToQarPerGram } from "@/lib/goldapi";
 import { USD_TO_QAR } from "@/lib/currency";
+import type {
+  GoldMarketData,
+  SilverMarketData,
+  DiamondMarketData,
+  HistoryByRange,
+  PricePoint,
+} from "./market-prices-types";
 
-export const QAR_TO_USD = 1 / USD_TO_QAR;
-
-export type PricePoint = { time: string; value: number };
-
-export type MarketPriceSnapshot = {
-  priceQAR: number;
-  changePercent: number;
-  updatedAt: string;
-  unit?: string;
-};
-
-export type HistoryByRange = {
-  "1D": PricePoint[];
-  "7D": PricePoint[];
-  "1M": PricePoint[];
-  "6M": PricePoint[];
-  "1Y": PricePoint[];
-};
-
-export type GoldMarketData = MarketPriceSnapshot & {
-  price24KPerGramQAR: number;
-  price22KPerGramQAR: number;
-  price18KPerGramQAR: number;
-  pricePerOunceQAR: number;
-  weeklyChangePercent: number;
-  monthlyTrend: "up" | "down" | "stable";
-  qatarPremiumEstimatePercent: number;
-  historyByRange: HistoryByRange;
-};
-
-export type SilverMarketData = MarketPriceSnapshot & {
-  pricePerGramQAR: number;
-  pricePerKgQAR: number;
-  industrialDemandTrend: "rising" | "stable" | "declining";
-  historyByRange: HistoryByRange;
-};
-
-export type DiamondMarketData = MarketPriceSnapshot & {
-  avg1CtPriceQAR: number;
-  investmentIndex: number;
-  luxuryRetailTrend: "up" | "stable" | "down";
-  demandIndicator: "High" | "Medium" | "Low";
-  historyByRange: HistoryByRange;
-};
+export { QAR_TO_USD } from "./market-prices-constants";
+export type {
+  PricePoint,
+  MarketPriceSnapshot,
+  HistoryByRange,
+  GoldMarketData,
+  SilverMarketData,
+  DiamondMarketData,
+} from "./market-prices-types";
 
 function nowISO(): string {
   return new Date().toISOString();
@@ -110,8 +82,20 @@ const GOLD_24K_BASE = 272.5;
 const SILVER_BASE = 3.88;
 const DIAMOND_1CT_BASE = 19200;
 
-/** Gold: 24K per gram. 22K = 91.67%, 18K = 75%. Uses GoldAPI.io when GOLDAPI_KEY is set. */
+/** Gold: 24K per gram. GoldAPI.io when GOLDAPI_KEY set; else mock. Scraper only if GOLD_PRICE_USE_SCRAPER=true. */
 export async function getGoldPrice(): Promise<GoldMarketData> {
+  if (process.env.GOLD_PRICE_USE_SCRAPER === "true") {
+    try {
+      const { getLatestGram24kQAR } = await import("@/lib/gold-scraper/storage");
+      const scrapedGram = await getLatestGram24kQAR();
+      if (scrapedGram != null && scrapedGram > 0) {
+        return buildGoldMarketDataFrom24kGram(scrapedGram, 0, nowISO());
+      }
+    } catch {
+      /* fall through to API / mock */
+    }
+  }
+
   const api = await fetchGoldFromApi();
   const price24K =
     api != null
@@ -130,6 +114,35 @@ export async function getGoldPrice(): Promise<GoldMarketData> {
     priceQAR: price24K,
     changePercent,
     updatedAt: api?.timestamp ?? nowISO(),
+    unit: "per gram",
+    price24KPerGramQAR: price24K,
+    price22KPerGramQAR: price22K,
+    price18KPerGramQAR: price18K,
+    pricePerOunceQAR: pricePerOz,
+    weeklyChangePercent,
+    monthlyTrend,
+    qatarPremiumEstimatePercent: 2.8,
+    historyByRange,
+  };
+}
+
+/** Build gold snapshot from scraped 24K QAR/gram (histories still synthetic). */
+function buildGoldMarketDataFrom24kGram(
+  price24K: number,
+  changePercent: number,
+  updatedAt: string
+): GoldMarketData {
+  const { historyByRange, weeklyChangePercent } = buildHistories(price24K, 0.04, 0.008);
+  const price22K = Math.round(price24K * 0.9167 * 100) / 100;
+  const price18K = Math.round(price24K * 0.75 * 100) / 100;
+  const pricePerOz = Math.round(price24K * 31.1035 * 100) / 100;
+  const monthlyTrend: "up" | "down" | "stable" =
+    weeklyChangePercent > 0.3 ? "up" : weeklyChangePercent < -0.3 ? "down" : "stable";
+
+  return {
+    priceQAR: price24K,
+    changePercent,
+    updatedAt,
     unit: "per gram",
     price24KPerGramQAR: price24K,
     price22KPerGramQAR: price22K,
@@ -190,7 +203,7 @@ export function getDiamondIndex(): DiamondMarketData {
   };
 }
 
-/** All market data in one call. Uses GoldAPI.io for gold/silver when GOLDAPI_KEY is set. */
+/** All market data in one call. See getGoldPrice / getSilverPrice for live vs mock rules. */
 export async function getAllMarketData() {
   const [gold, silver, diamond] = await Promise.all([
     getGoldPrice(),
@@ -200,101 +213,4 @@ export async function getAllMarketData() {
   return { gold, silver, diamond };
 }
 
-/** AI insight derived from current gold, silver, diamond data. */
-export function getMarketInsight(gold: GoldMarketData, silver: SilverMarketData, diamond: DiamondMarketData): {
-  text: string;
-  indicators: ("Safe Investment" | "High Volatility" | "Luxury Demand Rising")[];
-} {
-  const parts: string[] = [];
-  const indicators: ("Safe Investment" | "High Volatility" | "Luxury Demand Rising")[] = [];
-
-  if (gold.weeklyChangePercent > 0.5) {
-    parts.push(`Gold (24K/22K/18K) is up ${gold.weeklyChangePercent.toFixed(1)}% this week in GCC markets.`);
-    indicators.push("Safe Investment");
-  } else if (gold.weeklyChangePercent < -0.3) {
-    parts.push(`Gold has softened ${Math.abs(gold.weeklyChangePercent).toFixed(1)}% this week.`);
-  }
-
-  if (gold.monthlyTrend === "up") {
-    parts.push("24K and 22K show bullish momentum.");
-  }
-
-  if (silver.changePercent > 0.2) {
-    parts.push(`Silver is up ${silver.changePercent.toFixed(2)}% today.`);
-  }
-  if (silver.industrialDemandTrend === "rising") {
-    parts.push("Industrial demand for silver remains strong.");
-  }
-
-  if (diamond.luxuryRetailTrend === "up" && diamond.demandIndicator === "High") {
-    parts.push("Diamond demand is high with luxury retail trending up.");
-    indicators.push("Luxury Demand Rising");
-  }
-
-  if (gold.changePercent > 0.5 || silver.changePercent > 0.5) {
-    indicators.push("High Volatility");
-  }
-
-  const text =
-    parts.length > 0
-      ? parts.join(" ")
-      : "Precious metals and diamonds are trading in a stable range in Qatar. Monitor 24K gold and diamond indices for entry points.";
-
-  return {
-    text,
-    indicators: indicators.length > 0 ? indicators : ["Safe Investment"],
-  };
-}
-
-/** Seller opportunity derived from current market. */
-export function getSellerOpportunity(
-  gold: GoldMarketData,
-  silver: SilverMarketData,
-  diamond: DiamondMarketData
-): {
-  bestMetalToSell: string;
-  marginEstimatePercent: number;
-  trendingCategory: string;
-} {
-  const margins = [
-    {
-      name: "24K Gold",
-      margin: 4 + (gold.weeklyChangePercent > 0 ? 1.5 : 0) + (gold.monthlyTrend === "up" ? 1 : 0),
-      score: (gold.weeklyChangePercent > 0 ? 2 : 0) + (gold.monthlyTrend === "up" ? 1 : 0),
-    },
-    {
-      name: "22K Gold",
-      margin: 6 + (gold.weeklyChangePercent > 0 ? 1 : 0),
-      score: (gold.weeklyChangePercent > 0 ? 1 : 0) + 2,
-    },
-    {
-      name: "18K Gold",
-      margin: 7 + (gold.monthlyTrend === "up" ? 0.5 : 0),
-      score: 1,
-    },
-    {
-      name: "Silver",
-      margin: 5 + (silver.industrialDemandTrend === "rising" ? 2 : 0),
-      score: silver.industrialDemandTrend === "rising" ? 2 : 0,
-    },
-  ];
-
-  const best = margins.sort((a, b) => b.score - a.score || b.margin - a.margin)[0]!;
-
-  let trendingCategory: string;
-  if (diamond.demandIndicator === "High" && diamond.luxuryRetailTrend === "up") {
-    trendingCategory = "Diamond engagement rings";
-  } else if (gold.monthlyTrend === "up") {
-    trendingCategory = "22K gold bangles and necklaces";
-  } else if (silver.industrialDemandTrend === "rising") {
-    trendingCategory = "Silver jewelry and accessories";
-  } else {
-    trendingCategory = "Classic gold and diamond pieces";
-  }
-
-  return {
-    bestMetalToSell: best.name,
-    marginEstimatePercent: Math.round(best.margin * 10) / 10,
-    trendingCategory,
-  };
-}
+export { getMarketInsight, getSellerOpportunity } from "./market-prices-insight";

@@ -82,17 +82,11 @@ export default function ContactPage() {
             <div className="lg:col-span-5 flex flex-col justify-center">
               <h3 className="font-luxury text-xl text-primary mb-8">{isArabic ? "تواصل معنا مباشرة" : "Reach us directly"}</h3>
               <ul className="space-y-8 font-sans">
-                <li className="flex gap-4">
+                <li className="flex items-center gap-4">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-primary/15 text-primary">
                     <MapPin className="w-5 h-5" aria-hidden />
                   </span>
-                  <div>
-                    <p className="font-medium text-masa-dark">{isArabic ? "الموقع" : "Location"}</p>
-                    <p className="text-masa-dark mt-0.5">Doha, Qatar</p>
-                    <p className="text-masa-gray text-sm mt-1">
-                      {isArabic ? "عمليات سوق عالمي للمجوهرات الفاخرة." : "Global luxury jewelry marketplace operations."}
-                    </p>
-                  </div>
+                  <p className="text-masa-dark">{isArabic ? "الدوحة، قطر" : "Doha, Qatar"}</p>
                 </li>
                 <li className="flex gap-4">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-primary/15 text-primary">
@@ -101,7 +95,6 @@ export default function ContactPage() {
                   <div>
                     <p className="font-medium text-masa-dark">{isArabic ? "البريد الإلكتروني" : "Email"}</p>
                     <a href="mailto:support@masajewelry.com" className="text-masa-dark hover:text-primary block mt-0.5">support@masajewelry.com</a>
-                    <a href="mailto:partners@masajewelry.com" className="text-masa-dark hover:text-primary block mt-1">partners@masajewelry.com</a>
                   </div>
                 </li>
                 <li className="flex gap-4">
@@ -110,7 +103,13 @@ export default function ContactPage() {
                   </span>
                   <div>
                     <p className="font-medium text-masa-dark">{isArabic ? "الهاتف" : "Phone"}</p>
-                    <a href="tel:+97466055546" className="text-masa-dark hover:text-primary mt-0.5 inline-block">+974 6605 5546</a>
+                    <a
+                      href="tel:+97466055546"
+                      dir="ltr"
+                      className="text-masa-dark hover:text-primary mt-0.5 inline-block tabular-nums"
+                    >
+                      +974&nbsp;6605&nbsp;5546
+                    </a>
                   </div>
                 </li>
               </ul>
@@ -211,13 +210,13 @@ export default function ContactPage() {
             </details>
             <details className="group bg-white rounded-xl border border-primary/10 overflow-hidden">
               <summary className="font-sans font-medium text-masa-dark px-6 py-4 cursor-pointer list-none flex items-center justify-between gap-4 hover:bg-masa-light/50 transition-colors [&::-webkit-details-marker]:hidden">
-                {isArabic ? "ما خيارات الشحن والتوصيل المتاحة؟" : "What are the shipping and delivery options?"}
+                {isArabic ? "ما خيارات التوصيل المتاحة؟" : "What delivery options are available?"}
                 <span className="shrink-0 w-6 h-6 rounded-full border border-primary/20 flex items-center justify-center text-primary group-open:rotate-180 transition-transform">+</span>
               </summary>
               <div className="px-6 pb-4 pt-0 font-sans text-masa-gray text-sm leading-relaxed border-t border-primary/5">
                 {isArabic
-                  ? "تعتمد خيارات الشحن على البائع. يوفر معظمهم التوصيل داخل قطر وبعضهم يشحن دولياً. ستظهر الخيارات المتاحة أثناء الدفع. قد تتطلب المنتجات عالية القيمة توقيع الاستلام أو شحناً مؤمّناً."
-                  : "Shipping options depend on the seller. Most offer delivery within Qatar and some ship internationally. You will see available options at checkout. High-value items may require signature or insured delivery."}
+                  ? "تعتمد خيارات التوصيل على البائع. يوفر معظمهم التوصيل داخل قطر وبعضهم يوصل دولياً. ستظهر الخيارات المتاحة أثناء الدفع. قد تتطلب المنتجات عالية القيمة توقيع الاستلام أو توصيلاً مؤمّناً."
+                  : "Delivery options depend on the seller. Most offer delivery within Qatar and some deliver internationally. You will see available options at checkout. High-value items may require signature or insured delivery."}
               </div>
             </details>
             <details className="group bg-white rounded-xl border border-primary/10 overflow-hidden">

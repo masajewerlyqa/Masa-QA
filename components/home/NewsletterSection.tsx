@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/components/LanguageProvider";
 
 export function NewsletterSection() {
-  const { isArabic } = useLanguage();
+  const { isArabic, language } = useLanguage();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState(isArabic ? "يرجى إدخال بريد إلكتروني صحيح." : "Please enter a valid email address.");
@@ -19,7 +19,7 @@ export function NewsletterSection() {
       const res = await fetch("/api/newsletter/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, source: "home_section" }),
+        body: JSON.stringify({ email, source: "home_section", language }),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!res.ok) {

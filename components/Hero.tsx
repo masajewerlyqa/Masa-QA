@@ -28,8 +28,8 @@ export function Hero({
   title,
   subtitle,
   description,
-  primaryCta = { label: "Explore Marketplace", href: "/discover" },
-  secondaryCta = { label: "AI Jewelry Advisor", href: "/advisor" },
+  primaryCta = { label: "Start shopping", href: "/discover" },
+  secondaryCta = { label: "Join now", href: "/register" },
 }: HeroProps) {
   const { isArabic } = useLanguage();
   const trustBadges = isArabic
@@ -75,7 +75,7 @@ export function Hero({
           {subtitle && (
             <p className={`text-lg md:text-xl text-masa-dark mb-2 ${isArabic ? "font-arabic" : "font-sans"}`}>{subtitle}</p>
           )}
-          <p className="text-sm md:text-lg text-masa-gray mb-5 lg:mb-8 leading-relaxed max-w-lg font-sans">
+          <p className="text-sm md:text-lg text-[rgb(99,92,92)] mb-5 lg:mb-8 leading-relaxed max-w-lg font-sans">
             {description}
           </p>
           <div className="flex flex-wrap gap-3 md:gap-4 mb-6 md:mb-8">

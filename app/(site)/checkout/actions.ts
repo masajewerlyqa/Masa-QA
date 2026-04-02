@@ -2,7 +2,7 @@
 
 /**
  * Checkout order creation — payment-ready placeholder architecture.
- * - Receives payment_method (card | cod | bank_transfer) and optional promo_code from the form.
+ * - Receives payment_method (card | apple_pay) and optional promo_code from the form.
  * - Validates promo code if provided; applies discount; saves promo_code and discount_amount on order; increments used_count.
  * - No real payment processing; order is created and flow continues as today.
  */
@@ -12,10 +12,13 @@ import { redirect } from "next/navigation";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getCartWithProducts, clearCart } from "@/lib/customer";
 import { sendOrderConfirmationEmail } from "@/lib/email/transactional";
+import { resolveEmailLanguage } from "@/lib/email/email-language";
 import { recordOrderPlacedEvent } from "@/lib/orders/lifecycle";
 import { notifySellersNewOrder } from "@/lib/notifications";
 import { validatePromoCode } from "@/lib/promo";
 import { computeCommission } from "@/lib/commission";
+import { validateCartStoresForCheckout } from "@/lib/cart-store-availability";
+import { sellerResponseDeadlineIso } from "@/lib/orders/seller-sla";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -69,7 +72,7 @@ export async function createOrder(formData: FormData): Promise<CheckoutActionRes
   const deliveryMapUrl = String(formData.get("delivery_map_url") ?? "").trim() || null;
   const notes = deliveryLandmark;
   const paymentMethodRaw = String(formData.get("payment_method") ?? "").trim().toLowerCase();
-  const _paymentMethod = ["card", "cod", "bank_transfer"].includes(paymentMethodRaw) ? paymentMethodRaw : "cod";
+  const _paymentMethod = ["card", "apple_pay"].includes(paymentMethodRaw) ? paymentMethodRaw : "card";
   const promoCodeInput = String(formData.get("promo_code") ?? "").trim() || null;
 
   if (!firstName) {
@@ -104,6 +107,17 @@ export async function createOrder(formData: FormData): Promise<CheckoutActionRes
 
   const subtotal = cartWithProducts.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const cartStoreIds = Array.from(new Set(cartWithProducts.map((i) => i.product.storeId)));
+
+  const storeGate = await validateCartStoresForCheckout(user.id);
+  if (storeGate.blocked) {
+    return {
+      ok: false,
+      error:
+        storeGate.reason === "not_configured"
+          ? "STORE_HOURS_NOT_SET"
+          : "STORE_CLOSED",
+    };
+  }
 
   let discountAmount = 0;
   let appliedPromoCode: string | null = null;
@@ -148,12 +162,15 @@ export async function createOrder(formData: FormData): Promise<CheckoutActionRes
   }
 
   const supabase = await createClient();
+  const createdAt = new Date();
+  const sellerDeadline = sellerResponseDeadlineIso(createdAt);
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
       customer_id: user.id,
-      status: "pending",
+      status: "awaiting_seller",
+      seller_response_deadline: sellerDeadline,
       subtotal,
       shipping_cost,
       tax,
@@ -179,16 +196,18 @@ export async function createOrder(formData: FormData): Promise<CheckoutActionRes
       delivery_lng: deliveryLng,
       delivery_map_url: deliveryMapUrl,
     })
-    .select("id")
+    .select("id, order_number")
     .single();
 
   if (orderError || !order) return { ok: false, error: orderError?.message ?? "Failed to create order" };
+
+  const placed = order as { id: string; order_number: string | null };
 
   for (const item of cartWithProducts) {
     const unit_price = item.product.price;
     const total_price = Math.round(unit_price * item.quantity * 100) / 100;
     const { error: itemError } = await supabase.from("order_items").insert({
-      order_id: order.id,
+      order_id: placed.id,
       product_id: item.productId,
       quantity: item.quantity,
       unit_price,
@@ -205,14 +224,20 @@ export async function createOrder(formData: FormData): Promise<CheckoutActionRes
   }
 
   const storeIds = Array.from(new Set(cartWithProducts.map((i) => i.product.storeId)));
-  await notifySellersNewOrder(order.id, storeIds);
+  await notifySellersNewOrder(placed.id, storeIds);
 
-  await recordOrderPlacedEvent({ orderId: order.id, customerId: user.id });
+  await recordOrderPlacedEvent({ orderId: placed.id, customerId: user.id });
   const buyerEmail = user.email ?? profile?.email ?? null;
   if (buyerEmail) {
-    const mailResult = await sendOrderConfirmationEmail(buyerEmail, order.id, total.toFixed(2));
+    const mailResult = await sendOrderConfirmationEmail(
+      buyerEmail,
+      placed.id,
+      placed.order_number,
+      total,
+      resolveEmailLanguage(profile?.preferred_language)
+    );
     if (!mailResult.ok) {
-      console.warn("[checkout] order confirmation email failed:", mailResult.error, { orderId: order.id });
+      console.warn("[checkout] order confirmation email failed:", mailResult.error, { orderId: placed.id });
     }
   }
 
@@ -224,5 +249,5 @@ export async function createOrder(formData: FormData): Promise<CheckoutActionRes
   revalidatePath("/checkout");
   revalidatePath("/seller/orders");
   revalidatePath("/seller");
-  redirect(`/checkout/success?orderId=${order.id}`);
+  redirect(`/checkout/success?orderId=${placed.id}`);
 }

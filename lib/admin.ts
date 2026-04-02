@@ -7,6 +7,7 @@ import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getPricingMarketSnapshot } from "@/lib/pricing";
 import { computeDynamicMarketPriceUsd } from "@/lib/pricing-engine";
 import { QAR_TO_USD } from "@/lib/market-prices";
+import { loadProductEngagementStats } from "@/lib/product-engagement-stats";
 
 export type AdminMetrics = {
   totalUsers: number;
@@ -32,6 +33,7 @@ export type RecentApplicationRow = {
 
 export type RecentOrderRow = {
   id: string;
+  order_number: string | null;
   status: string;
   total: number;
   created_at: string;
@@ -430,7 +432,7 @@ export async function getRecentOrders(limit: number = 10): Promise<RecentOrderRo
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("orders")
-    .select("id, status, total, created_at, profiles(full_name, email)")
+    .select("id, order_number, status, total, created_at, profiles(full_name, email)")
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -438,6 +440,7 @@ export async function getRecentOrders(limit: number = 10): Promise<RecentOrderRo
 
   return (data ?? []).map((row: any) => ({
     id: row.id,
+    order_number: row.order_number ?? null,
     status: row.status,
     total: Number(row.total ?? 0),
     created_at: row.created_at,
@@ -573,10 +576,28 @@ export type AdminProductRow = {
   market_linked: boolean;
   category: string | null;
   status: string;
+  created_at: string;
+  /** Units sold (excl. cancelled/refunded orders). */
+  units_sold: number;
+  /** Distinct wishlist saves across customers. */
+  wishlist_count: number;
+  /** Line revenue USD for this product (excl. cancelled/refunded). */
+  revenue_usd: number;
+  /** Units on orders with status cancelled. */
+  units_cancelled: number;
+};
+
+export type StoreCancelledOrdersRow = {
+  store_id: string;
+  store_name: string;
+  store_slug: string;
+  /** Distinct cancelled orders that include at least one line from this store. */
+  cancelled_orders: number;
 };
 
 export type AdminOrderRow = {
   id: string;
+  order_number: string | null;
   customer_name: string | null;
   customer_email: string | null;
   total: number;
@@ -593,11 +614,14 @@ export async function getAdminProducts(limit: number = 500): Promise<AdminProduc
   const marketSnapshot = await getPricingMarketSnapshot();
   const { data: productRows, error } = await service
     .from("products")
-    .select("id, name, store_id, price, status, category, metal_type, gold_karat, weight, craftsmanship_margin")
+    .select("id, name, store_id, price, status, category, metal_type, gold_karat, weight, craftsmanship_margin, created_at")
     .order("created_at", { ascending: false })
     .limit(limit);
 
   if (error || !productRows?.length) return [];
+
+  const productIds = (productRows as { id: string }[]).map((p) => p.id);
+  const engagement = await loadProductEngagementStats(service, productIds);
 
   const storeIds = [...new Set((productRows as { store_id: string }[]).map((p) => p.store_id))];
   const { data: storesData } = await service.from("stores").select("id, name").in("id", storeIds);
@@ -625,6 +649,78 @@ export async function getAdminProducts(limit: number = 500): Promise<AdminProduc
       market_linked: dynamic.marketLinked,
       category: row.category ?? null,
       status: row.status ?? "draft",
+      created_at: row.created_at ?? "",
+      units_sold: engagement.unitsSold[row.id] ?? 0,
+      wishlist_count: engagement.wishlistCount[row.id] ?? 0,
+      revenue_usd: engagement.revenueUsd[row.id] ?? 0,
+      units_cancelled: engagement.unitsCancelled[row.id] ?? 0,
+    };
+  });
+}
+
+/**
+ * Stores ranked by how many distinct cancelled orders include their products
+ * (an order with items from multiple stores counts toward each store).
+ */
+export async function getStoresWithMostCancelledOrders(
+  limit: number = 20
+): Promise<StoreCancelledOrdersRow[]> {
+  const { profile } = await getCurrentUserWithProfile();
+  if (profile?.role !== "admin") return [];
+
+  const service = createServiceClient();
+  if (!service) return [];
+
+  const { data: cancelledOrders } = await service.from("orders").select("id").eq("status", "cancelled");
+  const orderIds = (cancelledOrders ?? []).map((o: { id: string }) => o.id);
+  if (orderIds.length === 0) return [];
+
+  const storeToOrderIds = new Map<string, Set<string>>();
+
+  const chunk = 200;
+  for (let i = 0; i < orderIds.length; i += chunk) {
+    const slice = orderIds.slice(i, i + chunk);
+    const { data: items } = await service
+      .from("order_items")
+      .select("order_id, product_id")
+      .in("order_id", slice);
+    if (!items?.length) continue;
+
+    const productIds = [...new Set((items as { product_id: string }[]).map((x) => x.product_id))];
+    const { data: products } = await service.from("products").select("id, store_id").in("id", productIds);
+    const pidToStore = new Map((products ?? []).map((p: { id: string; store_id: string }) => [p.id, p.store_id]));
+
+    for (const row of items as { order_id: string; product_id: string }[]) {
+      const storeId = pidToStore.get(row.product_id);
+      if (!storeId) continue;
+      if (!storeToOrderIds.has(storeId)) storeToOrderIds.set(storeId, new Set());
+      storeToOrderIds.get(storeId)!.add(row.order_id);
+    }
+  }
+
+  const ranked = [...storeToOrderIds.entries()]
+    .map(([store_id, set]) => ({ store_id, cancelled_orders: set.size }))
+    .sort((a, b) => b.cancelled_orders - a.cancelled_orders)
+    .slice(0, limit);
+
+  if (ranked.length === 0) return [];
+
+  const storeIds = ranked.map((r) => r.store_id);
+  const { data: storesData } = await service.from("stores").select("id, name, slug").in("id", storeIds);
+  const metaById = new Map(
+    (storesData ?? []).map((s: { id: string; name: string; slug: string }) => [
+      s.id,
+      { name: s.name ?? "", slug: s.slug ?? "" },
+    ])
+  );
+
+  return ranked.map((r) => {
+    const meta = metaById.get(r.store_id);
+    return {
+      store_id: r.store_id,
+      store_name: meta?.name ?? "—",
+      store_slug: meta?.slug ?? "",
+      cancelled_orders: r.cancelled_orders,
     };
   });
 }
@@ -637,7 +733,7 @@ export async function getAdminOrders(limit: number = 200): Promise<AdminOrderRow
   const service = createServiceClient();
   const { data: orderRows, error } = await service
     .from("orders")
-    .select("id, customer_id, total, status, created_at")
+    .select("id, order_number, customer_id, total, status, created_at")
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -654,6 +750,7 @@ export async function getAdminOrders(limit: number = 200): Promise<AdminOrderRow
     const profile = profileMap.get(row.customer_id);
     return {
       id: row.id,
+      order_number: row.order_number ?? null,
       customer_name: profile?.name ?? null,
       customer_email: profile?.email ?? null,
       total: Number(row.total) ?? 0,
@@ -855,6 +952,7 @@ export async function getAdminPromoCodes(limit: number = 200): Promise<AdminProm
 
 export type AdminOrderDetail = {
   id: string;
+  order_number: string | null;
   status: string;
   subtotal: number;
   shipping_cost: number;
@@ -894,7 +992,7 @@ export async function getAdminOrderById(orderId: string): Promise<AdminOrderDeta
   const service = createServiceClient();
   const { data: order, error } = await service
     .from("orders")
-    .select("id, status, subtotal, shipping_cost, tax, total, discount_amount, promo_code, shipping_address, notes, payment_method, tracking_number, shipping_company, estimated_delivery, created_at, customer_id, delivery_country, delivery_city_area, delivery_building_type, delivery_zone_no, delivery_street_no, delivery_building_no, delivery_floor_no, delivery_apartment_no, delivery_landmark, delivery_phone, delivery_lat, delivery_lng, delivery_map_url")
+    .select("id, order_number, status, subtotal, shipping_cost, tax, total, discount_amount, promo_code, shipping_address, notes, payment_method, tracking_number, shipping_company, estimated_delivery, created_at, customer_id, delivery_country, delivery_city_area, delivery_building_type, delivery_zone_no, delivery_street_no, delivery_building_no, delivery_floor_no, delivery_apartment_no, delivery_landmark, delivery_phone, delivery_lat, delivery_lng, delivery_map_url")
     .eq("id", orderId)
     .single();
 
@@ -917,6 +1015,7 @@ export async function getAdminOrderById(orderId: string): Promise<AdminOrderDeta
 
   return {
     id: order.id,
+    order_number: order.order_number ?? null,
     status: order.status,
     subtotal: Number(order.subtotal),
     shipping_cost: Number(order.shipping_cost),

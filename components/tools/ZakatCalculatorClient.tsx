@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calculator, Info } from "lucide-react";
+import { goldPricePerGramAtPurity } from "@/lib/tools/gold-karat-price";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,8 +40,9 @@ const NISAB_GRAMS = 85;
 const ZAKAT_RATE = 0.025;
 const DEFAULT_GOLD_PRICE_QAR = 272.5; // QAR per gram fallback
 
-function formatQAR(amount: number): string {
-  return `ر.ق ${amount.toLocaleString("en-US", {
+function formatQAR(amount: number, isArabic: boolean): string {
+  const prefix = isArabic ? "ر.ق" : "QAR";
+  return `${prefix} ${amount.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -54,7 +56,11 @@ export function ZakatCalculatorClient({ latestGoldPriceQAR = DEFAULT_GOLD_PRICE_
   const { isArabic } = useLanguage();
   const [weight, setWeight] = useState("");
   const [karat, setKarat] = useState("22");
-  const [goldPrice, setGoldPrice] = useState(latestGoldPriceQAR.toFixed(2));
+  const initialPurity = GOLD_KARATS.find((k) => k.value === "22")?.purity ?? 0.917;
+  const [goldPrice, setGoldPrice] = useState(() =>
+    goldPricePerGramAtPurity(latestGoldPriceQAR, initialPurity).toFixed(2)
+  );
+  const [syncPriceToSpot, setSyncPriceToSpot] = useState(true);
   const [result, setResult] = useState<{
     pureGold: number;
     totalValue: number;
@@ -62,14 +68,21 @@ export function ZakatCalculatorClient({ latestGoldPriceQAR = DEFAULT_GOLD_PRICE_
     meetsNisab: boolean;
   } | null>(null);
 
+  useEffect(() => {
+    if (!syncPriceToSpot) return;
+    const p = GOLD_KARATS.find((k) => k.value === karat)?.purity ?? 0.917;
+    setGoldPrice(goldPricePerGramAtPurity(latestGoldPriceQAR, p).toFixed(2));
+  }, [karat, latestGoldPriceQAR, syncPriceToSpot]);
+
   const calculate = () => {
     const weightNum = parseFloat(weight) || 0;
-    const priceNum = parseFloat(goldPrice) || latestGoldPriceQAR;
     const karatInfo = GOLD_KARATS.find((k) => k.value === karat);
     const purity = karatInfo?.purity || 0.917;
+    const spotForKarat = goldPricePerGramAtPurity(latestGoldPriceQAR, purity);
+    const priceNum = parseFloat(goldPrice) || spotForKarat;
 
     const pureGold = weightNum * purity;
-    const totalValue = pureGold * priceNum;
+    const totalValue = weightNum * priceNum;
     const meetsNisab = pureGold >= NISAB_GRAMS;
     const zakatDue = meetsNisab ? totalValue * ZAKAT_RATE : 0;
 
@@ -84,7 +97,7 @@ export function ZakatCalculatorClient({ latestGoldPriceQAR = DEFAULT_GOLD_PRICE_
   const reset = () => {
     setWeight("");
     setKarat("22");
-    setGoldPrice(latestGoldPriceQAR.toFixed(2));
+    setSyncPriceToSpot(true);
     setResult(null);
   };
 
@@ -120,7 +133,13 @@ export function ZakatCalculatorClient({ latestGoldPriceQAR = DEFAULT_GOLD_PRICE_
             {/* Gold Karat */}
             <div className="space-y-2">
               <Label htmlFor="karat">{isArabic ? "عيار الذهب / النقاء" : "Gold Karat / Purity"}</Label>
-              <Select value={karat} onValueChange={setKarat}>
+              <Select
+                value={karat}
+                onValueChange={(v) => {
+                  setKarat(v);
+                  setSyncPriceToSpot(true);
+                }}
+              >
                 <SelectTrigger id="karat" className="bg-masa-light">
                   <SelectValue placeholder={isArabic ? "اختر العيار" : "Select karat"} />
                 </SelectTrigger>
@@ -134,22 +153,31 @@ export function ZakatCalculatorClient({ latestGoldPriceQAR = DEFAULT_GOLD_PRICE_
               </Select>
             </div>
 
-            {/* Gold Price */}
+            {/* Gold Price (per gram at selected karat) */}
             <div className="space-y-2">
-              <Label htmlFor="price">{isArabic ? "سعر الذهب (ر.ق لكل غرام)" : "Gold Price (QAR per gram)"}</Label>
+              <Label htmlFor="price">
+                {isArabic
+                  ? "سعر الذهب (ر.ق/غرام حسب العيار المختار)"
+                  : "Gold price (QAR per gram at selected karat)"}
+              </Label>
               <Input
                 id="price"
                 type="number"
-                placeholder={isArabic ? "سعر الذهب الحالي" : "Current gold price"}
+                placeholder={isArabic ? "سعر الغرام للعيار المختار" : "Price per gram for selected karat"}
                 value={goldPrice}
-                onChange={(e) => setGoldPrice(e.target.value)}
+                onChange={(e) => {
+                  setSyncPriceToSpot(false);
+                  setGoldPrice(e.target.value);
+                }}
                 className="bg-masa-light"
                 min="0"
                 step="0.01"
               />
               <p className="text-xs text-masa-gray flex items-center gap-1">
                 <Info className="w-3 h-3" />
-                {isArabic ? "تم ضبطه على أحدث سعر من صفحة أسعار السوق" : "Defaulted to the latest Market Prices gold rate"}
+                {isArabic
+                  ? "يُحدَّث تلقائياً من سعر 24 عيار في السوق مضروباً في نقاء العيار. يمكنك تعديله يدوياً."
+                  : "Updates from market 24K spot × purity for the karat you pick. You can override with your own quote."}
               </p>
             </div>
 
@@ -171,7 +199,7 @@ export function ZakatCalculatorClient({ latestGoldPriceQAR = DEFAULT_GOLD_PRICE_
 
                 <div className="grid grid-cols-2 gap-4">
                   <ResultItem label={isArabic ? "محتوى الذهب الخالص" : "Pure Gold Content"} value={`${result.pureGold} g`} />
-                  <ResultItem label={isArabic ? "القيمة الإجمالية" : "Total Value"} value={formatQAR(result.totalValue)} />
+                  <ResultItem label={isArabic ? "القيمة الإجمالية" : "Total Value"} value={formatQAR(result.totalValue, isArabic)} />
                 </div>
 
                 <div className="pt-4 border-t border-primary/10">
@@ -179,7 +207,7 @@ export function ZakatCalculatorClient({ latestGoldPriceQAR = DEFAULT_GOLD_PRICE_
                     <div className="text-center">
                       <p className="text-sm text-masa-gray mb-2">{isArabic ? "الزكاة المستحقة (2.5%)" : "Zakat Due (2.5%)"}</p>
                       <p className="text-3xl font-luxury text-primary">
-                        {formatQAR(result.zakatDue)}
+                        {formatQAR(result.zakatDue, isArabic)}
                       </p>
                     </div>
                   ) : (

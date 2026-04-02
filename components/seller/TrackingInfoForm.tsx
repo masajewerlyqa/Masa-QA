@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { updateOrderTracking } from "@/app/seller/orders/actions";
 import { SHIPPING_COMPANIES } from "@/app/seller/orders/constants";
 import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/components/useI18n";
 
 type TrackingInfoFormProps = {
   orderId: string;
@@ -28,6 +29,7 @@ type TrackingInfoFormProps = {
 };
 
 export function TrackingInfoForm({ orderId, initialData }: TrackingInfoFormProps) {
+  const { t } = useI18n();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [trackingNumber, setTrackingNumber] = useState(initialData.tracking_number ?? "");
@@ -47,13 +49,13 @@ export function TrackingInfoForm({ orderId, initialData }: TrackingInfoFormProps
 
       if (result.ok) {
         toast({
-          title: "Tracking updated",
-          description: "Shipping information has been saved successfully.",
+          title: t("seller.orders.deliveryDetailsSavedTitle"),
+          description: t("seller.orders.deliveryDetailsSavedDesc"),
         });
       } else {
         toast({
-          title: "Error",
-          description: result.error ?? "Failed to update tracking information.",
+          title: t("seller.orders.deliveryDetailsSaveErrorTitle"),
+          description: result.error ?? t("seller.orders.deliveryDetailsSaveErrorDesc"),
           variant: "destructive",
         });
       }
@@ -70,18 +72,18 @@ export function TrackingInfoForm({ orderId, initialData }: TrackingInfoFormProps
       <CardHeader className="bg-masa-light/50">
         <CardTitle className="font-luxury text-primary flex items-center gap-2">
           <Truck className="w-5 h-5" />
-          Shipping & Tracking
+          {t("seller.orders.deliveryTrackingTitle")}
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="shipping_company" className="text-sm font-sans">
-              Shipping Company
+              {t("seller.orders.carrier")}
             </Label>
             <Select value={shippingCompany} onValueChange={setShippingCompany}>
               <SelectTrigger id="shipping_company" className="bg-white">
-                <SelectValue placeholder="Select carrier" />
+                <SelectValue placeholder={t("seller.orders.carrierPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {SHIPPING_COMPANIES.map((company) => (
@@ -95,12 +97,12 @@ export function TrackingInfoForm({ orderId, initialData }: TrackingInfoFormProps
 
           <div className="space-y-2">
             <Label htmlFor="tracking_number" className="text-sm font-sans">
-              Tracking Number
+              {t("seller.orders.trackingNumberLabel")}
             </Label>
             <Input
               id="tracking_number"
               type="text"
-              placeholder="Enter tracking number"
+              placeholder={t("seller.orders.trackingNumberPlaceholder")}
               value={trackingNumber}
               onChange={(e) => setTrackingNumber(e.target.value)}
               className="bg-white font-mono"
@@ -109,7 +111,7 @@ export function TrackingInfoForm({ orderId, initialData }: TrackingInfoFormProps
 
           <div className="space-y-2">
             <Label htmlFor="estimated_delivery" className="text-sm font-sans">
-              Estimated Delivery Date
+              {t("seller.orders.estimatedDeliveryLabel")}
             </Label>
             <Input
               id="estimated_delivery"
@@ -129,12 +131,12 @@ export function TrackingInfoForm({ orderId, initialData }: TrackingInfoFormProps
             {isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving...
+                {t("seller.orders.savingDeliveryDetails")}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                Save Tracking Info
+                {t("seller.orders.saveDeliveryDetails")}
               </>
             )}
           </Button>

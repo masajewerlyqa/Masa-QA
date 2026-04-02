@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { CircleDollarSign, Check } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,10 +11,12 @@ import { useCurrency } from "@/components/CurrencyProvider";
 import { useI18n } from "@/components/useI18n";
 import type { Currency } from "@/lib/currency";
 
-const LABELS: Record<Currency, string> = {
-  USD: "USD $",
-  QAR: "QAR ر.ق",
-};
+function currencyLabels(isArabic: boolean): Record<Currency, string> {
+  return {
+    USD: "USD $",
+    QAR: isArabic ? "ر.ق" : "QAR",
+  };
+}
 
 type CurrencyDropdownProps = {
   triggerClassName?: string;
@@ -30,34 +32,36 @@ export function CurrencyDropdown({
 }: CurrencyDropdownProps) {
   const { currency, setCurrency } = useCurrency();
   const { isArabic } = useI18n();
+  const labels = currencyLabels(isArabic);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className={`flex items-center gap-1 text-masa-dark hover:text-primary transition-colors focus:outline-none font-sans text-sm ${triggerClassName ?? ""}`}
+        className={`flex items-center justify-center rounded-sm p-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${triggerClassName ?? "text-masa-dark hover:text-primary"}`}
         aria-label={isArabic ? "اختيار العملة" : "Select currency"}
       >
-        <span>{LABELS[currency]}</span>
-        <ChevronDown className="w-4 h-4" aria-hidden />
+        <CircleDollarSign className="h-5 w-5 shrink-0" aria-hidden />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className={`min-w-[120px] font-sans ${contentClassName ?? ""}`}>
+      <DropdownMenuContent align="end" className={`min-w-[160px] font-sans ${contentClassName ?? ""}`}>
         <DropdownMenuItem
           onClick={() => {
             setCurrency("USD");
             onCurrencySelected?.();
           }}
-          className="cursor-pointer"
+          className="cursor-pointer justify-between gap-3"
         >
-          USD $
+          <span className={currency === "USD" ? "font-medium" : undefined}>{labels.USD}</span>
+          {currency === "USD" ? <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden /> : null}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
             setCurrency("QAR");
             onCurrencySelected?.();
           }}
-          className="cursor-pointer"
+          className="cursor-pointer justify-between gap-3"
         >
-          QAR ر.ق
+          <span className={currency === "QAR" ? "font-medium" : undefined}>{labels.QAR}</span>
+          {currency === "QAR" ? <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden /> : null}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

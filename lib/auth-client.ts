@@ -14,7 +14,7 @@ export type SessionUser = {
 
 export type Profile = {
   id: string;
-  role: "admin" | "seller" | "customer";
+  role: "admin" | "seller" | "pending_seller" | "customer";
   full_name: string | null;
   avatar_url: string | null;
   email: string | null;
@@ -23,6 +23,10 @@ export type Profile = {
   phone_verified_at: string | null;
   /** Marketing / newsletter opt-in from signup or settings; default false. */
   newsletter_opt_in: boolean;
+  /** Email + UI locale preference (`en` | `ar`); default en until set. */
+  preferred_language?: "en" | "ar";
+  /** Draft plan during Become a Seller; cleared after application is submitted. */
+  pending_seller_plan?: "basic" | "premium" | null;
 };
 
 /**
@@ -34,6 +38,8 @@ export function getRedirectPathForRole(role: Profile["role"]): string {
       return "/admin";
     case "seller":
       return "/seller";
+    case "pending_seller":
+      return "/apply";
     case "customer":
     default:
       return "/account";
@@ -49,6 +55,8 @@ export function getDashboardPathForRole(role: Profile["role"]): string {
       return "/admin";
     case "seller":
       return "/seller";
+    case "pending_seller":
+      return "/apply";
     case "customer":
     default:
       return "/account";

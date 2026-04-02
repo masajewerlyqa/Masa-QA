@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import {
   Search,
   ShoppingCart,
@@ -21,10 +20,10 @@ import {
   Truck,
   RotateCcw,
   User,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,7 +32,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NavbarAuth } from "@/components/auth/NavbarAuth";
 import { CurrencyDropdown } from "@/components/CurrencyDropdown";
+import { LanguageDropdown } from "@/components/LanguageDropdown";
 import { NavbarTopBarPromo } from "@/components/NavbarTopBarPromo";
+import { NavbarGlobalSearch } from "@/components/NavbarGlobalSearch";
 import type { Profile, SessionUser } from "@/lib/auth-client";
 import { useI18n } from "@/components/useI18n";
 
@@ -46,21 +47,9 @@ type NavbarProps = {
 };
 
 export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notificationCount = 0 }: NavbarProps) {
-  const router = useRouter();
-  const { language, isArabic, setLanguage, t } = useI18n();
+  const { isArabic, t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [desktopSearchQuery, setDesktopSearchQuery] = useState("");
-  const [mobileSearchQuery, setMobileSearchQuery] = useState("");
-
-  function submitSearch(rawQuery: string) {
-    const query = rawQuery.trim();
-    if (query.length === 0) {
-      router.push("/discover");
-      return;
-    }
-    router.push(`/discover?q=${encodeURIComponent(query)}`);
-  }
 
   return (
     <>
@@ -72,21 +61,16 @@ export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notifi
           {t("navbar.skipToMain")}
         </a>
 
-        {/* Top promo bar — hidden on mobile for cleaner look */}
+        {/* Top bar: promo + search (desktop) — hidden on mobile */}
         <div className="hidden md:block bg-primary text-white py-2 px-4 md:px-6">
-          <div className="max-w-content mx-auto flex justify-between items-center text-sm font-sans">
-            <div className="flex items-center gap-4 md:gap-6">
-              <NavbarTopBarPromo />
-            </div>
-            <div className="flex items-center gap-2 md:gap-4">
-              <button type="button" className="hover:text-secondary transition-colors" aria-label={t("navbar.switchToArabic")} onClick={() => setLanguage("ar")}>
-                {t("common.arabic")}
-              </button>
-              <span className="text-secondary" aria-hidden>|</span>
-              <button type="button" className="hover:text-secondary transition-colors font-medium" aria-label={t("navbar.switchToEnglish")} onClick={() => setLanguage("en")}>
-                {t("common.english")}
-              </button>
-              <span className="text-secondary" aria-hidden>|</span>
+          <div className="max-w-content mx-auto flex flex-nowrap items-center gap-3 md:gap-4 text-sm font-sans">
+            <NavbarTopBarPromo />
+            <NavbarGlobalSearch
+              variant="desktop"
+              formClassName="relative mx-2 min-w-0 flex-1 max-w-xl"
+            />
+            <div className="flex shrink-0 items-center gap-1 md:gap-2 ms-auto">
+              <LanguageDropdown triggerClassName="text-white hover:text-secondary" />
               <CurrencyDropdown triggerClassName="text-white hover:text-secondary" />
             </div>
           </div>
@@ -138,31 +122,17 @@ export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notifi
           {/* Mobile search bar — expandable */}
           {mobileSearchOpen && (
             <div className="mt-3 pb-1">
-              <form
-                className="relative"
-                role="search"
-                aria-label={t("navbar.searchProducts")}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  submitSearch(mobileSearchQuery);
-                  setMobileSearchOpen(false);
-                }}
-              >
-                <Search className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 text-masa-gray pointer-events-none ${isArabic ? "right-3" : "left-3"}`} aria-hidden />
-                <Input
-                  placeholder={t("navbar.searchMobilePlaceholder")}
-                  value={mobileSearchQuery}
-                  onChange={(e) => setMobileSearchQuery(e.target.value)}
-                  className={`${isArabic ? "pr-9 pl-4 text-right" : "pl-9 pr-4"} bg-masa-light border-0 h-10 text-sm rounded-full`}
-                  aria-label={t("navbar.search")}
-                  autoFocus
-                />
-              </form>
+              <NavbarGlobalSearch
+                variant="mobile"
+                formClassName="relative w-full"
+                autoFocus
+                onAfterNavigate={() => setMobileSearchOpen(false)}
+              />
             </div>
           )}
         </div>
 
-        {/* ─── Desktop Header (unchanged) ─── */}
+        {/* ─── Desktop Header ─── */}
         <div className="hidden md:block px-4 md:px-6 py-4">
           <div className="max-w-content mx-auto flex flex-wrap items-center justify-between gap-4 md:gap-8">
             <Link href="/" className="shrink-0" aria-label={isArabic ? "MASA الصفحة الرئيسية" : "MASA Home"}>
@@ -176,33 +146,15 @@ export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notifi
               />
             </Link>
 
-            <div className="flex-1 min-w-0 max-w-xl w-full order-3 md:order-2">
-              <form
-                className="relative"
-                role="search"
-                aria-label={t("navbar.searchProducts")}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  submitSearch(desktopSearchQuery);
-                }}
-              >
-                <Search className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 text-masa-gray pointer-events-none ${isArabic ? "right-3" : "left-3"}`} aria-hidden />
-                <Input
-                  placeholder={t("navbar.searchDesktopPlaceholder")}
-                  value={desktopSearchQuery}
-                  onChange={(e) => setDesktopSearchQuery(e.target.value)}
-                  className={`${isArabic ? "pr-10 text-right" : "pl-10"} bg-masa-light border-0 w-full`}
-                  aria-label={t("navbar.search")}
-                />
-              </form>
-            </div>
-
-            <div className="flex items-center gap-3 md:gap-6 order-2 md:order-3 font-sans text-sm">
+            <div className="flex items-center gap-3 md:gap-6 font-sans text-sm">
               <Link href="/discover" className="text-masa-dark hover:text-primary transition-colors">
                 {t("navbar.marketplace")}
               </Link>
               <Link href="/market-prices" className="text-masa-dark hover:text-primary transition-colors">
                 {t("navbar.marketPrices")}
+              </Link>
+              <Link href="/about" className="text-masa-dark hover:text-primary transition-colors">
+                {t("navbar.about")}
               </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center gap-1 text-masa-dark hover:text-primary transition-colors focus:outline-none">
@@ -324,6 +276,7 @@ export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notifi
               <div className="space-y-1">
                 <MobileMenuLink href="/discover" icon={Search} label={t("navbar.marketplace")} onClick={() => setMobileMenuOpen(false)} />
                 <MobileMenuLink href="/market-prices" icon={TrendingUp} label={t("navbar.marketPrices")} onClick={() => setMobileMenuOpen(false)} />
+                <MobileMenuLink href="/about" icon={Building2} label={t("navbar.about")} onClick={() => setMobileMenuOpen(false)} />
                 <MobileMenuLink href="/wishlist" icon={Heart} label={t("navbar.wishlist")} count={wishlistCount} onClick={() => setMobileMenuOpen(false)} />
                 <MobileMenuLink href="/cart" icon={ShoppingCart} label={t("navbar.cart")} count={cartCount} onClick={() => setMobileMenuOpen(false)} />
               </div>
@@ -342,7 +295,7 @@ export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notifi
               <p className="text-xs text-masa-gray uppercase tracking-wider mb-2 px-3">{t("navbar.support")}</p>
               <div className="space-y-1">
                 <MobileMenuLink href="/size-guide" icon={Ruler} label={t("navbar.sizeGuide")} onClick={() => setMobileMenuOpen(false)} />
-                <MobileMenuLink href="/shipping" icon={Truck} label={t("navbar.shipping")} onClick={() => setMobileMenuOpen(false)} />
+                <MobileMenuLink href="/delivery" icon={Truck} label={t("navbar.shipping")} onClick={() => setMobileMenuOpen(false)} />
                 <MobileMenuLink href="/returns" icon={RotateCcw} label={t("navbar.returns")} onClick={() => setMobileMenuOpen(false)} />
                 <MobileMenuLink href="/contact" icon={Phone} label={t("navbar.contact")} onClick={() => setMobileMenuOpen(false)} />
                 <MobileMenuLink href="/contact#faq" icon={HelpCircle} label={t("navbar.faq")} onClick={() => setMobileMenuOpen(false)} />
@@ -350,12 +303,9 @@ export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notifi
 
               <div className="my-4 border-t border-primary/10" />
 
-              <div className="px-3 flex flex-wrap items-center gap-3">
+              <div className="px-3 flex flex-wrap items-center gap-4">
+                <LanguageDropdown onLanguageSelected={() => setMobileMenuOpen(false)} />
                 <CurrencyDropdown onCurrencySelected={() => setMobileMenuOpen(false)} />
-                <span className="text-xs text-masa-gray">|</span>
-                <button type="button" className="text-sm text-masa-dark hover:text-primary transition-colors" aria-label={isArabic ? t("navbar.switchToEnglish") : t("navbar.switchToArabic")} onClick={() => setLanguage(language === "ar" ? "en" : "ar")}>
-                  {language === "ar" ? t("common.english") : t("common.arabic")}
-                </button>
               </div>
             </div>
           </div>

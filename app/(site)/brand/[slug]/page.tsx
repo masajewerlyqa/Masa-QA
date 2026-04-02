@@ -75,7 +75,7 @@ export default async function BrandPage({ params }: PageProps) {
           )}
           <Link href="/discover">
             <Button variant="outline" className="font-sans">
-              {isArabic ? "عرض السوق" : "View marketplace"}
+              {isArabic ? "العودة للسوق" : "Back to marketplace"}
             </Button>
           </Link>
         </div>

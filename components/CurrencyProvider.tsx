@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useLanguage } from "@/components/LanguageProvider";
 import {
   type Currency,
   formatPrice as formatPriceUtil,
@@ -36,6 +37,7 @@ function readStoredCurrency(): Currency {
 }
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
+  const { language } = useLanguage();
   const [currency, setCurrencyState] = useState<Currency>("USD");
   const [mounted, setMounted] = useState(false);
 
@@ -60,8 +62,8 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
 
   const formatPrice = useCallback(
     (priceUSD: number, forceCurrency?: Currency) =>
-      formatPriceUtil(priceUSD, forceCurrency ?? currency),
-    [currency]
+      formatPriceUtil(priceUSD, forceCurrency ?? currency, { language }),
+    [currency, language]
   );
 
   const value: CurrencyContextValue = {

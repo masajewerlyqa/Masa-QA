@@ -55,7 +55,10 @@ export function QatarLocationPicker({ initialLat, initialLng, onSelect, height =
   const zoom = position ? 14 : 10;
 
   return (
-    <div className="rounded-lg overflow-hidden border border-primary/20" style={{ height }}>
+    <div
+      className="masa-leaflet-site-scope relative z-0 isolate rounded-lg overflow-hidden border border-primary/20"
+      style={{ height }}
+    >
       <MapContainer
         center={center}
         zoom={zoom}

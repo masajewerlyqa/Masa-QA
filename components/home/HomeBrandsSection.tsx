@@ -18,12 +18,19 @@ export function HomeBrandsSection({ brands }: HomeBrandsSectionProps) {
       aria-labelledby="featured-brands-heading"
     >
       <div className="max-w-content mx-auto px-4 md:px-6">
-        <h2
-          id="featured-brands-heading"
-          className="text-3xl md:text-4xl mb-12 text-center text-primary font-luxury"
-        >
-          {isArabic ? "العلامات المميزة" : "Featured Brands"}
-        </h2>
+        <header className="text-center mb-12">
+          <h2
+            id="featured-brands-heading"
+            className={`text-3xl md:text-4xl mb-3 text-primary ${isArabic ? "font-arabic-luxury" : "font-luxury"}`}
+          >
+            {isArabic ? "متاجر مميزة ومختارة بعناية" : "Premium stores, handpicked with care"}
+          </h2>
+          <p
+            className={`text-masa-gray text-base md:text-lg max-w-2xl mx-auto ${isArabic ? "font-arabic" : "font-sans"}`}
+          >
+            {isArabic ? "مختارة من أفضل صاغة العالم" : "Curated from the world's finest jewelers"}
+          </p>
+        </header>
         <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-6 items-center">
           {brands.map((brand) => (
             <Link

@@ -43,7 +43,7 @@ const config: Config = {
         },
       },
       animation: {
-        "whatsapp-pulse": "whatsapp-pulse 3s ease-in-out infinite",
+        "whatsapp-pulse": "whatsapp-pulse 6s ease-in-out infinite",
       },
     },
   },

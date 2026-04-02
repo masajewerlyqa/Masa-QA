@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import {
   getMarketplaceFilters,
   getMarketplacePriceBoundsForFilters,
@@ -6,15 +7,20 @@ import {
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getWishlistProductIds } from "@/lib/customer";
 import { DiscoverClient } from "@/components/DiscoverClient";
+import {
+  canonicalizeMarketplaceCategoryParam,
+  isMarketplaceCategoryAll,
+} from "@/lib/marketplace-category";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
+/** Search and filters depend on query string — always run on the server per request. */
+export const dynamic = "force-dynamic";
+
 export default async function DiscoverPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const category = (params.category as string | undefined) ?? "all";
-  const search = (params.q as string | undefined) ?? "";
 
   const toArray = (value: string | string[] | undefined): string[] => {
     if (!value) return [];
@@ -25,6 +31,40 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
   const metals = toArray(params.metal as string | string[] | undefined);
   const karats = toArray(params.karat as string | string[] | undefined);
 
+  const rawCategoryList = toArray(params.category as string | string[] | undefined)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0 && !isMarketplaceCategoryAll(s));
+
+  const canonicalList = [
+    ...new Set(rawCategoryList.map((r) => canonicalizeMarketplaceCategoryParam(r))),
+  ];
+
+  const needsCategoryRedirect =
+    rawCategoryList.some((r) => canonicalizeMarketplaceCategoryParam(r) !== r) ||
+    rawCategoryList.length !== canonicalList.length;
+
+  if (needsCategoryRedirect) {
+    const sp = new URLSearchParams();
+    for (const [key, val] of Object.entries(params)) {
+      if (val === undefined || key === "category") continue;
+      if (Array.isArray(val)) {
+        for (const item of val) {
+          if (item != null && String(item) !== "") sp.append(key, String(item));
+        }
+      } else {
+        sp.set(key, String(val));
+      }
+    }
+    for (const c of canonicalList) {
+      sp.append("category", c);
+    }
+    redirect(`/discover?${sp.toString()}`);
+  }
+
+  const categoriesForQuery = canonicalList.length > 0 ? canonicalList : undefined;
+
+  const searchRaw = (params.q as string | undefined) ?? "";
+  const search = searchRaw.trim();
   const firstParam = (value: string | string[] | undefined): string | undefined => {
     if (value == null) return undefined;
     return Array.isArray(value) ? value[0] : value;
@@ -47,11 +87,11 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
   const { user } = await getCurrentUserWithProfile();
   const DISCOVER_PAGE_SIZE = 24;
   const priceBoundsInput = {
-    category: category === "all" ? undefined : category,
+    categories: categoriesForQuery,
     brands: brandIds.length > 0 ? brandIds : undefined,
     metals: metals.length > 0 ? metals : undefined,
     karats: karats.length > 0 ? karats : undefined,
-    search: search.trim() ? search.trim() : undefined,
+    search: search ? search : undefined,
     onSale: onSale || undefined,
   };
 
@@ -60,7 +100,7 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
     getMarketplacePriceBoundsForFilters(priceBoundsInput),
     getPublicProductsForMarketplace({
       search,
-      category: category === "all" ? undefined : category,
+      categories: categoriesForQuery,
       brands: brandIds,
       metals,
       karats,
@@ -76,12 +116,12 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
   return (
     <DiscoverClient
       initialProducts={initialProducts}
-      category={category}
       wishlistIds={wishlistIds}
       search={search}
       filters={filters}
       priceExtent={priceExtent ?? undefined}
       selectedFilters={{
+        categories: canonicalList,
         brands: brandIds,
         metals,
         karats,

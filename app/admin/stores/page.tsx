@@ -7,14 +7,7 @@ import { getAdminStores } from "@/lib/admin";
 import { StoreActions } from "./StoreActions";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
-
-function formatDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  } catch {
-    return iso;
-  }
-}
+import { formatShortDate } from "@/lib/date-format";
 
 export default async function AdminStoresPage() {
   const language = getServerLanguage();
@@ -60,7 +53,7 @@ export default async function AdminStoresPage() {
                       </td>
                       <td className="py-3 pr-4 text-masa-gray">{store.location ?? "—"}</td>
                       <td className="py-3 pr-4">{store.product_count}</td>
-                      <td className="py-3 pr-4 text-masa-gray">{formatDate(store.created_at)}</td>
+                      <td className="py-3 pr-4 text-masa-gray">{formatShortDate(store.created_at, language)}</td>
                       <td className="py-3 text-right">
                         <StoreActions store={store} />
                       </td>
@@ -107,7 +100,7 @@ export default async function AdminStoresPage() {
                       </td>
                       <td className="py-3 pr-4 text-masa-gray">{store.location ?? "—"}</td>
                       <td className="py-3 pr-4">{store.product_count}</td>
-                      <td className="py-3 pr-4 text-masa-gray">{formatDate(store.created_at)}</td>
+                      <td className="py-3 pr-4 text-masa-gray">{formatShortDate(store.created_at, language)}</td>
                       <td className="py-3 text-right">
                         <StoreActions store={store} />
                       </td>
@@ -146,7 +139,7 @@ export default async function AdminStoresPage() {
                       </td>
                       <td className="py-3 pr-4 text-masa-gray">{store.location ?? "—"}</td>
                       <td className="py-3 pr-4">{store.product_count}</td>
-                      <td className="py-3 pr-4 text-masa-gray">{formatDate(store.created_at)}</td>
+                      <td className="py-3 pr-4 text-masa-gray">{formatShortDate(store.created_at, language)}</td>
                       <td className="py-3 text-right">
                         <StoreActions store={store} />
                       </td>

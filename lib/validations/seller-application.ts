@@ -15,6 +15,13 @@ export const sellerApplicationFormSchema = z.object({
 
 export type SellerApplicationFormValues = z.infer<typeof sellerApplicationFormSchema>;
 
+export const finalizeSellerApplicationSchema = sellerApplicationFormSchema.extend({
+  license_path: z.string().min(1, "License path is required"),
+  logo_path: z.string().nullable(),
+});
+
+export type FinalizeSellerApplicationValues = z.infer<typeof finalizeSellerApplicationSchema>;
+
 export function socialLinksFromForm(values: SellerApplicationFormValues): Record<string, string> | null {
   const links: Record<string, string> = {};
   if (values.website?.trim()) links.website = values.website.trim();

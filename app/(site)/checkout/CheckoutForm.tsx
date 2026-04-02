@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useFormStatus } from "react-dom";
-import { CreditCard, Lock, Banknote, Building2, Check, MapPin } from "lucide-react";
+import { CreditCard, Lock, Wallet, Check, MapPin, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,15 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FormattedPrice } from "@/components/FormattedPrice";
 import { CheckoutMapPicker } from "@/components/checkout/CheckoutMapPicker";
 import { useI18n } from "@/components/useI18n";
 import { createOrder } from "./actions";
 
 const PAYMENT_METHODS = [
   { value: "card", label: "Credit / Debit Card", icon: CreditCard },
-  { value: "cod", label: "Cash on Delivery", icon: Banknote },
-  { value: "bank_transfer", label: "Bank Transfer", icon: Building2 },
+  { value: "apple_pay", label: "Apple Pay", icon: Wallet },
 ] as const;
 
 type PaymentMethod = (typeof PAYMENT_METHODS)[number]["value"];
@@ -42,11 +40,8 @@ export type AppliedPromo = { code: string; discountAmount: number };
 
 type CheckoutFormProps = {
   appliedPromo: AppliedPromo | null;
-  setAppliedPromo: (p: AppliedPromo | null) => void;
-  promoError: string | null;
-  setPromoError: (e: string | null) => void;
-  onApplyPromo: (code: string) => Promise<void>;
-  applyPending: boolean;
+  checkoutBlocked?: boolean;
+  checkoutBlockReason?: "not_configured" | "closed" | null;
 };
 
 function SubmitButton({ disabled }: { disabled?: boolean }) {
@@ -62,17 +57,13 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
 
 export function CheckoutForm({
   appliedPromo,
-  setAppliedPromo,
-  promoError,
-  setPromoError,
-  onApplyPromo,
-  applyPending,
+  checkoutBlocked = false,
+  checkoutBlockReason = null,
 }: CheckoutFormProps) {
   const { isArabic, t } = useI18n();
   const paymentLabels: Record<PaymentMethod, string> = {
     card: t("checkout.paymentLabels.card"),
-    cod: t("checkout.paymentLabels.cod"),
-    bank_transfer: t("checkout.paymentLabels.bankTransfer"),
+    apple_pay: t("checkout.paymentLabels.applePay"),
   };
   const buildingLabels: Record<string, string> = {
     house_villa: t("checkout.buildingTypes.houseVilla"),
@@ -84,7 +75,6 @@ export function CheckoutForm({
   };
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [promoInput, setPromoInput] = useState("");
   const [buildingType, setBuildingType] = useState("");
   const [deliveryLat, setDeliveryLat] = useState<number | null>(null);
   const [deliveryLng, setDeliveryLng] = useState<number | null>(null);
@@ -106,6 +96,13 @@ export function CheckoutForm({
     setSubmitError(null);
     setMapError(null);
 
+    if (checkoutBlocked) {
+      setSubmitError(
+        checkoutBlockReason === "not_configured" ? t("storefront.storeHoursNotSet") : t("storefront.storeClosed")
+      );
+      return;
+    }
+
     if (deliveryLat == null || deliveryLng == null) {
       setMapError(t("checkout.mapPinRequired"));
       return;
@@ -113,7 +110,7 @@ export function CheckoutForm({
 
     const form = e.currentTarget;
     const formData = new FormData(form);
-    formData.set("payment_method", VALID_PAYMENT_METHODS.has(paymentMethod) ? paymentMethod : "cod");
+    formData.set("payment_method", VALID_PAYMENT_METHODS.has(paymentMethod) ? paymentMethod : "card");
     formData.set("delivery_building_type", buildingType);
     formData.set("delivery_lat", String(deliveryLat));
     formData.set("delivery_lng", String(deliveryLng));
@@ -122,7 +119,10 @@ export function CheckoutForm({
     try {
       const result = await createOrder(formData);
       if (result?.ok === false) {
-        setSubmitError(result.error ?? t("checkout.placeOrderFailed"));
+        const code = result.error;
+        if (code === "STORE_HOURS_NOT_SET") setSubmitError(t("storefront.storeHoursNotSet"));
+        else if (code === "STORE_CLOSED") setSubmitError(t("storefront.storeClosed"));
+        else setSubmitError(code ?? t("checkout.placeOrderFailed"));
       }
     } catch (err) {
       const digest = err && typeof err === "object" && "digest" in err ? String((err as { digest?: string }).digest) : "";
@@ -131,16 +131,38 @@ export function CheckoutForm({
     }
   }
 
+  const blockMessage =
+    checkoutBlocked &&
+    (checkoutBlockReason === "not_configured" ? t("storefront.storeHoursNotSet") : t("storefront.storeClosed"));
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+      {checkoutBlocked && blockMessage && (
+        <div
+          role="alert"
+          className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 font-sans"
+        >
+          {blockMessage}
+        </div>
+      )}
       <input type="hidden" name="payment_method" value={paymentMethod} aria-hidden />
+      <input type="hidden" name="promo_code" value={appliedPromo?.code ?? ""} aria-hidden />
 
-      {/* Shipping / Delivery Address */}
+      {/* Delivery address */}
       <Card className="border-primary/10 shadow-sm">
         <CardHeader>
           <CardTitle className="font-luxury text-primary">{t("checkout.deliveryAddress")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <p
+            className={`rounded-md border border-primary/15 bg-masa-light/90 px-3 py-2.5 text-sm text-masa-dark font-sans flex gap-2.5 leading-relaxed ${
+              isArabic ? "flex-row-reverse text-right" : ""
+            }`}
+            role="note"
+          >
+            <Info className="w-4 h-4 shrink-0 text-primary mt-0.5" aria-hidden />
+            <span>{t("checkout.realNameVerificationNote")}</span>
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName" className="font-sans">{t("checkout.fullNameRequired")}</Label>
@@ -308,51 +330,11 @@ export function CheckoutForm({
             </div>
           )}
 
-          {paymentMethod === "cod" && (
-            <p className="text-sm text-masa-gray font-sans">
-              {t("checkout.payOnDeliveryHint")}
+          {paymentMethod === "apple_pay" && (
+            <p className="text-sm text-masa-gray font-sans" role="status">
+              {t("checkout.applePayHint")}
             </p>
           )}
-
-          {paymentMethod === "bank_transfer" && (
-            <p className="text-sm text-masa-gray font-sans">
-              {t("checkout.bankTransferHint")}
-            </p>
-          )}
-
-          <div className="pt-2 space-y-2">
-            <Label htmlFor="promo_code" className="font-sans">{t("checkout.promoCode")}</Label>
-            <div className="flex gap-2">
-              <Input
-                id="promo_code"
-                placeholder={t("checkout.promoExample")}
-                className="font-sans border-primary/20"
-                autoComplete="off"
-                value={appliedPromo ? appliedPromo.code : promoInput}
-                onChange={(e) => { setPromoInput(e.target.value); setPromoError(null); }}
-                readOnly={!!appliedPromo}
-              />
-              {appliedPromo ? (
-                <Button type="button" variant="outline" size="default" className="shrink-0 font-sans" onClick={() => { setAppliedPromo(null); setPromoError(null); setPromoInput(""); }}>
-                  {t("checkout.remove")}
-                </Button>
-              ) : (
-                <Button type="button" size="default" className="shrink-0 bg-primary hover:bg-primary/90 font-sans" disabled={applyPending || !promoInput.trim()} onClick={async () => { setPromoError(null); await onApplyPromo(promoInput.trim()); }}>
-                  {applyPending ? t("checkout.applying") : t("checkout.apply")}
-                </Button>
-              )}
-            </div>
-            <input type="hidden" name="promo_code" value={appliedPromo?.code ?? ""} aria-hidden />
-            {appliedPromo && (
-              <p className="flex items-center gap-2 text-sm text-green-600 font-sans" role="status">
-                <Check className="w-4 h-4 shrink-0" aria-hidden />
-                <span>{t("checkout.promoApplied")} {appliedPromo.code} -<FormattedPrice usd={appliedPromo.discountAmount} /></span>
-              </p>
-            )}
-            {promoError && (
-              <p role="alert" className="text-sm text-red-600 font-sans">{promoError}</p>
-            )}
-          </div>
         </CardContent>
       </Card>
 
@@ -362,7 +344,7 @@ export function CheckoutForm({
         </div>
       )}
 
-      <SubmitButton />
+      <SubmitButton disabled={checkoutBlocked} />
     </form>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +10,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useI18n } from "@/components/useI18n";
 import type { Profile } from "@/lib/auth-client";
 import type { PhoneVerificationPolicy } from "@/lib/auth/phone-verification";
-import { updateProfileAction, updateNewsletterOptInAction, uploadAvatarFormAction } from "./actions";
+import { updateProfileAction, updateNewsletterOptInAction } from "./actions";
 
 type Props = {
   profile: Profile;
@@ -27,17 +26,6 @@ export function AccountSettingsForm({ profile, email, phonePolicy }: Props) {
   const [newsletterMsg, setNewsletterMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [newsletterOptIn, setNewsletterOptIn] = useState(profile.newsletter_opt_in);
   const [pending, startTransition] = useTransition();
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
-  useEffect(() => {
-    return () => {
-      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
-    };
-  }, [avatarPreview]);
-
-  useEffect(() => {
-    setAvatarLoadFailed(false);
-  }, [profile.avatar_url, avatarPreview]);
 
   useEffect(() => {
     setNewsletterOptIn(profile.newsletter_opt_in);
@@ -73,75 +61,11 @@ export function AccountSettingsForm({ profile, email, phonePolicy }: Props) {
     });
   }
 
-  function onAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setMessage(null);
-    const preview = URL.createObjectURL(file);
-    setAvatarPreview(preview);
-    const fd = new FormData();
-    fd.set("avatar", file);
-    startTransition(async () => {
-      const result = await uploadAvatarFormAction(fd);
-      if (!result.ok) {
-        setAvatarPreview(null);
-        URL.revokeObjectURL(preview);
-        setMessage({ type: "err", text: result.error });
-        return;
-      }
-      setAvatarPreview(null);
-      URL.revokeObjectURL(preview);
-      setMessage({ type: "ok", text: t("account.photoUpdated") });
-    });
-    e.target.value = "";
-  }
-
   const phoneVerified = Boolean(profile.phone_verified_at);
   const hasPhone = Boolean(profile.phone?.trim());
-  const displayAvatar = avatarPreview || profile.avatar_url;
-  const showAvatar = Boolean(displayAvatar) && !avatarLoadFailed;
 
   return (
     <div className="space-y-6">
-      <Card className="border-primary/10">
-        <CardHeader>
-          <CardTitle className="text-xl font-luxury text-primary">{t("account.profilePhoto")}</CardTitle>
-          <CardDescription className="font-sans">{t("account.profilePhotoHint")}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col sm:flex-row gap-6 items-start">
-          <div className="relative h-24 w-24 rounded-full overflow-hidden bg-masa-light border border-primary/10 shrink-0">
-            {showAvatar ? (
-              <Image
-                src={displayAvatar!}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="96px"
-                unoptimized={Boolean(avatarPreview)}
-                onError={() => setAvatarLoadFailed(true)}
-              />
-            ) : (
-              <div className="h-full w-full flex items-center justify-center text-masa-gray text-sm font-sans">
-                {t("account.noPhoto")}
-              </div>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="avatar" className="font-sans">
-              {t("account.uploadImage")}
-            </Label>
-            <Input
-              id="avatar"
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={onAvatarChange}
-              disabled={pending}
-              className="font-sans max-w-xs"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
       <Card className="border-primary/10">
         <CardHeader>
           <CardTitle className="text-xl font-luxury text-primary">{t("account.personalDetails")}</CardTitle>

@@ -19,14 +19,8 @@ import { DeliveryAddressCard } from "@/components/order/DeliveryAddressCard";
 import { FormattedPrice } from "@/components/FormattedPrice";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
-
-function formatDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
-  } catch {
-    return iso;
-  }
-}
+import { formatOrderDisplayRef } from "@/lib/order-display";
+import { formatLongDateTime } from "@/lib/date-format";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -52,9 +46,9 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-luxury text-primary">{`${t(language, "admin.orders.orderId")} #${order.id.slice(0, 8).toUpperCase()}`}</h1>
+          <h1 className="text-3xl font-luxury text-primary">{`${t(language, "admin.orders.orderId")} ${formatOrderDisplayRef(order)}`}</h1>
           <p className="text-masa-gray font-sans mt-1">
-            {t(language, "admin.orders.placed").replace("{date}", formatDate(order.created_at))}
+            {t(language, "admin.orders.placed").replace("{date}", formatLongDateTime(order.created_at, language))}
           </p>
         </div>
         <OrderStatusBadge status={order.status} />
@@ -126,7 +120,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
               {order.payment_method && (
                 <div className="flex justify-between">
                   <span className="text-masa-gray">{t(language, "admin.orders.payment")}</span>
-                          <Badge variant="outline" className="text-xs capitalize">{t(language, `checkout.paymentLabels.${order.payment_method === "bank_transfer" ? "bankTransfer" : order.payment_method}`, order.payment_method.replace("_", " "))}</Badge>
+                          <Badge variant="outline" className="text-xs capitalize">{t(language, `checkout.paymentLabels.${order.payment_method === "bank_transfer" ? "bankTransfer" : order.payment_method === "apple_pay" ? "applePay" : order.payment_method}`, order.payment_method.replace("_", " "))}</Badge>
                 </div>
               )}
               <div className="flex justify-between font-medium pt-2 border-t border-primary/10">

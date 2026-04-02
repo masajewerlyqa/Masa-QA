@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { env } from "@/lib/config/env";
 import { sendEmailWithRetry } from "@/lib/email/send-email";
 import { newsletterSubscriptionConfirmationHtml } from "@/lib/email/templates";
+import { resolveEmailLanguage } from "@/lib/email/email-language";
 import { createServiceClient } from "@/lib/supabase/service";
 import { newsletterSubscribeBodySchema } from "@/lib/validations/newsletter";
 
@@ -37,11 +38,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const confirmationHtml = newsletterSubscriptionConfirmationHtml();
+    const subLang = resolveEmailLanguage(parsed.data.language);
+    const confirmationHtml = newsletterSubscriptionConfirmationHtml(subLang);
     const emailResult = await sendEmailWithRetry({
       from: env.contactAckFromEmail,
       to: email,
-      subject: "You are subscribed — MASA Newsletter",
+      subject: subLang === "ar" ? "أنت مشترك في نشرة MASA" : "You are subscribed — MASA Newsletter",
       html: confirmationHtml,
       tags: [{ name: "type", value: "newsletter_subscribe_confirmation" }],
     });

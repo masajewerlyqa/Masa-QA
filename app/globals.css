@@ -186,7 +186,7 @@
 .duration-300 {
   animation-duration: 300ms;
 }
-.duration-200 {
+/*.duration-200 {
   animation-duration: 200ms;
 }
 
@@ -244,4 +244,40 @@ html[lang="ar"] .sidebar-ar-item {
 
 html[lang="ar"] .message-ar-tone {
   line-height: 1.8;
+}
+
+/*
+ * Leaflet defaults use z-index up to 1000 for panes/controls, which stacks above
+ * sticky site chrome (navbar z-50, dashboard header z-40). Scope maps that sit
+ * in long pages (checkout, seller settings) so tiles never cover the header.
+ */
+.masa-leaflet-site-scope .leaflet-map-pane {
+  z-index: 0 !important;
+}
+.masa-leaflet-site-scope .leaflet-tile-pane {
+  z-index: 2 !important;
+}
+.masa-leaflet-site-scope .leaflet-overlay-pane {
+  z-index: 4 !important;
+}
+.masa-leaflet-site-scope .leaflet-shadow-pane {
+  z-index: 5 !important;
+}
+.masa-leaflet-site-scope .leaflet-marker-pane {
+  z-index: 6 !important;
+}
+.masa-leaflet-site-scope .leaflet-tooltip-pane {
+  z-index: 7 !important;
+}
+.masa-leaflet-site-scope .leaflet-popup-pane {
+  z-index: 8 !important;
+}
+.masa-leaflet-site-scope .leaflet-zoom-box {
+  z-index: 9 !important;
+}
+.masa-leaflet-site-scope .leaflet-control-container,
+.masa-leaflet-site-scope .leaflet-top,
+.masa-leaflet-site-scope .leaflet-bottom,
+.masa-leaflet-site-scope .leaflet-control {
+  z-index: 10 !important;
 }

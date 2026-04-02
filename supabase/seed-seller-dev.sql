@@ -44,6 +44,7 @@ BEGIN
     business_name,
     business_description,
     contact_email,
+    seller_plan,
     reviewed_at,
     updated_at
   )
@@ -53,6 +54,7 @@ BEGIN
     'MASA Dev Store',
     'Development store for seller@masa.com',
     'seller@masa.com',
+    'premium',
     NOW(),
     NOW()
   )
@@ -60,17 +62,19 @@ BEGIN
     status = 'approved'::seller_application_status,
     business_name = EXCLUDED.business_name,
     contact_email = EXCLUDED.contact_email,
+    seller_plan = COALESCE(EXCLUDED.seller_plan, public.seller_applications.seller_plan),
     reviewed_at = COALESCE(public.seller_applications.reviewed_at, NOW()),
     updated_at = NOW();
 
   -- 3) Create store if not already present for this owner
-  INSERT INTO public.stores (owner_id, name, slug, description, status)
+  INSERT INTO public.stores (owner_id, name, slug, description, status, seller_plan)
   VALUES (
     v_user_id,
     'MASA Dev Store',
     'masa-dev-store',
     'Development store for seller@masa.com',
-    'active'::store_status
+    'active'::store_status,
+    'premium'
   )
   ON CONFLICT (slug) DO NOTHING;
 

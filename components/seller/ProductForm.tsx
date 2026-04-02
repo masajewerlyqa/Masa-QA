@@ -13,8 +13,7 @@ import { createProduct, updateProduct, type ActionResult } from "@/app/seller/pr
 import type { SellerProductDetail } from "@/lib/seller-types";
 import { useI18n } from "@/components/useI18n";
 import { computeDynamicMarketPriceUsd, type PricingMarketSnapshot } from "@/lib/pricing-engine";
-
-const QAR_TO_USD = 1 / 3.64;
+import { QAR_TO_USD } from "@/lib/market-prices-constants";
 
 const BUCKET = "product-images";
 const MAX_IMAGES = 8;
@@ -36,7 +35,7 @@ type ProductFormEditProps = {
 };
 
 export function ProductForm(props: ProductFormProps | ProductFormEditProps) {
-  const { isArabic } = useI18n();
+  const { isArabic, t } = useI18n();
   const { storeId, mode, marketSnapshot } = props;
   const product = props.mode === "edit" ? props.product : null;
   const localizeOption = (value: string) => {
@@ -189,7 +188,11 @@ export function ProductForm(props: ProductFormProps | ProductFormEditProps) {
     setPending(false);
 
     if (!result.ok) {
-      setError(result.error ?? (isArabic ? "حدث خطأ ما" : "Something went wrong"));
+      if (result.code === "PLAN_PRODUCT_LIMIT") {
+        setError(t("seller.products.productLimitReached"));
+      } else {
+        setError(result.error ?? (isArabic ? "حدث خطأ ما" : "Something went wrong"));
+      }
       return;
     }
     if (mode === "create" && result.productId) {

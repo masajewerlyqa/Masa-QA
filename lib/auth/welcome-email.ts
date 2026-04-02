@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendWelcomeEmail } from "@/lib/email/transactional";
+import { resolveEmailLanguage } from "@/lib/email/email-language";
 
 /**
  * Sends the premium welcome email at most once per profile (welcome_email_sent_at).
@@ -15,7 +16,7 @@ export async function sendWelcomeEmailIfEligible(
   const service = createServiceClient();
   const { data: row, error } = await service
     .from("profiles")
-    .select("welcome_email_sent_at, full_name")
+    .select("welcome_email_sent_at, full_name, preferred_language")
     .eq("id", userId)
     .maybeSingle();
 
@@ -29,7 +30,10 @@ export async function sendWelcomeEmailIfEligible(
 
   const fullName = fullNameFallback ?? (row as { full_name?: string | null })?.full_name ?? null;
 
-  const sendResult = await sendWelcomeEmail(email, fullName);
+  const emailLang = resolveEmailLanguage(
+    row ? (row as { preferred_language?: string }).preferred_language : undefined
+  );
+  const sendResult = await sendWelcomeEmail(email, fullName, emailLang);
   if (!sendResult.ok) {
     console.warn("[welcome-email] send failed (welcome_email_sent_at not updated):", sendResult.error);
     return { sent: false, skipped: false };

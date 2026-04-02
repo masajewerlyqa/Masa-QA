@@ -1,22 +1,20 @@
 import type { Metadata } from "next";
-import {
-  getAllMarketData,
-  getMarketInsight,
-  getSellerOpportunity,
-} from "@/lib/market-prices";
+import { getAllMarketData } from "@/lib/market-prices";
 import { MarketPricesClient } from "@/components/market-prices/MarketPricesClient";
 import { getServerLanguage } from "@/lib/language-server";
 import { getLocalizedSeo } from "@/lib/seo";
+
+/** Re-fetch live gold/silver on the server at most every 60s (avoids stale static prices). */
+export const revalidate = 60;
 
 export function generateMetadata(): Metadata {
   const language = getServerLanguage();
   const localized = getLocalizedSeo(language, {
     title: "Gold & Diamond Prices in Qatar - MASA Market Insights",
-    titleAr: "أسعار الذهب والألماس في قطر - تحليلات سوق ماسا",
+    titleAr: "أسعار السوق المباشرة",
     description:
       "Live gold, silver, and diamond prices in Qatar with investment insights and luxury jewelry market trends.",
-    descriptionAr:
-      "أسعار الذهب والفضة والألماس المباشرة في قطر مع رؤى استثمارية وتحليلات محدثة لسوق المجوهرات الفاخرة.",
+    descriptionAr: "أسعار لحظية لسوق الذهب والفضة والألماس",
   });
   return {
     title: localized.title,
@@ -34,19 +32,6 @@ export function generateMetadata(): Metadata {
 
 export default async function MarketPricesPage() {
   const { gold, silver, diamond } = await getAllMarketData();
-  const insight = getMarketInsight(gold, silver, diamond);
-  const seller = getSellerOpportunity(gold, silver, diamond);
 
-  return (
-    <MarketPricesClient
-      gold={gold}
-      silver={silver}
-      diamond={diamond}
-      insightText={insight.text}
-      insightIndicators={insight.indicators}
-      sellerBestMetal={seller.bestMetalToSell}
-      sellerMarginPercent={seller.marginEstimatePercent}
-      sellerTrendingCategory={seller.trendingCategory}
-    />
-  );
+  return <MarketPricesClient gold={gold} silver={silver} diamond={diamond} />;
 }

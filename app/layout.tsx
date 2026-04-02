@@ -3,6 +3,7 @@ import { Cinzel, Inter, IBM_Plex_Sans_Arabic, Noto_Naskh_Arabic } from "next/fon
 import "./globals.css";
 import { CurrencyProvider } from "@/components/CurrencyProvider";
 import { LanguageProvider } from "@/components/LanguageProvider";
+import { Toaster } from "@/components/ui/toaster";
 import { languageDirection } from "@/lib/language";
 import { getServerLanguage } from "@/lib/language-server";
 import { getBaseUrl, getLocalizedSeo } from "@/lib/seo";
@@ -89,7 +90,10 @@ export default function RootLayout({
     >
       <body className={`min-h-screen bg-white text-masa-dark antialiased ${language === "ar" ? "font-arabic" : "font-sans"}`}>
         <LanguageProvider initialLanguage={language}>
-          <CurrencyProvider>{children}</CurrencyProvider>
+          <CurrencyProvider>
+            {children}
+            <Toaster />
+          </CurrencyProvider>
         </LanguageProvider>
       </body>
     </html>

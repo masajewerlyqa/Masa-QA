@@ -3,6 +3,7 @@ import { env } from "@/lib/config/env";
 import { getContactSubjectLabel } from "@/lib/contact/subjects";
 import { maskEmailForLog, sendEmailWithRetry } from "@/lib/email/send-email";
 import { contactSupportNotificationHtml, contactUserAcknowledgmentHtml } from "@/lib/email/templates";
+import { resolveEmailLanguage } from "@/lib/email/email-language";
 import { contactFormBodySchema } from "@/lib/validations/contact";
 
 /**
@@ -69,12 +70,13 @@ export async function POST(req: Request) {
     );
   }
 
-  const userHtml = contactUserAcknowledgmentHtml(d.fullName);
+  const ackLang = resolveEmailLanguage(d.language);
+  const userHtml = contactUserAcknowledgmentHtml(d.fullName, ackLang);
 
   const userResult = await sendEmailWithRetry({
     from: env.contactAckFromEmail,
     to: d.email.trim(),
-    subject: "We received your message — MASA",
+    subject: ackLang === "ar" ? "استلمنا رسالتك — MASA" : "We received your message — MASA",
     html: userHtml,
     tags: [{ name: "type", value: "contact_ack" }],
   });

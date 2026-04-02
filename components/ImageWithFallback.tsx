@@ -13,6 +13,8 @@ interface ImageWithFallbackProps {
   height?: number;
   fill?: boolean;
   priority?: boolean;
+  /** Next/Image compression (default 90 for sharper product photos; was implicit 75). */
+  quality?: number;
   /** Hint for responsive image sizes; improves LCP when set for above-the-fold images. */
   sizes?: string;
 }
@@ -25,6 +27,7 @@ export function ImageWithFallback({
   height,
   fill = false,
   priority,
+  quality = 90,
   sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
 }: ImageWithFallbackProps) {
   const [error, setError] = useState(false);
@@ -39,6 +42,7 @@ export function ImageWithFallback({
         className={className}
         onError={() => setError(true)}
         priority={priority}
+        quality={quality}
         sizes={sizes}
       />
     );
@@ -53,6 +57,7 @@ export function ImageWithFallback({
       className={className}
       onError={() => setError(true)}
       priority={priority}
+      quality={quality}
     />
   );
 }

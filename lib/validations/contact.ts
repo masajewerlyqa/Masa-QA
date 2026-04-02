@@ -7,6 +7,8 @@ export const contactFormBodySchema = z.object({
   phone: z.string().trim().max(50).optional(),
   subject: z.enum(CONTACT_SUBJECT_VALUES, { message: "Select a subject" }),
   message: z.string().trim().min(1, "Message is required").max(10000),
+  /** Visitor UI language for acknowledgment email (en | ar). */
+  language: z.enum(["en", "ar"]).optional(),
 });
 
 export type ContactFormBody = z.infer<typeof contactFormBodySchema>;

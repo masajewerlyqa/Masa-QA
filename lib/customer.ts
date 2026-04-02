@@ -111,6 +111,7 @@ export type CustomerOrderItem = {
 /** Summary row for order history list. */
 export type CustomerOrderRow = {
   id: string;
+  order_number: string | null;
   status: string;
   total: number;
   created_at: string;
@@ -121,13 +122,14 @@ export async function getCustomerOrders(userId: string): Promise<CustomerOrderRo
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("orders")
-    .select("id, status, total, created_at")
+    .select("id, order_number, status, total, created_at")
     .eq("customer_id", userId)
     .order("created_at", { ascending: false });
 
   if (error) return [];
   return (data ?? []).map((o) => ({
     id: o.id,
+    order_number: o.order_number ?? null,
     status: o.status,
     total: Number(o.total),
     created_at: o.created_at,
@@ -152,6 +154,7 @@ export type OrderDeliveryFields = {
 
 export type CustomerOrder = {
   id: string;
+  order_number: string | null;
   status: string;
   subtotal: number;
   shipping_cost: number;
@@ -166,6 +169,12 @@ export type CustomerOrder = {
   estimated_delivery: string | null;
   created_at: string;
   items: CustomerOrderItem[];
+  /** When seller cancelled — message emailed to buyer. */
+  seller_cancellation_reason: string | null;
+  /** When platform auto-cancelled (e.g. seller SLA). Stored in buyer’s locale at cancel time. */
+  platform_cancellation_reason: string | null;
+  cancellation_source: "seller" | "system" | "customer" | null;
+  auto_cancelled_at: string | null;
 } & OrderDeliveryFields;
 
 export type CustomerAddressSummary = {
@@ -177,14 +186,17 @@ export type CustomerAddressSummary = {
 export async function getCustomerOrder(orderId: string, userId: string): Promise<CustomerOrder | null> {
   const language = getServerLanguage();
   const supabase = await createClient();
+  // Use * so optional columns (e.g. seller_cancellation_reason before migration) never break the query.
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, status, subtotal, shipping_cost, tax, total, discount_amount, promo_code, shipping_address, notes, tracking_number, shipping_company, estimated_delivery, created_at, delivery_country, delivery_city_area, delivery_building_type, delivery_zone_no, delivery_street_no, delivery_building_no, delivery_floor_no, delivery_apartment_no, delivery_landmark, delivery_phone, delivery_lat, delivery_lng, delivery_map_url")
+    .select("*")
     .eq("id", orderId)
     .eq("customer_id", userId)
     .single();
 
   if (orderError || !order) return null;
+
+  const o = order as Record<string, unknown>;
 
   const { data: items } = await supabase
     .from("order_items")
@@ -206,35 +218,56 @@ export async function getCustomerOrder(orderId: string, userId: string): Promise
     total_price: Number(i.total_price),
   }));
 
+  const rawCancel = o.seller_cancellation_reason;
+  const sellerCancellationReason =
+    typeof rawCancel === "string" ? rawCancel : rawCancel == null ? null : String(rawCancel);
+
+  const rawPlatform = o.platform_cancellation_reason;
+  const platformCancellationReason =
+    typeof rawPlatform === "string" ? rawPlatform : rawPlatform == null ? null : String(rawPlatform);
+
+  const rawCs = o.cancellation_source;
+  const cancellationSource =
+    rawCs === "seller" || rawCs === "system" || rawCs === "customer" ? rawCs : null;
+
+  const rawAutoAt = o.auto_cancelled_at;
+  const autoCancelledAt =
+    typeof rawAutoAt === "string" ? rawAutoAt : rawAutoAt == null ? null : String(rawAutoAt);
+
   return {
-    id: order.id,
-    status: order.status,
-    subtotal: Number(order.subtotal),
-    shipping_cost: Number(order.shipping_cost),
-    tax: Number(order.tax),
-    total: Number(order.total),
-    discount_amount: Number(order.discount_amount ?? 0),
-    promo_code: order.promo_code ?? null,
-    shipping_address: order.shipping_address as Record<string, unknown> | null,
-    notes: order.notes,
-    tracking_number: order.tracking_number ?? null,
-    shipping_company: order.shipping_company ?? null,
-    estimated_delivery: order.estimated_delivery ?? null,
-    created_at: order.created_at,
+    id: String(o.id),
+    order_number: (o.order_number as string | null | undefined) ?? null,
+    status: String(o.status),
+    subtotal: Number(o.subtotal),
+    shipping_cost: Number(o.shipping_cost),
+    tax: Number(o.tax),
+    total: Number(o.total),
+    discount_amount: Number(o.discount_amount ?? 0),
+    promo_code: (o.promo_code as string | null | undefined) ?? null,
+    shipping_address: o.shipping_address as Record<string, unknown> | null,
+    notes: o.notes as string | null,
+    tracking_number: o.tracking_number as string | null,
+    shipping_company: o.shipping_company as string | null,
+    estimated_delivery: o.estimated_delivery as string | null,
+    created_at: String(o.created_at),
     items: orderItems,
-    delivery_country: order.delivery_country ?? null,
-    delivery_city_area: order.delivery_city_area ?? null,
-    delivery_building_type: order.delivery_building_type ?? null,
-    delivery_zone_no: order.delivery_zone_no ?? null,
-    delivery_street_no: order.delivery_street_no ?? null,
-    delivery_building_no: order.delivery_building_no ?? null,
-    delivery_floor_no: order.delivery_floor_no ?? null,
-    delivery_apartment_no: order.delivery_apartment_no ?? null,
-    delivery_landmark: order.delivery_landmark ?? null,
-    delivery_phone: order.delivery_phone ?? null,
-    delivery_lat: order.delivery_lat != null ? Number(order.delivery_lat) : null,
-    delivery_lng: order.delivery_lng != null ? Number(order.delivery_lng) : null,
-    delivery_map_url: order.delivery_map_url ?? null,
+    delivery_country: o.delivery_country as string | null,
+    delivery_city_area: o.delivery_city_area as string | null,
+    delivery_building_type: o.delivery_building_type as string | null,
+    delivery_zone_no: o.delivery_zone_no as string | null,
+    delivery_street_no: o.delivery_street_no as string | null,
+    delivery_building_no: o.delivery_building_no as string | null,
+    delivery_floor_no: o.delivery_floor_no as string | null,
+    delivery_apartment_no: o.delivery_apartment_no as string | null,
+    delivery_landmark: o.delivery_landmark as string | null,
+    delivery_phone: o.delivery_phone as string | null,
+    delivery_lat: o.delivery_lat != null ? Number(o.delivery_lat) : null,
+    delivery_lng: o.delivery_lng != null ? Number(o.delivery_lng) : null,
+    delivery_map_url: o.delivery_map_url as string | null,
+    seller_cancellation_reason: sellerCancellationReason,
+    platform_cancellation_reason: platformCancellationReason,
+    cancellation_source: cancellationSource,
+    auto_cancelled_at: autoCancelledAt,
   };
 }
 

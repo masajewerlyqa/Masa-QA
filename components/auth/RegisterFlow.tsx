@@ -6,10 +6,11 @@ import { RegisterForm } from "./RegisterForm";
 
 /**
  * Register flow: first choose Buyer or Seller path, then show the registration form.
- * Seller path redirects to /apply after account creation (no seller access until approved).
+ * Seller path sets profile role to pending_seller and redirects to /apply; admin approval upgrades to seller.
+ * `initialIntent` from `/register?intent=seller` skips straight to the seller registration form.
  */
-export function RegisterFlow() {
-  const [path, setPath] = useState<RegisterPath | null>(null);
+function RegisterFlow({ initialIntent }: { initialIntent?: RegisterPath | null }) {
+  const [path, setPath] = useState<RegisterPath | null>(() => initialIntent ?? null);
 
   if (path === null) {
     return <RegisterPathChoice onChoose={setPath} />;
@@ -21,3 +22,6 @@ export function RegisterFlow() {
     </div>
   );
 }
+
+export { RegisterFlow };
+export default RegisterFlow;

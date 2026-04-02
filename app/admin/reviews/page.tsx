@@ -8,21 +8,10 @@ import { getAdminReviews } from "@/lib/admin";
 import { AdminReviewActions } from "./AdminReviewActions";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
+import { formatShortDate } from "@/lib/date-format";
 
 // Always fetch fresh data from Supabase; no static/cached review list
 export const dynamic = "force-dynamic";
-
-function formatDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 function StatusBadge({ status, language }: { status: string; language: "en" | "ar" }) {
   if (status === "approved") return <Badge variant="default">{t(language, "admin.reviews.approved")}</Badge>;
@@ -124,7 +113,7 @@ export default async function AdminReviewsPage() {
                     {review.body && (
                       <p className="text-sm text-masa-gray">{review.body}</p>
                     )}
-                    <p className="text-xs text-masa-gray mt-2">{formatDate(review.created_at)}</p>
+                    <p className="text-xs text-masa-gray mt-2">{formatShortDate(review.created_at, language)}</p>
                   </div>
                   <div className="flex items-start">
                     <AdminReviewActions reviewId={review.id} status={review.status} />
@@ -175,7 +164,7 @@ export default async function AdminReviewsPage() {
                     {review.body && (
                       <p className="text-sm text-masa-gray">{review.body}</p>
                     )}
-                    <p className="text-xs text-masa-gray mt-2">{formatDate(review.created_at)}</p>
+                    <p className="text-xs text-masa-gray mt-2">{formatShortDate(review.created_at, language)}</p>
                   </div>
                   <div className="flex items-start">
                     <AdminReviewActions reviewId={review.id} status={review.status} />
@@ -224,7 +213,7 @@ export default async function AdminReviewsPage() {
                     {review.body && (
                       <p className="text-sm text-masa-gray">{review.body}</p>
                     )}
-                    <p className="text-xs text-masa-gray mt-2">{formatDate(review.created_at)}</p>
+                    <p className="text-xs text-masa-gray mt-2">{formatShortDate(review.created_at, language)}</p>
                   </div>
                   <div className="flex items-start">
                     <AdminReviewActions reviewId={review.id} status={review.status} />

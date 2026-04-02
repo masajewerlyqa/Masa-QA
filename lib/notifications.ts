@@ -39,17 +39,22 @@ export async function getNotifications(
   }));
 }
 
-/** Get unread count for navbar. */
+/** Get unread count for navbar. Never throws — layouts depend on this. */
 export async function getUnreadNotificationCount(userId: string): Promise<number> {
-  const supabase = await createClient();
-  const { count, error } = await supabase
-    .from("notifications")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .is("read_at", null);
+  try {
+    const supabase = await createClient();
+    const { count, error } = await supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .is("read_at", null);
 
-  if (error) return 0;
-  return count ?? 0;
+    if (error) return 0;
+    return count ?? 0;
+  } catch (e) {
+    console.error("[notifications] getUnreadNotificationCount failed:", e);
+    return 0;
+  }
 }
 
 /** Mark one notification as read. */
@@ -189,14 +194,19 @@ export async function notifyAdminsNewReviewPending(productId: string, productNam
 export async function notifyBuyerOrderStatusUpdated(
   customerId: string,
   orderId: string,
-  newStatus: string
+  newStatus: string,
+  cancellationReason?: string | null
 ): Promise<void> {
   const statusLabel = newStatus.replace(/_/g, " ");
+  let body = `Your order status is now: ${statusLabel}.`;
+  if (newStatus === "cancelled" && cancellationReason?.trim()) {
+    body = `Your order was cancelled. Reason: ${cancellationReason.trim()}`;
+  }
   await createNotification({
     userId: customerId,
     type: "order_status_updated",
     title: "Order update",
-    body: `Your order status is now: ${statusLabel}.`,
-    data: { orderId, status: newStatus },
+    body,
+    data: { orderId, status: newStatus, cancellationReason: cancellationReason ?? undefined },
   });
 }

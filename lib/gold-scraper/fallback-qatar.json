@@ -1,0 +1,15 @@
+{
+  "country": "Qatar",
+  "currency": "QAR",
+  "gram": 272.5,
+  "ounce": 8465.58,
+  "tola": 3178.36,
+  "karats": {
+    "24K": 272.5,
+    "22K": 249.61,
+    "21K": 238.44,
+    "18K": 204.38
+  },
+  "source": "static-fallback",
+  "lastUpdated": "1970-01-01T00:00:00.000Z"
+}

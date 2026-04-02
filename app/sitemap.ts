@@ -13,7 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/tools/sell",
     "/tools/zakat",
     "/size-guide",
-    "/shipping",
+    "/delivery",
     "/returns",
     "/privacy",
     "/terms",

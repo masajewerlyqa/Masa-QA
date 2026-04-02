@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,15 +26,20 @@ export function AddToCartButton({
   children?: React.ReactNode;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [err, setErr] = useState<string | null>(null);
   const router = useRouter();
   const { isArabic, t } = useI18n();
   const inStock = stockQuantity === undefined ? true : stockQuantity > 0;
 
   function handleClick() {
     if (!inStock) return;
+    setErr(null);
     startTransition(async () => {
       const result = await addToCart(productId, quantity);
       if (result.ok) router.refresh();
+      else if (result.error === "STORE_HOURS_NOT_SET") setErr(t("storefront.storeHoursNotSet"));
+      else if (result.error === "STORE_CLOSED") setErr(t("storefront.storeClosed"));
+      else if (result.error) setErr(result.error);
     });
   }
 
@@ -50,14 +55,21 @@ export function AddToCartButton({
   );
 
   return (
-    <Button
-      className={className}
-      variant={variant}
-      size={size}
-      disabled={isPending || !inStock}
-      onClick={handleClick}
-    >
-      {content}
-    </Button>
+    <div className="space-y-2 w-full">
+      <Button
+        className={className}
+        variant={variant}
+        size={size}
+        disabled={isPending || !inStock}
+        onClick={handleClick}
+      >
+        {content}
+      </Button>
+      {err && (
+        <p role="alert" className="text-sm text-red-700 font-sans max-w-md">
+          {err}
+        </p>
+      )}
+    </div>
   );
 }

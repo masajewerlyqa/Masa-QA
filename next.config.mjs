@@ -3,15 +3,20 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
-  // If CSS / _next/static/*.js return 404 in dev: (1) stop every `next dev`, (2) `npm run clean`,
-  // (3) start once with `npm run dev` and open the exact URL shown (e.g. :3001 if :3000 is busy —
-  // do not keep a tab on another port).
-  webpack: (config, { dev }) => {
-    if (dev) {
-      config.cache = { type: "memory" };
-    }
-    return config;
+  /**
+   * Do not set `serverComponentsExternalPackages` for `tailwind-merge` / `clsx` here: pulling `cn()` from
+   * `lib/utils` into the root layout client subtree (e.g. `<Toaster />` → `toast.tsx`) produced invalid
+   * client chunks and React error "Element type is invalid … got: undefined" on every (site) route.
+   */
+  async redirects() {
+    return [
+      { source: "/shipping", destination: "/delivery", permanent: true },
+      { source: "/shipping/", destination: "/delivery", permanent: true },
+    ];
   },
+  // Avoid forcing webpack `cache: { type: "memory" }` in dev — it can desync vendor chunks after
+  // edits or package updates (missing ./vendor-chunks/*.js). Use Next’s default cache instead.
+  // If CSS / _next/static/*.js return 404 in dev: stop dev, `npm run clean`, start again.
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [

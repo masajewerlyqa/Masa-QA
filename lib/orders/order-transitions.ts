@@ -4,6 +4,7 @@
  */
 
 export const SELLER_STATUS_ORDER = [
+  "awaiting_seller",
   "pending",
   "accepted",
   "processing",
@@ -14,6 +15,8 @@ export const SELLER_STATUS_ORDER = [
 ] as const;
 
 const SELLER_ALLOWED_NEXT: Record<string, string[]> = {
+  /** New checkout: seller must accept/reject within SLA window. */
+  awaiting_seller: ["accepted", "cancelled"],
   pending: ["accepted", "processing", "cancelled", "refunded"],
   accepted: ["processing", "shipped", "cancelled", "refunded"],
   processing: ["shipped", "cancelled", "refunded"],

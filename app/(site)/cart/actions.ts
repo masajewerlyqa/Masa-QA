@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getOrCreateCart } from "@/lib/customer";
 import { getPublicProductById } from "@/lib/data/public";
+import { validateStoreAcceptsOrdersForProduct } from "@/lib/cart-store-availability";
 import { createClient } from "@/lib/supabase/server";
 
 export type CartActionResult = { ok: boolean; error?: string };
@@ -16,6 +17,14 @@ export async function addToCart(productId: string, quantity: number = 1): Promis
   const product = await getPublicProductById(productId);
   if (!product) return { ok: false, error: "Product not found" };
   if ((product.stockQuantity ?? 0) <= 0) return { ok: false, error: "This item is out of stock" };
+
+  const gate = await validateStoreAcceptsOrdersForProduct(product.storeId);
+  if (gate.blocked) {
+    return {
+      ok: false,
+      error: gate.reason === "not_configured" ? "STORE_HOURS_NOT_SET" : "STORE_CLOSED",
+    };
+  }
 
   const cartId = await getOrCreateCart(user.id);
   if (!cartId) return { ok: false, error: "Could not load cart" };

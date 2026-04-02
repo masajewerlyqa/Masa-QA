@@ -9,13 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
-import {
-  sellerApplicationFormSchema,
-  socialLinksFromForm,
-  type SellerApplicationFormValues,
-} from "@/lib/validations/seller-application";
-import { notifyAdminsNewSellerApplicationAction } from "@/app/(site)/apply/actions";
+import { sellerApplicationFormSchema, type SellerApplicationFormValues } from "@/lib/validations/seller-application";
+import { finalizeSellerApplicationAction } from "@/app/(site)/apply/actions";
 import { useI18n } from "@/components/useI18n";
+import type { SellerPlanId } from "@/lib/seller-plans";
+import { SellerApplySignInCard } from "@/components/seller/SellerApplySignInCard";
+import { Badge } from "@/components/ui/badge";
 
 const BUCKET_LICENSES = "store-licenses";
 const BUCKET_LOGOS = "store-logos";
@@ -28,8 +27,13 @@ function sanitizeFileName(name: string): string {
   return name.replace(/[^a-zA-Z0-9.-]/g, "_").slice(0, 100) || "file";
 }
 
-export function SellerApplicationForm() {
-  const { isArabic } = useI18n();
+type SellerApplicationFormProps = {
+  /** Set when opening `/apply/form` after plan selection (server-validated). */
+  selectedPlan?: SellerPlanId;
+};
+
+export function SellerApplicationForm({ selectedPlan }: SellerApplicationFormProps = {}) {
+  const { t, isArabic } = useI18n();
   const router = useRouter();
   const [brandStoreName, setBrandStoreName] = useState("");
   const [contactFullName, setContactFullName] = useState("");
@@ -163,45 +167,24 @@ export function SellerApplicationForm() {
         logoPath = logoPathName;
       }
 
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ full_name: parsed.data.contact_full_name })
-        .eq("id", user.id);
-      if (profileError) {
-        setError(`Profile update failed: ${profileError.message}.`);
+      const finalize = await finalizeSellerApplicationAction({
+        ...parsed.data,
+        license_path: licensePath,
+        logo_path: logoPath,
+      });
+
+      if (!finalize.ok) {
+        if (finalize.code === "SELECT_PLAN_FIRST") {
+          setError(t("sellerOnboarding.selectPlanFirstError"));
+        } else {
+          setError(finalize.error);
+        }
         setLoading(false);
         return;
       }
-
-      const socialLinks = socialLinksFromForm(parsed.data);
-
-      const { error: insertError } = await supabase.from("seller_applications").upsert(
-        {
-          user_id: user.id,
-          status: "pending",
-          business_name: parsed.data.brand_store_name,
-          business_description: parsed.data.store_description || null,
-          contact_email: parsed.data.email,
-          contact_phone: parsed.data.phone || null,
-          contact_full_name: parsed.data.contact_full_name,
-          store_location: parsed.data.store_location,
-          license_path: licensePath,
-          logo_path: logoPath,
-          social_links: socialLinks,
-        },
-        { onConflict: "user_id" }
-      );
-
-      if (insertError) {
-        setError(`Application save failed: ${insertError.message}.`);
-        setLoading(false);
-        return;
-      }
-
-      await notifyAdminsNewSellerApplicationAction();
 
       router.refresh();
-      router.push("/account?applied=1");
+      router.push(`/apply/success?plan=${encodeURIComponent(finalize.planId)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : (isArabic ? "حدث خطأ ما" : "Something went wrong"));
     } finally {
@@ -223,25 +206,7 @@ export function SellerApplicationForm() {
   }
 
   if (!signedIn) {
-    return (
-      <Card className="w-full max-w-xl border-primary/10 shadow-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-luxury text-primary">{isArabic ? "انضم كبائع" : "Become a seller"}</CardTitle>
-          <CardDescription className="font-sans">
-            {isArabic ? "سجّل الدخول لإرسال طلب البائع." : "Sign in to submit your seller application."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 font-sans">
-          <Button asChild className="w-full bg-primary hover:bg-primary/90" size="lg">
-            <Link href="/login">{isArabic ? "تسجيل الدخول" : "Sign in"}</Link>
-          </Button>
-          <p className="text-center text-sm text-masa-gray">
-            {isArabic ? "ليس لديك حساب؟" : "Don&apos;t have an account?"}{" "}
-            <Link href="/register" className="text-primary hover:underline">{isArabic ? "إنشاء حساب" : "Register"}</Link>
-          </p>
-        </CardContent>
-      </Card>
-    );
+    return <SellerApplySignInCard />;
   }
 
   if (existingApplication) {
@@ -273,8 +238,22 @@ export function SellerApplicationForm() {
 
   return (
     <Card className="w-full max-w-xl border-primary/10 shadow-sm">
-      <CardHeader className="text-center border-b border-primary/10 pb-6">
+      <CardHeader className="text-center border-b border-primary/10 pb-6 space-y-4">
         <CardTitle className="text-2xl font-luxury text-primary">{isArabic ? "طلب البائع" : "Seller application"}</CardTitle>
+        {selectedPlan && (
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+            <span className="text-sm text-masa-gray font-sans">{t("sellerOnboarding.formPlanSummary")}:</span>
+            <Badge variant="outline" className="border-primary/40 text-primary font-sans text-sm px-3 py-1">
+              {selectedPlan === "basic" ? t("sellerOnboarding.basicName") : t("sellerOnboarding.premiumName")}
+            </Badge>
+            <Link
+              href="/apply"
+              className="text-sm text-primary hover:underline font-sans"
+            >
+              {t("sellerOnboarding.formChangePlan")}
+            </Link>
+          </div>
+        )}
         <CardDescription className="font-sans text-masa-gray">
           {isArabic ? "أكمل النموذج أدناه وسنراجع طلبك ثم نعاود التواصل." : "Complete the form below. We will review your application and get back to you."}
         </CardDescription>

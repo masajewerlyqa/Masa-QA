@@ -8,16 +8,13 @@ import { PromoActions } from "./PromoActions";
 import { FormattedPrice } from "@/components/FormattedPrice";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
+import { formatShortDate } from "@/lib/date-format";
 
 export const dynamic = "force-dynamic";
 
-function formatDate(iso: string | null) {
+function formatPromoDate(iso: string | null, language: "en" | "ar") {
   if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  } catch {
-    return iso;
-  }
+  return formatShortDate(iso, language);
 }
 
 function getPromoStatus(promo: {
@@ -101,7 +98,7 @@ export default async function AdminPromoPage() {
                           {status.label}
                         </Badge>
                       </td>
-                      <td className="py-3 pr-4 text-masa-gray">{formatDate(promo.expires_at)}</td>
+                      <td className="py-3 pr-4 text-masa-gray">{formatPromoDate(promo.expires_at, language)}</td>
                       <td className="py-3 text-right">
                         <PromoActions promo={promo} />
                       </td>

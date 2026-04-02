@@ -15,18 +15,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCurrency } from "@/components/CurrencyProvider";
 import { useI18n } from "@/components/useI18n";
-import { QAR_TO_USD } from "@/lib/market-prices";
-import type { GoldMarketData, SilverMarketData, DiamondMarketData } from "@/lib/market-prices";
+import { getMarketInsight, getSellerOpportunity } from "@/lib/market-prices-insight";
+import { QAR_TO_USD } from "@/lib/market-prices-constants";
+import type { GoldMarketData, SilverMarketData, DiamondMarketData } from "@/lib/market-prices-types";
 
 const TIME_RANGES = ["1D", "7D", "1M", "6M", "1Y"] as const;
 
-function formatMarketPrice(qar: number, currency: "USD" | "QAR"): string {
+function formatMarketPrice(qar: number, currency: "USD" | "QAR", language: "en" | "ar"): string {
   const amount = currency === "QAR" ? qar : qar * QAR_TO_USD;
   const formatted = amount.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  return currency === "QAR" ? `ر.ق ${formatted}` : `$ ${formatted}`;
+  if (currency === "USD") return `$ ${formatted}`;
+  const qarPrefix = language === "ar" ? "ر.ق" : "QAR";
+  return `${qarPrefix} ${formatted}`;
 }
 
 function formatTime(iso: string | undefined): string {
@@ -39,31 +42,45 @@ function changePercentValue(value: number | undefined | null): number {
   return typeof value === "number" && !Number.isNaN(value) ? value : 0;
 }
 
+function KpiTrendRow({
+  changePercent,
+  todayLabel,
+}: {
+  changePercent: number;
+  todayLabel: string;
+}) {
+  const v = changePercentValue(changePercent);
+  const up = v >= 0;
+  return (
+    <div className="flex items-center gap-1 mt-1 text-[10px] font-sans leading-none">
+      {up ? <TrendingUp className="w-3 h-3 text-green-600 shrink-0" aria-hidden /> : <TrendingDown className="w-3 h-3 text-red-600 shrink-0" aria-hidden />}
+      <span className={up ? "text-green-600" : "text-red-600"}>
+        {up ? "+" : ""}
+        {v.toFixed(2)}%
+      </span>
+      <span className="text-masa-gray truncate">{todayLabel}</span>
+    </div>
+  );
+}
+
 type MarketPricesClientProps = {
   gold: GoldMarketData;
   silver: SilverMarketData;
   diamond: DiamondMarketData;
-  insightText: string;
-  insightIndicators: ("Safe Investment" | "High Volatility" | "Luxury Demand Rising")[];
-  sellerBestMetal: string;
-  sellerMarginPercent: number;
-  sellerTrendingCategory: string;
 };
 
-export function MarketPricesClient({
-  gold,
-  silver,
-  diamond,
-  insightText,
-  insightIndicators,
-  sellerBestMetal,
-  sellerMarginPercent,
-  sellerTrendingCategory,
-}: MarketPricesClientProps) {
-  const { t, isArabic } = useI18n();
+export function MarketPricesClient({ gold, silver, diamond }: MarketPricesClientProps) {
+  const { t, isArabic, language } = useI18n();
+
+  const { text: insightText, indicators: insightIndicators } = useMemo(
+    () => getMarketInsight(gold, silver, diamond, language),
+    [gold, silver, diamond, language],
+  );
+  const { bestMetalToSell: sellerBestMetal, marginEstimatePercent: sellerMarginPercent, trendingCategory: sellerTrendingCategory } =
+    useMemo(() => getSellerOpportunity(gold, silver, diamond, language), [gold, silver, diamond, language]);
   const { currency } = useCurrency();
   const displayCurrency = currency;
-  const format = (qar: number) => formatMarketPrice(qar, displayCurrency);
+  const format = (qar: number) => formatMarketPrice(qar, displayCurrency, language);
 
   const [timeRange, setTimeRange] = useState<(typeof TIME_RANGES)[number]>("7D");
   const [activeTab, setActiveTab] = useState<"gold" | "silver" | "diamond">("gold");
@@ -94,7 +111,6 @@ export function MarketPricesClient({
     return series.map((p) => ({ ...p, label: formatLabel(p.time) }));
   }, [timeRange, diamond.historyByRange, formatLabel]);
 
-  const activeData = activeTab === "gold" ? gold : activeTab === "silver" ? silver : diamond;
   const translatedIndicators = insightIndicators.map((ind) => {
     if (!isArabic) return ind;
     if (ind === "Safe Investment") return "استثمار آمن";
@@ -102,33 +118,6 @@ export function MarketPricesClient({
     if (ind === "Luxury Demand Rising") return "الطلب على الفخامة في ارتفاع";
     return ind;
   });
-
-  const translatedInsightText = isArabic
-    ? insightText
-        .replace("Gold appears stable", "يبدو الذهب مستقراً")
-        .replace("Silver shows increased volatility", "تُظهر الفضة تقلباً أعلى")
-        .replace("diamond demand in luxury segment is rising", "الطلب على الألماس في فئة الفخامة في ارتفاع")
-    : insightText;
-
-  const translatedSellerBestMetal = isArabic
-    ? sellerBestMetal === "gold"
-      ? "الذهب"
-      : sellerBestMetal === "silver"
-        ? "الفضة"
-        : sellerBestMetal === "diamond"
-          ? "الألماس"
-          : sellerBestMetal
-    : sellerBestMetal;
-
-  const translatedTrendingCategory = isArabic
-    ? sellerTrendingCategory === "bridal"
-      ? "الزفاف"
-      : sellerTrendingCategory === "investment"
-        ? "استثماري"
-        : sellerTrendingCategory === "daily-wear"
-          ? "يومي"
-          : sellerTrendingCategory
-    : sellerTrendingCategory;
 
   const chartData =
     activeTab === "gold" ? goldChartData : activeTab === "silver" ? silverChartData : diamondChartData;
@@ -180,87 +169,92 @@ export function MarketPricesClient({
           </p>
         </div>
 
-        {/* Highlight cards */}
-        <div className="relative max-w-content mx-auto px-4 md:px-6 mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Highlight KPIs — compact: 24K / 22K / 18K gold, silver, diamond */}
+        <div className="relative max-w-content mx-auto px-4 md:px-6 mt-8 md:mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
           <Card className="border-primary/10 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-sans text-masa-gray flex items-center gap-2">
-                <Coins className="w-4 h-4 text-masa-gold" />
+            <CardHeader className="px-3 pt-2.5 pb-1 space-y-0">
+              <CardTitle className="text-[11px] sm:text-xs font-sans text-masa-gray flex items-center gap-1.5 font-medium">
+                <Coins className="w-3 h-3 text-masa-gold shrink-0" aria-hidden />
                 {t("tools.market.gold24k")}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl md:text-3xl font-luxury text-primary">
-                {format(gold.priceQAR)}
-                <span className="text-sm font-sans text-masa-gray ml-1">{t("tools.market.perGram")}</span>
+            <CardContent className="px-3 pb-2.5 pt-0">
+              <p className="text-base sm:text-lg font-luxury text-primary leading-tight tabular-nums">
+                {format(gold.price24KPerGramQAR)}
+                <span className="text-[10px] font-sans text-masa-gray font-normal ms-0.5">{t("tools.market.perGram")}</span>
               </p>
-              <div className="flex items-center gap-2 mt-2 text-sm font-sans">
-                {(changePercentValue(gold.changePercent)) >= 0 ? (
-                  <TrendingUp className="w-4 h-4 text-green-600" aria-hidden />
-                ) : (
-                  <TrendingDown className="w-4 h-4 text-red-600" aria-hidden />
-                )}
-                <span className={(changePercentValue(gold.changePercent)) >= 0 ? "text-green-600" : "text-red-600"}>
-                  {(changePercentValue(gold.changePercent)) >= 0 ? "+" : ""}
-                  {(changePercentValue(gold.changePercent)).toFixed(2)}%
-                </span>
-                <span className="text-masa-gray">{t("tools.market.today")}</span>
-              </div>
-              <p className="text-xs text-masa-gray mt-2">{t("tools.market.updated")} {formatTime(gold.updatedAt)}</p>
+              <KpiTrendRow changePercent={gold.changePercent} todayLabel={t("tools.market.today")} />
+              <p className="text-[10px] text-masa-gray mt-1">
+                {t("tools.market.updated")} {formatTime(gold.updatedAt)}
+              </p>
             </CardContent>
           </Card>
           <Card className="border-primary/10 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-sans text-masa-gray flex items-center gap-2">
-                <Coins className="w-4 h-4 text-masa-gray" />
+            <CardHeader className="px-3 pt-2.5 pb-1 space-y-0">
+              <CardTitle className="text-[11px] sm:text-xs font-sans text-masa-gray flex items-center gap-1.5 font-medium">
+                <Coins className="w-3 h-3 text-masa-gold/80 shrink-0" aria-hidden />
+                {t("tools.market.gold22k")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-3 pb-2.5 pt-0">
+              <p className="text-base sm:text-lg font-luxury text-primary leading-tight tabular-nums">
+                {format(gold.price22KPerGramQAR)}
+                <span className="text-[10px] font-sans text-masa-gray font-normal ms-0.5">{t("tools.market.perGram")}</span>
+              </p>
+              <KpiTrendRow changePercent={gold.changePercent} todayLabel={t("tools.market.today")} />
+            </CardContent>
+          </Card>
+          <Card className="border-primary/10 shadow-sm">
+            <CardHeader className="px-3 pt-2.5 pb-1 space-y-0">
+              <CardTitle className="text-[11px] sm:text-xs font-sans text-masa-gray flex items-center gap-1.5 font-medium">
+                <Coins className="w-3 h-3 text-masa-gold/70 shrink-0" aria-hidden />
+                {t("tools.market.gold18k")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-3 pb-2.5 pt-0">
+              <p className="text-base sm:text-lg font-luxury text-primary leading-tight tabular-nums">
+                {format(gold.price18KPerGramQAR)}
+                <span className="text-[10px] font-sans text-masa-gray font-normal ms-0.5">{t("tools.market.perGram")}</span>
+              </p>
+              <KpiTrendRow changePercent={gold.changePercent} todayLabel={t("tools.market.today")} />
+            </CardContent>
+          </Card>
+          <Card className="border-primary/10 shadow-sm">
+            <CardHeader className="px-3 pt-2.5 pb-1 space-y-0">
+              <CardTitle className="text-[11px] sm:text-xs font-sans text-masa-gray flex items-center gap-1.5 font-medium">
+                <Coins className="w-3 h-3 text-masa-gray shrink-0" aria-hidden />
                 {t("tools.market.silver")}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl md:text-3xl font-luxury text-primary">
+            <CardContent className="px-3 pb-2.5 pt-0">
+              <p className="text-base sm:text-lg font-luxury text-primary leading-tight tabular-nums">
                 {format(silver.priceQAR)}
-                <span className="text-sm font-sans text-masa-gray ml-1">{t("tools.market.perGram")}</span>
+                <span className="text-[10px] font-sans text-masa-gray font-normal ms-0.5">{t("tools.market.perGram")}</span>
               </p>
-              <div className="flex items-center gap-2 mt-2 text-sm font-sans">
-                {(changePercentValue(silver.changePercent)) >= 0 ? (
-                  <TrendingUp className="w-4 h-4 text-green-600" aria-hidden />
-                ) : (
-                  <TrendingDown className="w-4 h-4 text-red-600" aria-hidden />
-                )}
-                <span className={(changePercentValue(silver.changePercent)) >= 0 ? "text-green-600" : "text-red-600"}>
-                  {(changePercentValue(silver.changePercent)) >= 0 ? "+" : ""}
-                  {(changePercentValue(silver.changePercent)).toFixed(2)}%
-                </span>
-                <span className="text-masa-gray">{t("tools.market.today")}</span>
-              </div>
-              <p className="text-xs text-masa-gray mt-2">{t("tools.market.updated")} {formatTime(silver.updatedAt)}</p>
+              <KpiTrendRow changePercent={silver.changePercent} todayLabel={t("tools.market.today")} />
+              <p className="text-[10px] text-masa-gray mt-1">
+                {t("tools.market.updated")} {formatTime(silver.updatedAt)}
+              </p>
             </CardContent>
           </Card>
-          <Card className="border-primary/10 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-sans text-masa-gray flex items-center gap-2">
-                <Gem className="w-4 h-4 text-primary" />
+          <Card className="border-primary/10 shadow-sm col-span-2 sm:col-span-1">
+            <CardHeader className="px-3 pt-2.5 pb-1 space-y-0">
+              <CardTitle className="text-[11px] sm:text-xs font-sans text-masa-gray flex items-center gap-1.5 font-medium">
+                <Gem className="w-3 h-3 text-primary shrink-0" aria-hidden />
                 {t("tools.market.diamondIndex")}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl md:text-3xl font-luxury text-primary">
+            <CardContent className="px-3 pb-2.5 pt-0">
+              <p className="text-base sm:text-lg font-luxury text-primary leading-tight tabular-nums">
                 {format(diamond.priceQAR)}
-                <span className="text-sm font-sans text-masa-gray ml-1">{t("tools.market.oneCaratAvg")}</span>
-              </p>
-              <div className="flex items-center gap-2 mt-2 text-sm font-sans">
-                {(changePercentValue(diamond.changePercent)) >= 0 ? (
-                  <TrendingUp className="w-4 h-4 text-green-600" aria-hidden />
-                ) : (
-                  <TrendingDown className="w-4 h-4 text-red-600" aria-hidden />
-                )}
-                <span className={(changePercentValue(diamond.changePercent)) >= 0 ? "text-green-600" : "text-red-600"}>
-                  {(changePercentValue(diamond.changePercent)) >= 0 ? "+" : ""}
-                  {(changePercentValue(diamond.changePercent)).toFixed(2)}%
+                <span className="text-[10px] font-sans text-masa-gray font-normal block sm:inline sm:ms-0.5 mt-0.5 sm:mt-0">
+                  {t("tools.market.oneCaratAvg")}
                 </span>
-                <span className="text-masa-gray">{t("tools.market.today")}</span>
-              </div>
-              <p className="text-xs text-masa-gray mt-2">{t("tools.market.updated")} {formatTime(diamond.updatedAt)}</p>
+              </p>
+              <KpiTrendRow changePercent={diamond.changePercent} todayLabel={t("tools.market.today")} />
+              <p className="text-[10px] text-masa-gray mt-1">
+                {t("tools.market.updated")} {formatTime(diamond.updatedAt)}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -443,7 +437,7 @@ export function MarketPricesClient({
               <CardTitle className="text-xl font-luxury text-primary">{t("tools.market.aiInsight")}</CardTitle>
             </CardHeader>
             <CardContent className="font-sans">
-              <p className="text-masa-dark leading-relaxed mb-4">{translatedInsightText}</p>
+              <p className="text-masa-dark leading-relaxed mb-4">{insightText}</p>
               <div className="flex flex-wrap gap-2">
                 {translatedIndicators.map((ind) => (
                   <span
@@ -470,13 +464,13 @@ export function MarketPricesClient({
             </CardHeader>
             <CardContent className="font-sans space-y-3 text-sm text-masa-dark">
               <p>
-                <span className="font-medium text-primary">{t("tools.market.bestMetal")}</span> {translatedSellerBestMetal}
+                <span className="font-medium text-primary">{t("tools.market.bestMetal")}</span> {sellerBestMetal}
               </p>
               <p>
                 <span className="font-medium text-primary">{t("tools.market.estimatedMargin")}</span> ~{sellerMarginPercent}%
               </p>
               <p>
-                <span className="font-medium text-primary">{t("tools.market.trendingCategory")}</span> {translatedTrendingCategory}
+                <span className="font-medium text-primary">{t("tools.market.trendingCategory")}</span> {sellerTrendingCategory}
               </p>
             </CardContent>
           </Card>

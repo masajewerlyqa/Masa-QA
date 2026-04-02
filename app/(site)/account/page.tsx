@@ -7,7 +7,23 @@ import { ResendVerificationEmail } from "@/components/account/ResendVerification
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getServerLanguage } from "@/lib/language-server";
+import type { Profile } from "@/lib/auth-client";
 import { t } from "@/lib/i18n";
+import type { Language } from "@/lib/language";
+
+function accountRoleLabel(language: Language, role: Profile["role"]): string {
+  switch (role) {
+    case "admin":
+      return t(language, "account.accountPage.roleLabels.admin");
+    case "seller":
+      return t(language, "account.accountPage.roleLabels.seller");
+    case "pending_seller":
+      return t(language, "account.accountPage.roleLabels.pending_seller");
+    case "customer":
+    default:
+      return t(language, "account.accountPage.roleLabels.customer");
+  }
+}
 
 export default async function AccountPage({
   searchParams,
@@ -25,6 +41,11 @@ export default async function AccountPage({
   const lastAddress = await getLastCustomerAddress(user.id);
   const passwordUpdated =
     typeof searchParams?.password === "string" ? searchParams.password === "updated" : false;
+  const sellerApplied = searchParams?.applied === "1";
+  const appliedPlan =
+    typeof searchParams?.plan === "string" && (searchParams.plan === "basic" || searchParams.plan === "premium")
+      ? searchParams.plan
+      : null;
   const verified = searchParams?.verified === "1";
   const emailVerified = Boolean(user.emailConfirmedAt);
   const profileComplete = Boolean(profile.full_name?.trim() && profile.phone?.trim());
@@ -41,6 +62,22 @@ export default async function AccountPage({
         {passwordUpdated && (
           <div className="lg:col-span-2 rounded-md border border-primary/20 bg-masa-light px-4 py-3 text-sm text-masa-dark font-sans">
             {t(language, "account.accountPage.passwordUpdatedBanner")}
+          </div>
+        )}
+        {sellerApplied && (
+          <div className="lg:col-span-2 rounded-md border border-primary/25 bg-white px-4 py-4 text-sm text-masa-dark font-sans shadow-sm">
+            <p className="font-medium text-primary font-luxury text-base">{t(language, "sellerOnboarding.appliedSuccessTitle")}</p>
+            <p className="mt-2 leading-relaxed">{t(language, "sellerOnboarding.appliedSuccessBody")}</p>
+            {appliedPlan && (
+              <p className="mt-3 text-masa-gray">
+                {t(language, "sellerOnboarding.formPlanSummary")}:{" "}
+                <span className="font-medium text-masa-dark">
+                  {appliedPlan === "premium"
+                    ? t(language, "sellerOnboarding.premiumName")
+                    : t(language, "sellerOnboarding.basicName")}
+                </span>
+              </p>
+            )}
           </div>
         )}
         {!emailVerified && accountEmail && (
@@ -99,7 +136,7 @@ export default async function AccountPage({
               </div>
               <div>
                 <p className="text-sm text-masa-gray">{t(language, "account.accountPage.role")}</p>
-                <p className="text-masa-dark capitalize">{profile.role}</p>
+                <p className="text-masa-dark">{accountRoleLabel(language, profile.role)}</p>
               </div>
               <div>
                 <p className="text-sm text-masa-gray">{t(language, "account.accountPage.accountId")}</p>

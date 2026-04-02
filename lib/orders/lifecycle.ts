@@ -3,6 +3,8 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { notifyBuyerOrderStatusUpdated, createNotification } from "@/lib/notifications";
 import { sendOrderStatusEmailWithRetry } from "@/lib/email/transactional";
+import { getProfileEmailLanguage } from "@/lib/email/profile-language";
+import { t } from "@/lib/i18n";
 
 function formatStatusLabel(status: string): string {
   return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -15,7 +17,7 @@ export async function appendOrderStatusEvent(params: {
   orderId: string;
   previousStatus: string | null;
   newStatus: string;
-  actorId: string;
+  actorId: string | null;
   source: "seller" | "admin" | "system" | "checkout";
   metadata?: Record<string, unknown> | null;
 }): Promise<boolean> {
@@ -41,19 +43,38 @@ export async function appendOrderStatusEvent(params: {
 export async function deliverBuyerOrderStatusMessages(params: {
   customerId: string;
   orderId: string;
+  orderNumber?: string | null;
   newStatus: string;
   customerEmail: string | null;
   customerName: string | null;
+  /** Set when seller cancels — included in email and in-app notification. */
+  cancellationReason?: string | null;
 }): Promise<void> {
-  await notifyBuyerOrderStatusUpdated(params.customerId, params.orderId, params.newStatus);
+  await notifyBuyerOrderStatusUpdated(
+    params.customerId,
+    params.orderId,
+    params.newStatus,
+    params.cancellationReason
+  );
 
-  const label = formatStatusLabel(params.newStatus);
+  const emailLang = await getProfileEmailLanguage(params.customerId);
+  const statusKey = `order.statuses.${params.newStatus}` as const;
+  const label = t(emailLang, statusKey, formatStatusLabel(params.newStatus));
+  let orderNumber = params.orderNumber ?? null;
+  if (orderNumber == null) {
+    const service = createServiceClient();
+    const { data: row } = await service.from("orders").select("order_number").eq("id", params.orderId).maybeSingle();
+    orderNumber = (row as { order_number?: string | null } | null)?.order_number ?? null;
+  }
   if (params.customerEmail) {
     const mailResult = await sendOrderStatusEmailWithRetry(
       params.customerEmail,
       params.orderId,
+      orderNumber,
       label,
-      params.customerName
+      params.customerName,
+      emailLang,
+      params.cancellationReason
     );
     if (!mailResult.ok) {
       console.warn("[order lifecycle] status email failed:", mailResult.error, {
@@ -72,7 +93,7 @@ export async function recordOrderPlacedEvent(params: {
   const ok = await appendOrderStatusEvent({
     orderId: params.orderId,
     previousStatus: null,
-    newStatus: "pending",
+    newStatus: "awaiting_seller",
     actorId: params.customerId,
     source: "checkout",
     metadata: { kind: "order_created" },

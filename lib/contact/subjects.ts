@@ -8,6 +8,8 @@ export const CONTACT_SUBJECT_VALUES = [
   "order-inquiry",
   "technical-issue",
   "business-collaboration",
+  "complaints-feedback",
+  "other",
 ] as const;
 
 export type ContactSubjectValue = (typeof CONTACT_SUBJECT_VALUES)[number];
@@ -18,6 +20,8 @@ export const CONTACT_SUBJECT_OPTIONS: { value: ContactSubjectValue; label: strin
   { value: "order-inquiry", label: "Order Inquiry" },
   { value: "technical-issue", label: "Technical Issue" },
   { value: "business-collaboration", label: "Business Collaboration" },
+  { value: "complaints-feedback", label: "Complaints & feedback" },
+  { value: "other", label: "Other" },
 ];
 
 const CONTACT_SUBJECT_LABELS_AR: Record<ContactSubjectValue, string> = {
@@ -26,6 +30,8 @@ const CONTACT_SUBJECT_LABELS_AR: Record<ContactSubjectValue, string> = {
   "order-inquiry": "استفسار عن الطلب",
   "technical-issue": "مشكلة تقنية",
   "business-collaboration": "تعاون تجاري",
+  "complaints-feedback": "شكاوى وملاحظات",
+  other: "أخرى",
 };
 
 export function getContactSubjectLabel(value: string): string {

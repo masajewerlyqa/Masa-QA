@@ -121,12 +121,19 @@ export function LoginForm() {
             {loading ? (isArabic ? "جارٍ تسجيل الدخول…" : "Signing in…") : isArabic ? "تسجيل الدخول" : "Sign in"}
           </Button>
         </form>
-        <p className="text-center text-sm text-masa-gray font-sans">
-          {isArabic ? "ليس لديك حساب؟" : "Don&apos;t have an account?"}{" "}
-          <Link href="/register" className="text-primary hover:underline">
-            {isArabic ? "إنشاء حساب" : "Register"}
-          </Link>
-        </p>
+        <div className="text-center text-sm text-masa-gray font-sans space-y-2">
+          <p>
+            {t("auth.login.noAccount")}{" "}
+            <Link href="/register" className="text-primary hover:underline font-medium">
+              {t("auth.login.registerToShop")}
+            </Link>
+          </p>
+          <p>
+            <Link href="/register?intent=seller" className="text-primary hover:underline font-medium">
+              {t("auth.login.registerToSell")}
+            </Link>
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

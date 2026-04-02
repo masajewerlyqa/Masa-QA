@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, Edit, Eye, Percent, Trash2 } from "lucide-react";
+import { Edit, Eye, Percent, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,6 +15,14 @@ import { applyProductDiscount, removeProductDiscount } from "@/app/seller/produc
 import { isDiscountValid, computeDiscountedPrice } from "@/lib/discount";
 import type { ProductRow } from "@/lib/seller-types";
 import { useI18n } from "@/components/useI18n";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { sortProductsByEngagement, type ProductEngagementSortKey } from "@/lib/product-list-sort";
 
 type Props = { products: ProductRow[] };
 
@@ -29,6 +37,9 @@ export function SellerProductsTable({ products }: Props) {
   const { t } = useI18n();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [discountModalOpen, setDiscountModalOpen] = useState(false);
+  const [sort, setSort] = useState<ProductEngagementSortKey>("newest");
+
+  const sortedProducts = useMemo(() => sortProductsByEngagement(products, sort), [products, sort]);
 
   const toggleOne = (id: string) => {
     setSelected((prev) => {
@@ -40,8 +51,8 @@ export function SellerProductsTable({ products }: Props) {
   };
 
   const toggleAll = () => {
-    if (selected.size === products.length) setSelected(new Set());
-    else setSelected(new Set(products.map((p) => p.id)));
+    if (selected.size === sortedProducts.length) setSelected(new Set());
+    else setSelected(new Set(sortedProducts.map((p) => p.id)));
   };
 
   const selectedCount = selected.size;
@@ -61,42 +72,59 @@ export function SellerProductsTable({ products }: Props) {
   return (
     <Card className="border-primary/10 shadow-sm">
       <CardHeader>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <CardTitle>{t("seller.products.allProducts")}</CardTitle>
-          {selectedCount > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-masa-gray font-sans">{t("seller.products.selected").replace("{count}", String(selectedCount))}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDiscountModalOpen(true)}
-                className="font-sans"
-              >
-                <Percent className="w-4 h-4 mr-1" />
-                {t("seller.products.applyDiscount")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRemoveDiscount}
-                className="font-sans text-red-600 hover:text-red-700"
-              >
-                <Trash2 className="w-4 h-4 mr-1" />
-                {t("seller.products.removeDiscount")}
-              </Button>
-            </div>
-          )}
+        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-4 min-w-0 flex-1">
+            <CardTitle>{t("seller.products.allProducts")}</CardTitle>
+            {selectedCount > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-masa-gray font-sans">{t("seller.products.selected").replace("{count}", String(selectedCount))}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDiscountModalOpen(true)}
+                  className="font-sans"
+                >
+                  <Percent className="w-4 h-4 mr-1" />
+                  {t("seller.products.applyDiscount")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRemoveDiscount}
+                  className="font-sans text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  {t("seller.products.removeDiscount")}
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col gap-1.5 w-full sm:w-auto sm:min-w-[220px]">
+            <span className="text-xs text-masa-gray font-sans">{t("seller.products.sortBy")}</span>
+            <Select value={sort} onValueChange={(v) => setSort(v as ProductEngagementSortKey)}>
+              <SelectTrigger className="w-full font-sans">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">{t("seller.products.sortNewest")}</SelectItem>
+                <SelectItem value="units_sold">{t("seller.products.sortBestSeller")}</SelectItem>
+                <SelectItem value="revenue_usd">{t("seller.products.sortRevenue")}</SelectItem>
+                <SelectItem value="wishlist_count">{t("seller.products.sortWishlist")}</SelectItem>
+                <SelectItem value="units_cancelled">{t("seller.products.sortMostCancelled")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-        <Table className="min-w-[700px] md:min-w-0">
+        <Table className="min-w-[1000px] md:min-w-0">
           <TableHeader>
             <TableRow>
               <TableHead className="w-10">
                 <input
                   type="checkbox"
-                  checked={products.length > 0 && selected.size === products.length}
+                  checked={sortedProducts.length > 0 && selected.size === sortedProducts.length}
                   onChange={toggleAll}
                   aria-label={t("seller.products.selectAll")}
                   className="rounded border-primary/20"
@@ -106,19 +134,23 @@ export function SellerProductsTable({ products }: Props) {
               <TableHead>{t("seller.products.price")}</TableHead>
               <TableHead>{t("seller.products.discount")}</TableHead>
               <TableHead>{t("seller.products.stock")}</TableHead>
+              <TableHead>{t("seller.products.unitsSold")}</TableHead>
+              <TableHead>{t("seller.products.wishlist")}</TableHead>
+              <TableHead>{t("seller.products.revenue")}</TableHead>
+              <TableHead>{t("seller.products.unitsCancelled")}</TableHead>
               <TableHead>{t("seller.products.status")}</TableHead>
               <TableHead>{t("seller.products.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.length === 0 ? (
+            {sortedProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-masa-gray py-8 font-sans">
+                <TableCell colSpan={10} className="text-center text-masa-gray py-8 font-sans">
                   {t("seller.products.noProductsYet")}
                 </TableCell>
               </TableRow>
             ) : (
-              products.map((product) => {
+              sortedProducts.map((product) => {
                 const label = discountLabel(product, t);
                 const basePrice = Number(product.price);
                 const effectivePrice =
@@ -181,6 +213,12 @@ export function SellerProductsTable({ products }: Props) {
                       )}
                     </TableCell>
                     <TableCell>{product.stock_quantity}</TableCell>
+                    <TableCell className="font-sans tabular-nums">{product.units_sold}</TableCell>
+                    <TableCell className="font-sans tabular-nums">{product.wishlist_count}</TableCell>
+                    <TableCell className="font-sans">
+                      <FormattedPrice usd={Number(product.revenue_usd)} />
+                    </TableCell>
+                    <TableCell className="font-sans tabular-nums">{product.units_cancelled}</TableCell>
                     <TableCell>
                       <Badge
                         variant={product.status === "active" ? "default" : product.status === "out_of_stock" ? "warning" : "secondary"}

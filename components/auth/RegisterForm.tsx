@@ -16,7 +16,7 @@ import { useI18n } from "@/components/useI18n";
 import { normalizeAuthError } from "@/lib/auth-error-messages";
 
 type RegisterFormProps = {
-  /** When "seller", after signup redirect to /apply to complete seller application (role stays customer until approved). */
+  /** When "seller", after signup redirect to /apply; profile role is pending_seller until admin approves (then seller). */
   intent?: RegisterPath;
   /** If set, show a back button to return to path choice (used when intent was chosen on same page). */
   onBack?: () => void;
@@ -67,6 +67,7 @@ export function RegisterForm({ intent, onBack }: RegisterFormProps) {
             full_name: parsed.data.fullName,
             phone: parsed.data.phone,
             newsletter_opt_in: newsletterOptIn,
+            registration_intent: intent === "seller" ? "seller" : "buyer",
           },
           emailRedirectTo,
         },

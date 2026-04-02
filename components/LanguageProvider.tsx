@@ -81,6 +81,13 @@ export function LanguageProvider({
     } catch {
       // ignore
     }
+    void fetch("/api/user/preferences/language", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ language: nextLanguage }),
+    }).catch(() => {
+      /* guest or offline — ignore */
+    });
     // Force server components to re-render in the selected language.
     router.refresh();
   }, [language, router]);

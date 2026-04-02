@@ -18,6 +18,10 @@ export const SHIPPING_COMPANIES = [
 
 export type OrderActionResult = { ok: boolean; error?: string };
 
+/** Min length for seller cancellation message to buyer. */
+export const SELLER_CANCELLATION_REASON_MIN_LEN = 10;
+export const SELLER_CANCELLATION_REASON_MAX_LEN = 2000;
+
 export type TrackingInfo = {
   tracking_number: string | null;
   shipping_company: string | null;

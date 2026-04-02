@@ -38,6 +38,12 @@ export default async function SellerOverviewPage() {
   return (
     <SellerOverviewClient
       storeName={store.name}
+      storeAvailability={{
+        business_timezone: store.business_timezone,
+        working_days: store.working_days,
+        opening_time_local: store.opening_time_local,
+        closing_time_local: store.closing_time_local,
+      }}
       stats={stats}
       revenueData={revenueData}
       products={products}

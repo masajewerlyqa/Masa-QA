@@ -6,8 +6,16 @@ import { getSellerStore, getSellerProductById } from "@/lib/seller";
 import { createClient } from "@/lib/supabase/server";
 import { productFormSchema, type ProductFormValues } from "@/lib/validations/product";
 import { computeDynamicProductPrice } from "@/lib/pricing";
+import { parseSellerPlanId } from "@/lib/seller-plans";
+import { canSellerAddProduct } from "@/lib/seller-plan-policy";
 
-export type ActionResult = { ok: boolean; error?: string; productId?: string };
+export type ActionResult = {
+  ok: boolean;
+  error?: string;
+  productId?: string;
+  /** Stable code for client i18n (e.g. catalog cap on Basic). */
+  code?: "PLAN_PRODUCT_LIMIT";
+};
 
 function mapSchemaMismatchError(message?: string): string | undefined {
   if (!message) return undefined;
@@ -47,6 +55,29 @@ export async function createProduct(formData: ProductFormValues, imageUrls: stri
   if (!store) return { ok: false, error: "Store not found" };
 
   const supabase = await createClient();
+
+  const effectivePlan = parseSellerPlanId(store.seller_plan) ?? "basic";
+  const { count: existingCount, error: countError } = await supabase
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("store_id", store.id)
+    .is("deleted_at", null);
+
+  if (countError) {
+    return { ok: false, error: countError.message };
+  }
+  const n = existingCount ?? 0;
+  if (!canSellerAddProduct(n, effectivePlan)) {
+    return {
+      ok: false,
+      code: "PLAN_PRODUCT_LIMIT",
+      error:
+        effectivePlan === "basic"
+          ? "Basic plan allows up to 100 active products. Delete or archive items, or upgrade to Premium."
+          : "Product limit reached for your plan.",
+    };
+  }
+
   const slug = uniqueSlug(parsed.data.title);
   const dynamicPrice = await computeDynamicProductPrice({
     metalType: parsed.data.metal_type,

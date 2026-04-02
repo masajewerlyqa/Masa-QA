@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { Grid3x3, List, Search, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/ProductCard";
@@ -16,7 +16,7 @@ import {
 import { PageContainer } from "@/components/PageContainer";
 import type { Product } from "@/lib/types";
 import type { MarketplaceFilters } from "@/lib/data";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useI18n } from "@/components/useI18n";
 
 type SortKey =
@@ -31,7 +31,6 @@ type SortKey =
 
 export function DiscoverClient({
   initialProducts,
-  category,
   wishlistIds = [],
   search = "",
   filters,
@@ -39,13 +38,13 @@ export function DiscoverClient({
   selectedFilters,
 }: {
   initialProducts: Product[];
-  category: string;
   wishlistIds?: string[];
   search?: string;
   filters: MarketplaceFilters;
   /** Slider bounds for current filters (USD); falls back to global catalog range */
   priceExtent?: { minPrice: number; maxPrice: number };
   selectedFilters: {
+    categories: string[];
     brands: string[];
     metals: string[];
     karats: string[];
@@ -63,8 +62,53 @@ export function DiscoverClient({
     serverSort !== "default" ? (serverSort as SortKey) : "featured"
   );
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(search);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setQuery(search);
+  }, [search]);
+
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, []);
+
+  const pushQueryToUrl = useCallback(
+    (q: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      const trimmed = q.trim();
+      if (trimmed === "") params.delete("q");
+      else params.set("q", trimmed);
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [router, pathname, searchParams]
+  );
+
+  function clearMarketplaceSearch() {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = null;
+    }
+    setQuery("");
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("q");
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
+
+  function handleSearchInputChange(value: string) {
+    setQuery(value);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      searchDebounceRef.current = null;
+      pushQueryToUrl(value);
+    }, 320);
+  }
 
   const products = useMemo(() => {
     const list = [...initialProducts];
@@ -93,6 +137,14 @@ export function DiscoverClient({
     return list;
   }, [initialProducts, sort]);
 
+  const hasMarketSearch = Boolean(search?.trim());
+  const hasStructuredFilters =
+    selectedFilters.categories.length > 0 ||
+    selectedFilters.brands.length > 0 ||
+    selectedFilters.metals.length > 0 ||
+    selectedFilters.karats.length > 0 ||
+    selectedFilters.onSale === true;
+
   function updateSearchParam(name: string, value: string | null) {
     const params = new URLSearchParams(searchParams.toString());
     if (value == null || value.trim() === "") {
@@ -100,7 +152,8 @@ export function DiscoverClient({
     } else {
       params.set(name, value);
     }
-    router.push(`?${params.toString()}`, { scroll: false });
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
 
   function handleSortChange(value: string) {
@@ -115,7 +168,11 @@ export function DiscoverClient({
 
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
-    updateSearchParam("q", query.trim() || null);
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = null;
+    }
+    pushQueryToUrl(query);
   }
 
   return (
@@ -139,7 +196,7 @@ export function DiscoverClient({
           <input
             type="search"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => handleSearchInputChange(e.target.value)}
             placeholder={t("marketplace.searchByProductOrBrand")}
             className={`w-full rounded-full border border-primary/20 bg-masa-light px-9 py-2.5 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-primary ${isArabic ? "text-right" : ""}`}
           />
@@ -152,15 +209,21 @@ export function DiscoverClient({
           <FilterSidebar filters={filters} priceExtent={priceExtent} selected={selectedFilters} />
         </div>
 
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 min-h-0 pb-2">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 md:pb-6 border-b border-primary/10">
             <div className="flex items-center gap-2">
               {/* Mobile filter button */}
               <MobileFilterDrawer filters={filters} priceExtent={priceExtent} selected={selectedFilters} />
               <p className="text-sm text-masa-gray font-sans hidden sm:block">
-                {t("marketplace.showing")} <span className="text-masa-dark">1-{products.length}</span>{" "}
-                {t("marketplace.of")} <span className="text-masa-dark">{products.length}</span>{" "}
-                {t("marketplace.products")}
+                {products.length === 0 ? (
+                  <span className="text-masa-dark">0 {t("marketplace.products")}</span>
+                ) : (
+                  <>
+                    {t("marketplace.showing")} <span className="text-masa-dark">1-{products.length}</span>{" "}
+                    {t("marketplace.of")} <span className="text-masa-dark">{products.length}</span>{" "}
+                    {t("marketplace.products")}
+                  </>
+                )}
               </p>
               <p className="text-xs text-masa-gray font-sans sm:hidden">
                 {isArabic
@@ -212,17 +275,45 @@ export function DiscoverClient({
             </div>
           </div>
 
-          <div
-            className={
-              viewMode === "grid"
-                ? "grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6"
-                : "space-y-4"
-            }
-          >
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} isInWishlist={wishlistSet.has(product.id)} />
-            ))}
-          </div>
+          {products.length === 0 ? (
+            <div className="rounded-xl border border-primary/10 bg-masa-light/40 px-6 py-14 text-center">
+              {hasMarketSearch ? (
+                <>
+                  <p className="font-luxury text-lg text-primary mb-2">{t("marketplace.searchNoResults")}</p>
+                  <p className="text-sm text-masa-gray mb-6 max-w-md mx-auto">
+                    {t("marketplace.searchNoResultsHint")}
+                  </p>
+                  <Button type="button" variant="outline" className="border-primary text-primary" onClick={clearMarketplaceSearch}>
+                    {t("marketplace.clearSearch")}
+                  </Button>
+                </>
+              ) : hasStructuredFilters ? (
+                <>
+                  <p className="font-luxury text-lg text-primary mb-2">{t("marketplace.noMatchesFilters")}</p>
+                  <p className="text-sm text-masa-gray max-w-md mx-auto">{t("marketplace.noMatchesFiltersHint")}</p>
+                </>
+              ) : (
+                <p className="text-masa-gray font-sans">{t("marketplace.catalogEmpty")}</p>
+              )}
+            </div>
+          ) : (
+            <div
+              className={
+                viewMode === "grid"
+                  ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 md:gap-4"
+                  : "flex flex-col gap-2 sm:gap-3"
+              }
+            >
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  isInWishlist={wishlistSet.has(product.id)}
+                  layout={viewMode === "grid" ? "compact" : "list"}
+                />
+              ))}
+            </div>
+          )}
 
           {products.length > 0 && (
             <div className="mt-8 md:mt-12 flex justify-center gap-2">

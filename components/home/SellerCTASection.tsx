@@ -10,7 +10,7 @@ export function SellerCTASection() {
   const { isArabic } = useLanguage();
   const benefits = [
     { icon: Store, text: isArabic ? "واجهة متجر رقمية" : "Digital storefront" },
-    { icon: BarChart3, text: isArabic ? "رؤى طلب بالذكاء الاصطناعي" : "AI demand insights" },
+    { icon: BarChart3, text: isArabic ? "لوحة تحكم ذكية" : "Smart dashboard" },
     { icon: Truck, text: isArabic ? "لوجستيات آمنة" : "Secure logistics" },
     { icon: Users, text: isArabic ? "شبكة مشترين مميزة" : "Premium buyers network" },
   ];

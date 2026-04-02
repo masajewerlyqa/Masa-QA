@@ -1,11 +1,10 @@
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DataTable, type Column } from "@/components/DataTable";
-import { Badge } from "@/components/ui/badge";
 import { getCurrentUserWithProfile } from "@/lib/auth";
-import { getAdminSellers, type AdminSellerRow } from "@/lib/admin";
+import { getAdminSellers } from "@/lib/admin";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
+import { AdminSellersTable } from "@/components/admin/AdminSellersTable";
 
 export default async function SellersListPage() {
   const language = getServerLanguage();
@@ -13,20 +12,6 @@ export default async function SellersListPage() {
   if (profile?.role !== "admin") redirect("/login");
 
   const sellers = await getAdminSellers();
-
-  const columns: Column<AdminSellerRow>[] = [
-    { key: "name", header: t(language, "admin.sellers.seller") },
-    { key: "email", header: t(language, "admin.sellers.email") },
-    { key: "stores", header: t(language, "admin.sellers.stores") },
-    { key: "products", header: t(language, "admin.sellers.products") },
-    {
-      key: "status",
-      header: t(language, "admin.sellers.status"),
-      render: (row) => (
-        <Badge variant={row.status === "Active" ? "default" : "secondary"}>{t(language, `order.statuses.${row.status.toLowerCase()}`, row.status)}</Badge>
-      ),
-    },
-  ];
 
   return (
     <div className="p-6 md:p-8">
@@ -39,11 +24,7 @@ export default async function SellersListPage() {
           <CardTitle>{t(language, "admin.sellers.allSellers").replace("{count}", String(sellers.length))}</CardTitle>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={columns}
-            data={sellers}
-            keyExtractor={(row) => row.id}
-          />
+          <AdminSellersTable sellers={sellers} />
         </CardContent>
       </Card>
     </div>

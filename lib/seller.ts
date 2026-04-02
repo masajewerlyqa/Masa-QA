@@ -5,6 +5,8 @@ import "server-only";
  * For types only in Client Components, import from @/lib/seller-types instead.
  */
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { loadProductEngagementStats, zeroEngagementStats } from "@/lib/product-engagement-stats";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getPricingMarketSnapshot } from "@/lib/pricing";
 import { computeDynamicMarketPriceUsd } from "@/lib/pricing-engine";
@@ -19,6 +21,20 @@ import type {
   SellerOrderStatusAnalytics,
   SellerTopProductAnalytics,
 } from "@/lib/seller-types";
+
+function normalizeStoreRow(raw: Record<string, unknown>): StoreRow {
+  const base = raw as unknown as StoreRow;
+  const sp = raw.seller_plan;
+  const sellerPlan = sp === "basic" || sp === "premium" ? sp : null;
+  return {
+    ...base,
+    business_timezone: typeof raw.business_timezone === "string" ? raw.business_timezone : "Asia/Qatar",
+    working_days: Array.isArray(raw.working_days) ? (raw.working_days as number[]) : [],
+    opening_time_local: raw.opening_time_local != null ? String(raw.opening_time_local) : null,
+    closing_time_local: raw.closing_time_local != null ? String(raw.closing_time_local) : null,
+    seller_plan: sellerPlan,
+  };
+}
 
 export type {
   StoreRow,
@@ -37,7 +53,9 @@ export async function getSellerStore(): Promise<StoreRow | null> {
   if (!user || profile?.role !== "seller") return null;
 
   const supabase = await createClient();
-  const storeSelect = "id, owner_id, name, slug, description, logo_url, banner_url, status, location, contact_email, contact_phone, social_links, latitude, longitude";
+  const storeSelect =
+    "id, owner_id, name, slug, description, logo_url, banner_url, status, location, contact_email, contact_phone, social_links, latitude, longitude, " +
+    "business_timezone, working_days, opening_time_local, closing_time_local, seller_plan";
   const { data: owned } = await supabase
     .from("stores")
     .select(storeSelect)
@@ -45,7 +63,7 @@ export async function getSellerStore(): Promise<StoreRow | null> {
     .limit(1)
     .maybeSingle();
 
-  if (owned) return owned as StoreRow;
+  if (owned) return normalizeStoreRow(owned as Record<string, unknown>);
 
   const { data: memberRow } = await supabase
     .from("store_members")
@@ -62,7 +80,7 @@ export async function getSellerStore(): Promise<StoreRow | null> {
     .eq("id", memberRow.store_id)
     .single();
 
-  return store as StoreRow | null;
+  return store ? normalizeStoreRow(store as Record<string, unknown>) : null;
 }
 
 /** Get stats for a store: product count, order count, total revenue, avg order value. */
@@ -118,7 +136,7 @@ export async function getSellerProducts(storeId: string, limit?: number): Promis
   const marketSnapshot = await getPricingMarketSnapshot();
   let query = supabase
     .from("products")
-    .select("id, store_id, name, slug, description, category, price, metal_type, gold_karat, weight, craftsmanship_margin, stock_quantity, status, deleted_at, discount_type, discount_value, discount_start_at, discount_end_at, discount_active")
+    .select("id, store_id, name, slug, description, category, price, metal_type, gold_karat, weight, craftsmanship_margin, stock_quantity, status, deleted_at, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, created_at")
     .eq("store_id", storeId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
@@ -137,6 +155,12 @@ export async function getSellerProducts(storeId: string, limit?: number): Promis
     list.push(img.url);
     imagesByProduct.set(img.product_id, list);
   }
+
+  const service = createServiceClient();
+  const engagement = service
+    ? await loadProductEngagementStats(service, productIds)
+    : zeroEngagementStats(productIds);
+
   return products.map((p) => {
     const dynamic = computeDynamicMarketPriceUsd(
       {
@@ -153,6 +177,10 @@ export async function getSellerProducts(storeId: string, limit?: number): Promis
       ...p,
       price: dynamic.finalPriceUsd,
       image_urls: imagesByProduct.get(p.id) ?? [],
+      units_sold: engagement.unitsSold[p.id] ?? 0,
+      wishlist_count: engagement.wishlistCount[p.id] ?? 0,
+      revenue_usd: engagement.revenueUsd[p.id] ?? 0,
+      units_cancelled: engagement.unitsCancelled[p.id] ?? 0,
     };
   }) as ProductRow[];
 }
@@ -166,7 +194,7 @@ export async function getSellerProductById(
   const marketSnapshot = await getPricingMarketSnapshot();
   const { data: product } = await supabase
     .from("products")
-    .select("id, store_id, name, slug, description, category, price, metal_type, gold_karat, weight, craftsmanship_margin, stock_quantity, status, deleted_at, discount_type, discount_value, discount_start_at, discount_end_at, discount_active")
+    .select("id, store_id, name, slug, description, category, price, metal_type, gold_karat, weight, craftsmanship_margin, stock_quantity, status, deleted_at, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, created_at")
     .eq("id", productId)
     .eq("store_id", storeId)
     .is("deleted_at", null)
@@ -188,6 +216,10 @@ export async function getSellerProductById(
     marketSnapshot ?? {},
     QAR_TO_USD
   );
+  const service = createServiceClient();
+  const engagement = service
+    ? await loadProductEngagementStats(service, [productId])
+    : zeroEngagementStats([productId]);
   return {
     ...product,
     price: dynamic.finalPriceUsd,
@@ -198,6 +230,10 @@ export async function getSellerProductById(
       alt: i.alt,
       sort_order: i.sort_order,
     })),
+    units_sold: engagement.unitsSold[productId] ?? 0,
+    wishlist_count: engagement.wishlistCount[productId] ?? 0,
+    revenue_usd: engagement.revenueUsd[productId] ?? 0,
+    units_cancelled: engagement.unitsCancelled[productId] ?? 0,
   } as import("@/lib/seller-types").SellerProductDetail;
 }
 
@@ -223,7 +259,7 @@ export async function getSellerOrders(storeId: string, limit = 50): Promise<Sell
 
   const { data: orders } = await supabase
     .from("orders")
-    .select("id, status, total, subtotal, discount_amount, seller_earnings, created_at, customer_id")
+    .select("id, order_number, status, total, subtotal, discount_amount, seller_earnings, created_at, customer_id")
     .in("id", orderIds)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -272,12 +308,14 @@ export async function getSellerOrders(storeId: string, limit = 50): Promise<Sell
         : undefined;
     return {
       id: o.id,
+      order_number: o.order_number ?? null,
       status: o.status,
       total: Number(o.total),
       created_at: o.created_at,
       customer_name: profileMap.get(o.customer_id) ?? null,
       store_earnings: storeEarnings,
       item_summary: itemSummary,
+      seller_response_deadline: (o as { seller_response_deadline?: string | null }).seller_response_deadline ?? null,
     };
   });
 
@@ -290,18 +328,54 @@ export async function getSellerOrderById(orderId: string, storeId: string): Prom
   const orderIds = await getOrderIdsForStore(supabase, storeId);
   if (!orderIds.includes(orderId)) return null;
 
+  // Use * so missing optional columns (e.g. before migration) do not break the query.
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, status, subtotal, shipping_cost, tax, total, discount_amount, seller_earnings, shipping_address, notes, payment_method, tracking_number, shipping_company, estimated_delivery, created_at, updated_at, customer_id, delivery_country, delivery_city_area, delivery_building_type, delivery_zone_no, delivery_street_no, delivery_building_no, delivery_floor_no, delivery_apartment_no, delivery_landmark, delivery_phone, delivery_lat, delivery_lng, delivery_map_url")
+    .select("*")
     .eq("id", orderId)
     .single();
 
   if (orderError || !order) return null;
 
+  const orderRow = order as Record<string, unknown> & {
+    id: string;
+    order_number?: string | null;
+    status: string;
+    subtotal: unknown;
+    shipping_cost: unknown;
+    tax: unknown;
+    total: unknown;
+    discount_amount: unknown;
+    seller_earnings: unknown;
+    shipping_address: unknown;
+    notes: unknown;
+    payment_method: unknown;
+    tracking_number: unknown;
+    shipping_company: unknown;
+    estimated_delivery: unknown;
+    created_at: string;
+    updated_at: string;
+    customer_id: string;
+    delivery_country: unknown;
+    delivery_city_area: unknown;
+    delivery_building_type: unknown;
+    delivery_zone_no: unknown;
+    delivery_street_no: unknown;
+    delivery_building_no: unknown;
+    delivery_floor_no: unknown;
+    delivery_apartment_no: unknown;
+    delivery_landmark: unknown;
+    delivery_phone: unknown;
+    delivery_lat: unknown;
+    delivery_lng: unknown;
+    delivery_map_url: unknown;
+    seller_cancellation_reason?: unknown;
+  };
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name, email, phone")
-    .eq("id", order.customer_id)
+    .eq("id", orderRow.customer_id)
     .single();
 
   const { data: products } = await supabase
@@ -346,48 +420,70 @@ export async function getSellerOrderById(orderId: string, storeId: string): Prom
     };
   });
 
-  const subtotalAfterDiscount = Math.max(0, Number(order.subtotal ?? 0) - Number(order.discount_amount ?? 0));
+  const subtotalAfterDiscount = Math.max(0, Number(orderRow.subtotal ?? 0) - Number(orderRow.discount_amount ?? 0));
   const storeItemsTotal = orderItems.reduce((sum, i) => sum + i.total_price, 0);
-  const sellerEarningsTotal = Number(order.seller_earnings ?? 0);
+  const sellerEarningsTotal = Number(orderRow.seller_earnings ?? 0);
   const storeEarnings =
     subtotalAfterDiscount > 0 && sellerEarningsTotal >= 0
       ? Math.round((storeItemsTotal / subtotalAfterDiscount) * sellerEarningsTotal * 100) / 100
       : undefined;
 
+  const cancelReason = orderRow.seller_cancellation_reason;
+  const sellerCancellationReason =
+    typeof cancelReason === "string" ? cancelReason : cancelReason == null ? null : String(cancelReason);
+  const platformReason = orderRow.platform_cancellation_reason;
+  const platformCancellationReason =
+    typeof platformReason === "string" ? platformReason : platformReason == null ? null : String(platformReason);
+  const rawDeadline = orderRow.seller_response_deadline;
+  const sellerResponseDeadline =
+    typeof rawDeadline === "string" ? rawDeadline : rawDeadline == null ? null : String(rawDeadline);
+
   return {
-    id: order.id,
-    status: order.status,
-    subtotal: Number(order.subtotal),
-    shipping_cost: Number(order.shipping_cost),
-    tax: Number(order.tax),
-    total: Number(order.total),
-    shipping_address: order.shipping_address as Record<string, unknown> | null,
-    notes: order.notes,
-    payment_method: order.payment_method ?? null,
-    tracking_number: order.tracking_number ?? null,
-    shipping_company: order.shipping_company ?? null,
-    estimated_delivery: order.estimated_delivery ?? null,
-    created_at: order.created_at,
-    updated_at: order.updated_at,
-    customer_id: order.customer_id,
+    id: orderRow.id,
+    order_number: orderRow.order_number ?? null,
+    status: orderRow.status,
+    subtotal: Number(orderRow.subtotal),
+    shipping_cost: Number(orderRow.shipping_cost),
+    tax: Number(orderRow.tax),
+    total: Number(orderRow.total),
+    shipping_address: orderRow.shipping_address as Record<string, unknown> | null,
+    notes: orderRow.notes as string | null,
+    payment_method: orderRow.payment_method as string | null,
+    tracking_number: orderRow.tracking_number as string | null,
+    shipping_company: orderRow.shipping_company as string | null,
+    estimated_delivery: orderRow.estimated_delivery as string | null,
+    created_at: orderRow.created_at,
+    updated_at: orderRow.updated_at,
+    customer_id: orderRow.customer_id,
     customer_name: profile?.full_name ?? null,
     customer_email: profile?.email ?? null,
     customer_phone: profile?.phone ?? null,
     items: orderItems,
     store_earnings: storeEarnings,
-    delivery_country: order.delivery_country ?? null,
-    delivery_city_area: order.delivery_city_area ?? null,
-    delivery_building_type: order.delivery_building_type ?? null,
-    delivery_zone_no: order.delivery_zone_no ?? null,
-    delivery_street_no: order.delivery_street_no ?? null,
-    delivery_building_no: order.delivery_building_no ?? null,
-    delivery_floor_no: order.delivery_floor_no ?? null,
-    delivery_apartment_no: order.delivery_apartment_no ?? null,
-    delivery_landmark: order.delivery_landmark ?? null,
-    delivery_phone: order.delivery_phone ?? null,
-    delivery_lat: order.delivery_lat != null ? Number(order.delivery_lat) : null,
-    delivery_lng: order.delivery_lng != null ? Number(order.delivery_lng) : null,
-    delivery_map_url: order.delivery_map_url ?? null,
+    delivery_country: orderRow.delivery_country as string | null,
+    delivery_city_area: orderRow.delivery_city_area as string | null,
+    delivery_building_type: orderRow.delivery_building_type as string | null,
+    delivery_zone_no: orderRow.delivery_zone_no as string | null,
+    delivery_street_no: orderRow.delivery_street_no as string | null,
+    delivery_building_no: orderRow.delivery_building_no as string | null,
+    delivery_floor_no: orderRow.delivery_floor_no as string | null,
+    delivery_apartment_no: orderRow.delivery_apartment_no as string | null,
+    delivery_landmark: orderRow.delivery_landmark as string | null,
+    delivery_phone: orderRow.delivery_phone as string | null,
+    delivery_lat: orderRow.delivery_lat != null ? Number(orderRow.delivery_lat) : null,
+    delivery_lng: orderRow.delivery_lng != null ? Number(orderRow.delivery_lng) : null,
+    delivery_map_url: orderRow.delivery_map_url as string | null,
+    seller_cancellation_reason: sellerCancellationReason,
+    platform_cancellation_reason: platformCancellationReason,
+    seller_response_deadline: sellerResponseDeadline,
+    cancellation_source:
+      orderRow.cancellation_source === "seller" || orderRow.cancellation_source === "system" || orderRow.cancellation_source === "customer"
+        ? orderRow.cancellation_source
+        : null,
+    auto_cancelled_at:
+      orderRow.auto_cancelled_at != null && typeof orderRow.auto_cancelled_at === "string"
+        ? orderRow.auto_cancelled_at
+        : null,
   };
 }
 

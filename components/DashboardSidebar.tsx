@@ -15,6 +15,7 @@ import {
   Star,
   Tag,
   X,
+  CalendarClock,
   LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,7 @@ const sellerNav: NavItem[] = [
   { href: "/seller", label: "Overview", icon: LayoutDashboard },
   { href: "/seller/products", label: "Products", icon: Package },
   { href: "/seller/orders", label: "Orders", icon: DollarSign },
+  { href: "/seller/availability", label: "Store Availability", icon: CalendarClock },
   { href: "/seller/reviews", label: "Reviews", icon: Star },
   { href: "/seller/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/seller/settings", label: "Settings", icon: Settings },
@@ -71,6 +73,7 @@ export function DashboardSidebar({ type, mobileOpen, onMobileClose }: DashboardS
       "Promo codes": t("dashboard.nav.promoCodes"),
       Analytics: t("dashboard.nav.analytics"),
       Settings: t("dashboard.nav.settings"),
+      "Store Availability": t("dashboard.nav.storeAvailability"),
     };
     return { ...item, label: labelMap[item.label] ?? item.label };
   });

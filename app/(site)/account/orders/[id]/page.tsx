@@ -13,12 +13,15 @@ import {
 } from "@/components/ui/table";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getCustomerOrder, getOrderStatusTimeline } from "@/lib/customer";
+import { getOrderExperienceRating } from "@/lib/order-experience-ratings";
+import { OrderExperienceRatingCard } from "@/components/account/OrderExperienceRatingCard";
 import { OrderStatusBadge } from "@/components/order/OrderStatusBadge";
 import { TrackingInfoCard } from "@/components/order/TrackingInfoCard";
 import { DeliveryAddressCard } from "@/components/order/DeliveryAddressCard";
 import { FormattedPrice } from "@/components/FormattedPrice";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
+import { formatOrderDisplayRef } from "@/lib/order-display";
 
 function formatDate(iso: string, locale: string) {
   try {
@@ -42,7 +45,10 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
   const order = await getCustomerOrder(id, user.id);
   if (!order) notFound();
 
-  const statusTimeline = await getOrderStatusTimeline(id, user.id);
+  const [statusTimeline, experienceRating] = await Promise.all([
+    getOrderStatusTimeline(id, user.id),
+    getOrderExperienceRating(id),
+  ]);
 
   const address = order.shipping_address as Record<string, string> | null;
   const buyerName = address
@@ -76,11 +82,39 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-luxury text-primary">{t(language, "account.orders.order")} {order.id.slice(0, 8)}…</h1>
+            <h1 className="text-2xl md:text-3xl font-luxury text-primary">{t(language, "account.orders.order")} {formatOrderDisplayRef(order)}</h1>
             <p className="text-masa-gray font-sans mt-1">{t(language, "account.orders.placed")} {formatDate(order.created_at, isArabic ? "ar-QA" : "en-US")}</p>
           </div>
           <OrderStatusBadge status={order.status} />
         </div>
+
+        {order.status === "cancelled" &&
+          order.cancellation_source === "system" &&
+          order.platform_cancellation_reason?.trim() && (
+            <Card className="mb-8 border-amber-200/90 bg-amber-50/40 border-primary/10">
+              <CardHeader>
+                <CardTitle className="font-luxury text-primary text-lg">
+                  {t(language, "account.orders.platformCancellationHeading")}
+                </CardTitle>
+                <p className="text-sm text-masa-gray font-sans">{t(language, "account.orders.platformCancellationIntro")}</p>
+              </CardHeader>
+              <CardContent className="font-sans text-sm text-masa-dark whitespace-pre-wrap">
+                {order.platform_cancellation_reason.trim()}
+              </CardContent>
+            </Card>
+          )}
+
+        {order.status === "cancelled" &&
+          order.cancellation_source !== "system" &&
+          order.seller_cancellation_reason?.trim() && (
+            <Card className="mb-8 border-red-200/80 bg-red-50/50 border-primary/10">
+              <CardHeader>
+                <CardTitle className="font-luxury text-primary text-lg">{t(language, "account.orders.sellerCancellationHeading")}</CardTitle>
+                <p className="text-sm text-masa-gray font-sans">{t(language, "account.orders.sellerCancellationIntro")}</p>
+              </CardHeader>
+              <CardContent className="font-sans text-sm text-masa-dark whitespace-pre-wrap">{order.seller_cancellation_reason.trim()}</CardContent>
+            </Card>
+          )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
@@ -113,6 +147,8 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
                 </div>
               </CardContent>
             </Card>
+
+            <OrderExperienceRatingCard orderId={order.id} orderStatus={order.status} existing={experienceRating} />
           </div>
 
           <div className="space-y-6">
@@ -136,6 +172,7 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
                         {ev.source === "checkout" && ` · ${t(language, "account.orders.placedSource")}`}
                         {ev.source === "seller" && ` · ${t(language, "account.orders.sellerSource")}`}
                         {ev.source === "admin" && ` · ${t(language, "account.orders.adminSource")}`}
+                        {ev.source === "system" && ` · ${t(language, "account.orders.systemSource")}`}
                       </p>
                       <p className="text-xs text-masa-gray">{formatDate(ev.created_at, isArabic ? "ar-QA" : "en-US")}</p>
                     </div>

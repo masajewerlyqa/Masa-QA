@@ -11,6 +11,7 @@ type MobileFilterDrawerProps = {
   filters: MarketplaceFilters;
   priceExtent?: { minPrice: number; maxPrice: number };
   selected: {
+    categories: string[];
     brands: string[];
     metals: string[];
     karats: string[];
@@ -33,6 +34,7 @@ export function MobileFilterDrawer({ filters, priceExtent, selected }: MobileFil
     (selected.minPrice > lo + eps || selected.maxPrice < hi - eps);
 
   const activeCount = [
+    selected.categories.length > 0,
     selected.brands.length > 0,
     selected.metals.length > 0,
     selected.karats.length > 0,

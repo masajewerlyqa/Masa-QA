@@ -25,13 +25,17 @@ export async function ensureProfileForAuthUser(user: User): Promise<void> {
   const newsletterOptIn =
     typeof meta.newsletter_opt_in === "boolean" ? meta.newsletter_opt_in : false;
 
+  const registrationIntent =
+    typeof meta.registration_intent === "string" ? meta.registration_intent : null;
+  const role = registrationIntent === "seller" ? "pending_seller" : "customer";
+
   const { error } = await service.from("profiles").insert({
     id: user.id,
     email: user.email ?? null,
     full_name: fullName,
     avatar_url: avatarUrl,
     phone,
-    role: "customer",
+    role,
     newsletter_opt_in: newsletterOptIn,
   });
 

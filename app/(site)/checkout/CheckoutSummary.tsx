@@ -54,7 +54,7 @@ export function CheckoutSummary({ cartItems, subtotal, appliedPromo }: CheckoutS
             </div>
           )}
           <div className="flex justify-between">
-            <span className="text-masa-gray">{t("checkout.shipping", "Shipping")}</span>
+            <span className="text-masa-gray">{t("checkout.shipping", "Delivery")}</span>
             <span className="text-green-600">{t("checkout.free", "Free")}</span>
           </div>
           <div className="pt-4 border-t border-primary/10">

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatsCard } from "@/components/StatsCard";
 import { DollarSign, ShoppingBag, Store, Layers3 } from "lucide-react";
@@ -22,6 +23,8 @@ import type {
 } from "@/lib/admin";
 import { useCurrency } from "@/components/CurrencyProvider";
 import { useI18n } from "@/components/useI18n";
+import { localizeEnglishMonthAbbrev } from "@/lib/date-format";
+import { translateProductCategory } from "@/lib/product-category-i18n";
 
 type Props = {
   platformSnapshot: AdminPlatformSnapshotRow[];
@@ -37,7 +40,25 @@ export function AdminAnalyticsClient({
   topSellers,
 }: Props) {
   const { formatPrice } = useCurrency();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+
+  const platformChartData = useMemo(
+    () =>
+      platformSnapshot.map((r) => ({
+        ...r,
+        month: localizeEnglishMonthAbbrev(r.month, language),
+      })),
+    [platformSnapshot, language]
+  );
+
+  const categoryRevenueChart = useMemo(
+    () =>
+      categoryRevenue.map((r) => ({
+        ...r,
+        category: translateProductCategory(r.category, t),
+      })),
+    [categoryRevenue, t]
+  );
 
   const totalRevenue = platformSnapshot.reduce((sum, row) => sum + row.revenue, 0);
   const totalOrders = platformSnapshot.reduce((sum, row) => sum + row.orders, 0);
@@ -65,7 +86,7 @@ export function AdminAnalyticsClient({
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={platformSnapshot}>
+              <AreaChart data={platformChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E7D8C3" />
                 <XAxis dataKey="month" />
                 <YAxis />
@@ -82,7 +103,7 @@ export function AdminAnalyticsClient({
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={platformSnapshot}>
+              <BarChart data={platformChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E7D8C3" />
                 <XAxis dataKey="month" />
                 <YAxis />
@@ -101,7 +122,7 @@ export function AdminAnalyticsClient({
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={categoryRevenue.slice(0, 8)}>
+              <BarChart data={categoryRevenueChart.slice(0, 8)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E7D8C3" />
                 <XAxis dataKey="category" />
                 <YAxis />

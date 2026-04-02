@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { LANGUAGE_COOKIE_KEY, isLanguage } from "@/lib/language";
+import { createServiceClient } from "@/lib/supabase/service";
 
 /**
  * OAuth PKCE, email confirmation, and password-recovery code exchange.
@@ -56,6 +58,29 @@ export async function GET(request: Request) {
         const { ensureProfileForAuthUser, enrichProfileFromOAuthMetadata } = await import("@/lib/auth/profile-sync");
         await ensureProfileForAuthUser(user);
         await enrichProfileFromOAuthMetadata(user).catch(() => {});
+
+        const applyPath = next === "/apply" || next.startsWith("/apply?");
+        if (applyPath) {
+          const service = createServiceClient();
+          const { data: prof } = await service.from("profiles").select("role").eq("id", user.id).maybeSingle();
+          if (prof && (prof as { role: string }).role === "customer") {
+            await service
+              .from("profiles")
+              .update({ role: "pending_seller", updated_at: new Date().toISOString() })
+              .eq("id", user.id);
+          }
+        }
+
+        const langCookie = cookieStore.get(LANGUAGE_COOKIE_KEY)?.value;
+        if (isLanguage(langCookie)) {
+          await createServiceClient()
+            .from("profiles")
+            .update({
+              preferred_language: langCookie,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", user.id);
+        }
 
         // Password recovery: do not send welcome (account already exists).
         if (flowType !== "recovery") {

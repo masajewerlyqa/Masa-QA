@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Coins, Info, TrendingUp, TrendingDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Coins, Info, TrendingUp } from "lucide-react";
+import { goldPricePerGramAtPurity } from "@/lib/tools/gold-karat-price";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,8 +40,9 @@ function getKaratLabel(label: string, isArabic: boolean): string {
 
 const DEFAULT_GOLD_PRICE_QAR = 272.5; // QAR per gram fallback
 
-function formatQAR(amount: number): string {
-  return `ر.ق ${amount.toLocaleString("en-US", {
+function formatQAR(amount: number, isArabic: boolean): string {
+  const prefix = isArabic ? "ر.ق" : "QAR";
+  return `${prefix} ${amount.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -54,7 +56,11 @@ export function SellGoldCalculatorClient({ latestGoldPriceQAR = DEFAULT_GOLD_PRI
   const { isArabic } = useLanguage();
   const [weight, setWeight] = useState("");
   const [karat, setKarat] = useState("22");
-  const [goldPrice, setGoldPrice] = useState(latestGoldPriceQAR.toFixed(2));
+  const initialPurity = GOLD_KARATS.find((k) => k.value === "22")?.purity ?? 0.917;
+  const [goldPrice, setGoldPrice] = useState(() =>
+    goldPricePerGramAtPurity(latestGoldPriceQAR, initialPurity).toFixed(2)
+  );
+  const [syncPriceToSpot, setSyncPriceToSpot] = useState(true);
   const [result, setResult] = useState<{
     pureGold: number;
     marketValue: number;
@@ -62,15 +68,22 @@ export function SellGoldCalculatorClient({ latestGoldPriceQAR = DEFAULT_GOLD_PRI
     buybackRate: number;
   } | null>(null);
 
+  useEffect(() => {
+    if (!syncPriceToSpot) return;
+    const p = GOLD_KARATS.find((k) => k.value === karat)?.purity ?? 0.917;
+    setGoldPrice(goldPricePerGramAtPurity(latestGoldPriceQAR, p).toFixed(2));
+  }, [karat, latestGoldPriceQAR, syncPriceToSpot]);
+
   const calculate = () => {
     const weightNum = parseFloat(weight) || 0;
-    const priceNum = parseFloat(goldPrice) || latestGoldPriceQAR;
     const karatInfo = GOLD_KARATS.find((k) => k.value === karat);
     const purity = karatInfo?.purity || 0.917;
     const buybackRate = karatInfo?.buybackRate || 0.95;
+    const spotForKarat = goldPricePerGramAtPurity(latestGoldPriceQAR, purity);
+    const priceNum = parseFloat(goldPrice) || spotForKarat;
 
     const pureGold = weightNum * purity;
-    const marketValue = pureGold * priceNum;
+    const marketValue = weightNum * priceNum;
     const estimatedOffer = marketValue * buybackRate;
 
     setResult({
@@ -84,7 +97,7 @@ export function SellGoldCalculatorClient({ latestGoldPriceQAR = DEFAULT_GOLD_PRI
   const reset = () => {
     setWeight("");
     setKarat("22");
-    setGoldPrice(latestGoldPriceQAR.toFixed(2));
+    setSyncPriceToSpot(true);
     setResult(null);
   };
 
@@ -120,7 +133,13 @@ export function SellGoldCalculatorClient({ latestGoldPriceQAR = DEFAULT_GOLD_PRI
             {/* Gold Karat */}
             <div className="space-y-2">
               <Label htmlFor="karat">{isArabic ? "عيار الذهب / النقاء" : "Gold Karat / Purity"}</Label>
-              <Select value={karat} onValueChange={setKarat}>
+              <Select
+                value={karat}
+                onValueChange={(v) => {
+                  setKarat(v);
+                  setSyncPriceToSpot(true);
+                }}
+              >
                 <SelectTrigger id="karat" className="bg-masa-light">
                   <SelectValue placeholder={isArabic ? "اختر العيار" : "Select karat"} />
                 </SelectTrigger>
@@ -134,22 +153,31 @@ export function SellGoldCalculatorClient({ latestGoldPriceQAR = DEFAULT_GOLD_PRI
               </Select>
             </div>
 
-            {/* Gold Price */}
+            {/* Gold Price (per gram at selected karat) */}
             <div className="space-y-2">
-              <Label htmlFor="price">{isArabic ? "سعر الذهب الحالي (ر.ق لكل غرام)" : "Current Gold Price (QAR per gram)"}</Label>
+              <Label htmlFor="price">
+                {isArabic
+                  ? "سعر الذهب (ر.ق/غرام حسب العيار المختار)"
+                  : "Gold price (QAR per gram at selected karat)"}
+              </Label>
               <Input
                 id="price"
                 type="number"
-                placeholder={isArabic ? "سعر الذهب الحالي" : "Current gold price"}
+                placeholder={isArabic ? "سعر الغرام للعيار المختار" : "Price per gram for selected karat"}
                 value={goldPrice}
-                onChange={(e) => setGoldPrice(e.target.value)}
+                onChange={(e) => {
+                  setSyncPriceToSpot(false);
+                  setGoldPrice(e.target.value);
+                }}
                 className="bg-masa-light"
                 min="0"
                 step="0.01"
               />
               <p className="text-xs text-masa-gray flex items-center gap-1">
                 <Info className="w-3 h-3" />
-                {isArabic ? "تم ضبطه على أحدث سعر من صفحة أسعار السوق" : "Defaulted to the latest Market Prices gold rate"}
+                {isArabic
+                  ? "يُحدَّث تلقائياً من سعر 24 عيار في السوق مضروباً في نقاء العيار. يمكنك تعديله يدوياً."
+                  : "Updates from market 24K spot × purity for the karat you pick. You can override with your own quote."}
               </p>
             </div>
 
@@ -177,7 +205,7 @@ export function SellGoldCalculatorClient({ latestGoldPriceQAR = DEFAULT_GOLD_PRI
                   />
                   <ResultItem
                     label={isArabic ? "القيمة السوقية" : "Market Value"}
-                    value={formatQAR(result.marketValue)}
+                    value={formatQAR(result.marketValue, isArabic)}
                     icon={<TrendingUp className="w-4 h-4 text-green-600" />}
                   />
                 </div>
@@ -188,7 +216,7 @@ export function SellGoldCalculatorClient({ latestGoldPriceQAR = DEFAULT_GOLD_PRI
                       {isArabic ? `العرض التقديري (${result.buybackRate}% من السوق)` : `Estimated Offer (${result.buybackRate}% of market)`}
                     </p>
                     <p className="text-4xl font-luxury text-primary mb-2">
-                      {formatQAR(result.estimatedOffer)}
+                      {formatQAR(result.estimatedOffer, isArabic)}
                     </p>
                     <p className="text-xs text-masa-gray">
                       {isArabic ? "قد تختلف العروض الفعلية حسب التاجر وظروف السوق" : "Actual offers may vary based on dealer and market conditions"}
@@ -210,15 +238,15 @@ export function SellGoldCalculatorClient({ latestGoldPriceQAR = DEFAULT_GOLD_PRI
                     </div>
                     <div className="flex justify-between">
                       <span className="text-masa-gray">{isArabic ? "سعر الذهب" : "Gold Price"}</span>
-                      <span>{formatQAR(Number(goldPrice) || 0)}/g</span>
+                      <span>{formatQAR(Number(goldPrice) || 0, isArabic)}/g</span>
                     </div>
                     <div className="flex justify-between border-t border-primary/10 pt-2">
                       <span className="text-masa-gray">{isArabic ? "القيمة السوقية" : "Market Value"}</span>
-                      <span className="font-medium">{formatQAR(result.marketValue)}</span>
+                      <span className="font-medium">{formatQAR(result.marketValue, isArabic)}</span>
                     </div>
                     <div className="flex justify-between text-primary">
                       <span>{isArabic ? "تقديرك" : "Your Estimate"}</span>
-                      <span className="font-medium">{formatQAR(result.estimatedOffer)}</span>
+                      <span className="font-medium">{formatQAR(result.estimatedOffer, isArabic)}</span>
                     </div>
                   </div>
                 </div>

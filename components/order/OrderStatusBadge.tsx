@@ -5,6 +5,7 @@ import { useI18n } from "@/components/useI18n";
 
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline" | "warning" | "success"> = {
   pending: "outline",
+  awaiting_seller: "warning",
   accepted: "secondary",
   processing: "secondary",
   shipped: "secondary",

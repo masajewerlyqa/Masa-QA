@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getCartWithProducts } from "@/lib/customer";
+import { validateCartStoresForCheckout } from "@/lib/cart-store-availability";
 import { CheckoutWithSummary } from "./CheckoutWithSummary";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
@@ -12,6 +13,10 @@ export default async function CheckoutPage() {
 
   const cartWithProducts = await getCartWithProducts(user.id);
   if (cartWithProducts.length === 0) redirect("/cart");
+
+  const gate = await validateCartStoresForCheckout(user.id);
+  const checkoutBlocked = gate.blocked;
+  const checkoutBlockReason = checkoutBlocked ? gate.reason : null;
 
   const subtotal = cartWithProducts.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const cartItems = cartWithProducts.map((item) => ({
@@ -25,7 +30,12 @@ export default async function CheckoutPage() {
       <h1 className="text-3xl md:text-4xl mb-8 md:mb-12 text-primary font-luxury">
         {t(language, "checkout.secureCheckout")}
       </h1>
-      <CheckoutWithSummary cartItems={cartItems} subtotal={subtotal} />
+      <CheckoutWithSummary
+        cartItems={cartItems}
+        subtotal={subtotal}
+        checkoutBlocked={checkoutBlocked}
+        checkoutBlockReason={checkoutBlockReason}
+      />
     </div>
   );
 }

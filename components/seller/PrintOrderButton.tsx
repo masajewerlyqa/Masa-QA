@@ -6,9 +6,11 @@ import { useI18n } from "@/components/useI18n";
 
 interface PrintOrderButtonProps {
   orderId: string;
+  /** Shown in print dialog title (e.g. MASA-2026-000001). */
+  orderLabel?: string;
 }
 
-export function PrintOrderButton({ orderId }: PrintOrderButtonProps) {
+export function PrintOrderButton({ orderId, orderLabel }: PrintOrderButtonProps) {
   const { t } = useI18n();
   function handlePrint() {
     const printWindow = window.open("", "_blank");
@@ -21,7 +23,7 @@ export function PrintOrderButton({ orderId }: PrintOrderButtonProps) {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Order ${orderId.slice(0, 8)}</title>
+          <title>Order ${orderLabel ?? orderId.slice(0, 8)}</title>
           <style>
             @page { margin: 20mm; }
             * { box-sizing: border-box; margin: 0; padding: 0; }

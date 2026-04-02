@@ -17,6 +17,7 @@ type SellerApplicationApproveRow = {
   store_location: string | null;
   logo_path: string | null;
   social_links: unknown;
+  seller_plan: string | null;
 };
 type SellerApplicationRejectRow = {
   user_id: string;
@@ -55,7 +56,7 @@ export async function approveApplication(applicationId: string): Promise<ActionR
     .from("seller_applications")
     .select(
       "user_id, status, business_name, business_description, contact_email, contact_phone, " +
-        "store_location, logo_path, social_links"
+        "store_location, logo_path, social_links, seller_plan"
     )
     .eq("id", applicationId)
     .single();
@@ -109,6 +110,9 @@ export async function approveApplication(applicationId: string): Promise<ActionR
     const socialLinks =
       app.social_links != null && typeof app.social_links === "object" ? app.social_links : null;
 
+    const plan =
+      app.seller_plan === "premium" || app.seller_plan === "basic" ? app.seller_plan : "basic";
+
     const { data: newStore, error: storeError } = await service
       .from("stores")
       .insert({
@@ -122,6 +126,7 @@ export async function approveApplication(applicationId: string): Promise<ActionR
         contact_phone: (app.contact_phone ?? "").trim() || null,
         social_links: socialLinks,
         status: "pending",
+        seller_plan: plan,
       })
       .select("id")
       .single();
@@ -191,6 +196,12 @@ export async function rejectApplication(
   if (updateError) {
     return { ok: false, error: updateError.message };
   }
+
+  const service = createServiceClient();
+  await service
+    .from("profiles")
+    .update({ role: "customer", updated_at: new Date().toISOString() })
+    .eq("id", app.user_id);
 
   await notifyApplicantApplicationRejected(app.user_id, reviewNotes);
 

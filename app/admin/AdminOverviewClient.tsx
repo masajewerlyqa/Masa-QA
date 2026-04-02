@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import {
   Users,
@@ -38,19 +39,9 @@ import type {
   AdminPlatformSnapshotRow,
 } from "@/lib/admin";
 import { useI18n } from "@/components/useI18n";
-
-function formatDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return iso;
-  }
-}
-
+import { formatOrderDisplayRef } from "@/lib/order-display";
+import { formatShortDate, localizeEnglishMonthAbbrev } from "@/lib/date-format";
+import { translateProductCategory } from "@/lib/product-category-i18n";
 import { useCurrency } from "@/components/CurrencyProvider";
 
 type Props = {
@@ -73,8 +64,35 @@ export function AdminOverviewClient({
   platformSnapshotMonthly,
 }: Props) {
   const { formatPrice } = useCurrency();
-  const { t } = useI18n();
-  const pieData = categoryDistribution.length > 0 ? categoryDistribution : [{ name: t("admin.overview.noData"), value: 1, color: "#E7D8C3" }];
+  const { t, language } = useI18n();
+
+  const pieData = useMemo(() => {
+    if (categoryDistribution.length === 0) {
+      return [{ name: t("admin.overview.noData"), value: 1, color: "#E7D8C3" }];
+    }
+    return categoryDistribution.map((c) => ({
+      ...c,
+      name: translateProductCategory(c.name, t),
+    }));
+  }, [categoryDistribution, t]);
+
+  const platformChartData = useMemo(
+    () =>
+      platformSnapshotMonthly.map((r) => ({
+        ...r,
+        month: localizeEnglishMonthAbbrev(r.month, language),
+      })),
+    [platformSnapshotMonthly, language]
+  );
+
+  const commissionTableRows = useMemo(
+    () =>
+      commissionMonthly.map((r) => ({
+        ...r,
+        month: localizeEnglishMonthAbbrev(r.month, language),
+      })),
+    [commissionMonthly, language]
+  );
 
   return (
     <div className="p-4 md:p-8">
@@ -125,7 +143,7 @@ export function AdminOverviewClient({
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={platformSnapshotMonthly}>
+              <LineChart data={platformChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E7D8C3" />
                 <XAxis dataKey="month" />
                 <YAxis yAxisId="left" />
@@ -211,7 +229,7 @@ export function AdminOverviewClient({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {commissionMonthly.map((row) => (
+                    {commissionTableRows.map((row) => (
                       <TableRow key={row.month}>
                         <TableCell className="font-sans">{row.month}</TableCell>
                         <TableCell className="font-sans text-right">{formatPrice(row.commission)}</TableCell>
@@ -279,7 +297,7 @@ export function AdminOverviewClient({
                             {t("order.statuses." + app.status, app.status)}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-sans text-masa-gray">{formatDate(app.created_at)}</TableCell>
+                        <TableCell className="font-sans text-masa-gray">{formatShortDate(app.created_at, language)}</TableCell>
                         <TableCell>
                           <Button asChild variant="ghost" size="sm" className="font-sans">
                             <Link href={`/admin/seller-applications/${app.id}`}>{t("admin.overview.view")}</Link>
@@ -321,7 +339,7 @@ export function AdminOverviewClient({
                   ) : (
                     recentOrders.map((order) => (
                       <TableRow key={order.id}>
-                        <TableCell className="font-mono text-sm">{order.id.slice(0, 8)}…</TableCell>
+                        <TableCell className="font-mono text-sm">{formatOrderDisplayRef(order)}</TableCell>
                         <TableCell className="font-sans">
                           {order.customer_name ?? order.customer_email ?? "—"}
                         </TableCell>
@@ -331,7 +349,7 @@ export function AdminOverviewClient({
                             {t("order.statuses." + order.status, order.status.replace(/_/g, " "))}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-sans text-masa-gray">{formatDate(order.created_at)}</TableCell>
+                        <TableCell className="font-sans text-masa-gray">{formatShortDate(order.created_at, language)}</TableCell>
                       </TableRow>
                     ))
                   )}

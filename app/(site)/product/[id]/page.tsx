@@ -16,6 +16,7 @@ import { WishlistHeartButton } from "@/components/customer/WishlistHeartButton";
 import { FormattedPrice } from "@/components/FormattedPrice";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
+import { isSupabaseStoragePublicUrl } from "@/lib/product-image-url";
 import Image from "next/image";
 
 interface PageProps {
@@ -42,39 +43,45 @@ export default async function ProductPage({ params }: PageProps) {
     getRelatedProducts(product.id, product.storeId, product.category, 4),
   ]);
   const images = product.images?.length ? product.images : [product.image];
+  const mainOriginal = isSupabaseStoragePublicUrl(product.image);
 
   return (
     <div className="max-w-content mx-auto px-4 md:px-6 py-6 md:py-12">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 mb-12 md:mb-20">
         {/* Image Gallery */}
         <div>
-          <div className="aspect-square bg-masa-light rounded-lg overflow-hidden mb-3 md:mb-4">
+          <div className="relative aspect-square bg-masa-light rounded-lg overflow-hidden mb-3 md:mb-4">
             <Image
               src={product.image}
               alt={product.title}
-              width={600}
-              height={600}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
               priority
-              sizes="(max-width: 768px) 100vw, 50vw"
+              sizes="(max-width: 1023px) min(100vw, 1440px), 680px"
+              unoptimized={mainOriginal}
+              quality={100}
             />
           </div>
           <div className="grid grid-cols-4 gap-2 md:gap-4">
-            {images.slice(0, 4).map((img, idx) => (
-              <div
-                key={idx}
-                className="aspect-square rounded-lg overflow-hidden border-2 border-primary/20"
-              >
-                <Image
-                  src={img}
-                  alt=""
-                  width={120}
-                  height={120}
-                  className="w-full h-full object-cover"
-                  sizes="(max-width: 768px) 25vw, 120px"
-                />
-              </div>
-            ))}
+            {images.slice(0, 4).map((img, idx) => {
+              const thumbOriginal = isSupabaseStoragePublicUrl(img);
+              return (
+                <div
+                  key={idx}
+                  className="relative aspect-square rounded-lg overflow-hidden border-2 border-primary/20"
+                >
+                  <Image
+                    src={img}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1023px) 22vw, 180px"
+                    unoptimized={thumbOriginal}
+                    quality={100}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -198,7 +205,7 @@ export default async function ProductPage({ params }: PageProps) {
           >
             {t(language, "product.reviewsTab")} ({reviewStats.reviewCount})
           </TabsTrigger>
-          <TabsTrigger value="shipping" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-xs md:text-sm shrink-0 px-3 md:px-4">
+          <TabsTrigger value="delivery" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-xs md:text-sm shrink-0 px-3 md:px-4">
             {t(language, "product.shippingTab")}
           </TabsTrigger>
         </TabsList>
@@ -326,7 +333,7 @@ export default async function ProductPage({ params }: PageProps) {
             </div>
           </div>
         </TabsContent>
-        <TabsContent value="shipping" className="py-6 md:py-8">
+        <TabsContent value="delivery" className="py-6 md:py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             <div>
               <h4 className="mb-3 md:mb-4 text-primary font-luxury text-sm md:text-base">{t(language, "product.shippingInformation")}</h4>

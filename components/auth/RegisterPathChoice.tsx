@@ -22,10 +22,7 @@ export function RegisterPathChoice({ onChoose }: Props) {
         <p className="text-masa-gray font-sans">{t("auth.register.joinMarketplace")}</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <Card
-          className="border-primary/20 hover:border-primary/40 transition-colors cursor-pointer group overflow-hidden"
-          onClick={() => onChoose("buyer")}
-        >
+        <Card className="border-primary/20 hover:border-primary/40 transition-colors group overflow-hidden">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
               <ShoppingBag className="h-7 w-7" />
@@ -41,10 +38,7 @@ export function RegisterPathChoice({ onChoose }: Props) {
             </Button>
           </CardContent>
         </Card>
-        <Card
-          className="border-primary/20 hover:border-primary/40 transition-colors cursor-pointer group overflow-hidden"
-          onClick={() => onChoose("seller")}
-        >
+        <Card className="border-primary/20 hover:border-primary/40 transition-colors group overflow-hidden ring-2 ring-primary/10">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
               <Store className="h-7 w-7" />

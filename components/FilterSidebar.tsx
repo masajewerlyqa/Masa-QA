@@ -9,12 +9,12 @@ import { Slider } from "@/components/ui/slider";
 import { useCurrency } from "@/components/CurrencyProvider";
 import { useI18n } from "@/components/useI18n";
 import type { MarketplaceFilters } from "@/lib/data";
-
 type FilterSidebarProps = {
   filters: MarketplaceFilters;
   /** Bounds for the slider for the current filter context (USD); optional */
   priceExtent?: { minPrice: number; maxPrice: number };
   selected: {
+    categories: string[];
     brands: string[];
     metals: string[];
     karats: string[];
@@ -118,6 +118,7 @@ export function FilterSidebar({ filters, priceExtent: _priceExtent, selected }: 
       silver: t("marketplace.silver"),
       platinum: t("marketplace.platinum"),
       diamond: t("marketplace.diamond"),
+      other: t("marketplace.other"),
     };
     return optionMap[key] ?? value;
   }
@@ -162,29 +163,25 @@ export function FilterSidebar({ filters, priceExtent: _priceExtent, selected }: 
                     p.delete("category");
                   })
                 }
-                className={`block text-sm ${
-                  !searchParams.get("category") ? "text-primary font-medium" : "text-masa-dark"
+                className={`block text-sm text-start w-full ${
+                  selected.categories.length === 0 ? "text-primary font-medium" : "text-masa-dark"
                 }`}
               >
                 {t("marketplace.all")}
               </button>
               {filters.categories.map((cat) => {
-                const active = searchParams.get("category") === cat;
+                const checked = selected.categories.includes(cat);
                 return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() =>
-                      updateParams((p) => {
-                        p.set("category", cat);
-                      })
-                    }
-                    className={`block text-sm ${
-                      active ? "text-primary font-medium" : "text-masa-dark"
-                    }`}
-                  >
-                    {localizeOption(cat)}
-                  </button>
+                  <div key={cat} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`category-${cat}`}
+                      checked={checked}
+                      onCheckedChange={() => toggleMulti("category", cat)}
+                    />
+                    <Label htmlFor={`category-${cat}`} className="text-sm cursor-pointer text-masa-dark">
+                      {localizeOption(cat)}
+                    </Label>
+                  </div>
                 );
               })}
             </div>

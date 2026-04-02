@@ -58,7 +58,7 @@ export default function TermsPage() {
             <div>
               <h2 className="font-luxury text-xl text-primary mb-3">{isArabic ? "المشتريات والمدفوعات" : "Purchases and payments"}</h2>
               <p>
-                When you buy an item, you agree to pay the stated price and any applicable shipping and taxes. Payment is processed through our secure payment partners. Disputes about the product or delivery are addressed with the seller; we may step in to help resolve issues where appropriate.
+                When you buy an item, you agree to pay the stated price and any applicable delivery fees and taxes. Payment is processed through our secure payment partners. Disputes about the product or delivery are addressed with the seller; we may step in to help resolve issues where appropriate.
               </p>
             </div>
             <div>

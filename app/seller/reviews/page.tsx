@@ -7,14 +7,7 @@ import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getSellerStore, getSellerReviews } from "@/lib/seller";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
-
-function formatDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  } catch {
-    return iso;
-  }
-}
+import { formatShortDate } from "@/lib/date-format";
 
 function StatusBadge({ status, language }: { status: string; language: "en" | "ar" }) {
   if (status === "approved") return <Badge variant="default">{t(language, "seller.reviews.approved")}</Badge>;
@@ -86,7 +79,7 @@ export default async function SellerReviewsPage() {
                     </div>
                     {review.title && <p className="font-medium text-masa-dark mb-1">{review.title}</p>}
                     {review.body && <p className="text-sm text-masa-gray">{review.body}</p>}
-                    <p className="text-xs text-masa-gray mt-2">{formatDate(review.created_at)}</p>
+                    <p className="text-xs text-masa-gray mt-2">{formatShortDate(review.created_at, language)}</p>
                   </div>
                 </div>
               ))}
@@ -119,7 +112,7 @@ export default async function SellerReviewsPage() {
                     </div>
                     {review.title && <p className="font-medium text-masa-dark mb-1">{review.title}</p>}
                     {review.body && <p className="text-sm text-masa-gray">{review.body}</p>}
-                    <p className="text-xs text-masa-gray mt-2">{formatDate(review.created_at)}</p>
+                    <p className="text-xs text-masa-gray mt-2">{formatShortDate(review.created_at, language)}</p>
                   </div>
                 </div>
               ))}
@@ -150,7 +143,7 @@ export default async function SellerReviewsPage() {
                     </div>
                     {review.title && <p className="font-medium text-masa-dark mb-1">{review.title}</p>}
                     {review.body && <p className="text-sm text-masa-gray">{review.body}</p>}
-                    <p className="text-xs text-masa-gray mt-2">{formatDate(review.created_at)}</p>
+                    <p className="text-xs text-masa-gray mt-2">{formatShortDate(review.created_at, language)}</p>
                   </div>
                 </div>
               ))}

@@ -52,7 +52,7 @@ export default async function HomePage() {
         }}
         secondaryCta={{
           label: t(language, "home.heroSecondaryCta"),
-          href: "/advisor",
+          href: "/register",
         }}
       />
 

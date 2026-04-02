@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,18 +18,20 @@ import {
 } from "@/lib/contact/subjects";
 import { useLanguage } from "@/components/LanguageProvider";
 import { normalizeAuthError } from "@/lib/auth-error-messages";
+import { toast } from "@/hooks/use-toast";
 
 export function ContactForm() {
-  const { isArabic } = useLanguage();
+  const { isArabic, language } = useLanguage();
+  const formRef = useRef<HTMLFormElement>(null);
   const [subject, setSubject] = useState<string>("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState(
     "Please fill in all required fields."
   );
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const form = e.currentTarget;
+    const form = formRef.current ?? e.currentTarget;
     const formData = new FormData(form);
     const name = (formData.get("name") as string)?.trim();
     const email = (formData.get("email") as string)?.trim();
@@ -53,6 +55,7 @@ export function ContactForm() {
           ...(phone ? { phone } : {}),
           subject,
           message,
+          language,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
@@ -65,7 +68,16 @@ export function ContactForm() {
         setStatus("error");
         return;
       }
-      setStatus("success");
+      form.reset();
+      setSubject("");
+      setStatus("idle");
+      toast({
+        variant: "success",
+        title: isArabic ? "شكراً لك" : "Thank you",
+        description: isArabic
+          ? "استلمنا رسالتك وسنرد عليك قريباً."
+          : "We received your message and will get back to you shortly.",
+      });
     } catch {
       setErrorMessage(isArabic ? "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى." : "Something went wrong. Please try again.");
       setStatus("error");
@@ -74,6 +86,7 @@ export function ContactForm() {
 
   return (
     <form
+      ref={formRef}
       onSubmit={handleSubmit}
       className="space-y-6"
       noValidate
@@ -128,7 +141,7 @@ export function ContactForm() {
           {isArabic ? "الموضوع" : "Subject"} <span className="text-primary">*</span>
         </Label>
         <input type="hidden" name="subject" value={subject} readOnly aria-hidden />
-        <Select value={subject} onValueChange={setSubject}>
+        <Select value={subject || undefined} onValueChange={setSubject}>
           <SelectTrigger id="contact-subject" className="h-11 border-primary/20 focus:ring-2 focus:ring-primary">
             <SelectValue placeholder={isArabic ? "اختر الموضوع" : "Select a topic"} />
           </SelectTrigger>
@@ -159,11 +172,6 @@ export function ContactForm() {
       {status === "error" && (
         <p className="text-sm text-red-600 font-sans" role="alert">
           {errorMessage}
-        </p>
-      )}
-      {status === "success" && (
-        <p className="text-sm text-primary font-sans">
-          {isArabic ? "شكراً لك. تم إرسال رسالتك بنجاح، وسنرد عليك قريباً." : "Thank you. Your message has been sent. We will respond shortly."}
         </p>
       )}
 

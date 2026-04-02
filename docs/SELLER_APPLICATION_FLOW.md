@@ -35,14 +35,15 @@ Details: **supabase/STORAGE_SETUP.md**.
 ### Step 2: Customer submits a seller application
 
 1. Go to **Become a seller** (footer link) or open http://localhost:3000/apply.
-2. If not logged in, you’ll see “Sign in to submit your seller application” → use **Sign in** and sign in as **customer@test.com**.
-3. Fill the form:
+2. If not logged in, sign in or use **Register** (seller links use `/register?intent=seller` to open the seller signup path, then you are sent to `/apply`).
+3. On **Choose your plan**, pick **Basic** or **Premium** → you are taken to `/apply/form`.
+4. Fill the application form:
    - **Full name**, **Email**, **Phone**
-   - **Store name**, **Store description**
+   - **Store name**, **Store description**, **Store location**
    - **Store license**: upload a PDF or image (required).
-4. Click **Submit application**.
-5. You should be redirected to `/account?applied=1` and see a success state.
-6. Visiting **/apply** again should show “You have already submitted an application” with status **Pending**.
+5. Click **Submit application**.
+6. You should be redirected to `/apply/success?plan=basic` or `premium` and receive a confirmation email. The account page can still show a banner if you use an older `?applied=1` link.
+7. Visiting **/apply** again should show “You have already submitted an application” with status **Pending**.
 
 ### Step 3: Admin reviews the application
 

@@ -100,11 +100,13 @@ function scoreProduct(
   let score = 0;
   const reasons: string[] = [];
 
-  const budgetRange = BUDGET_RANGES.find((b) => b.value === preferences.budget);
+  const budgetRange =
+    preferences.budget === "any" ? undefined : BUDGET_RANGES.find((b) => b.value === preferences.budget);
   if (budgetRange) {
-    const inBudget = product.price >= budgetRange.min && product.price <= budgetRange.max;
+    const maxCap = budgetRange.max === Infinity ? Number.MAX_SAFE_INTEGER : budgetRange.max;
+    const inBudget = product.price >= budgetRange.min && product.price <= maxCap;
     const nearBudget =
-      product.price >= budgetRange.min * 0.8 && product.price <= budgetRange.max * 1.2;
+      product.price >= budgetRange.min * 0.8 && product.price <= maxCap * 1.2;
 
     if (inBudget) {
       score += 30;
@@ -113,12 +115,18 @@ function scoreProduct(
       score += 15;
       reasons.push("Close to your budget");
     }
+  } else if (preferences.budget === "any") {
+    score += 10;
   }
 
-  if (preferences.category !== "any") {
-    if (product.category?.toLowerCase() === preferences.category.toLowerCase()) {
+  const selectedCategories = preferences.categories ?? [];
+  if (selectedCategories.length > 0) {
+    const match = selectedCategories.some(
+      (c) => product.category?.toLowerCase() === c.toLowerCase()
+    );
+    if (match) {
       score += 25;
-      reasons.push(`Matches your preferred category: ${product.category}`);
+      reasons.push(`Matches your preferred type: ${product.category}`);
     }
   } else {
     score += 10;
@@ -138,22 +146,26 @@ function scoreProduct(
     score += 8;
   }
 
-  const occasionConfig = getOccasionConfig(preferences.occasion);
-  if (occasionConfig) {
-    const titleLower = product.title.toLowerCase();
-    const descLower = (product.description ?? "").toLowerCase();
-    const combined = titleLower + " " + descLower;
+  if (preferences.occasion === "any") {
+    score += 8;
+  } else {
+    const occasionConfig = getOccasionConfig(preferences.occasion);
+    if (occasionConfig) {
+      const titleLower = product.title.toLowerCase();
+      const descLower = (product.description ?? "").toLowerCase();
+      const combined = titleLower + " " + descLower;
 
-    const keywordMatches = occasionConfig.keywords.filter((kw) =>
-      combined.includes(kw.toLowerCase())
-    );
-    if (keywordMatches.length > 0) {
-      score += Math.min(keywordMatches.length * 5, 15);
-      reasons.push(`Suitable for ${occasionConfig.label}`);
-    }
+      const keywordMatches = occasionConfig.keywords.filter((kw) =>
+        combined.includes(kw.toLowerCase())
+      );
+      if (keywordMatches.length > 0) {
+        score += Math.min(keywordMatches.length * 5, 15);
+        reasons.push(`Suitable for ${occasionConfig.label}`);
+      }
 
-    if (occasionConfig.preferredCategories.includes(product.category?.toLowerCase() ?? "")) {
-      score += 5;
+      if (occasionConfig.preferredCategories.includes(product.category?.toLowerCase() ?? "")) {
+        score += 5;
+      }
     }
   }
 
@@ -226,15 +238,38 @@ function generateSummary(
   preferences: AdvisorPreferences,
   matchCount: number
 ): string {
-  const occasion = OCCASIONS.find((o) => o.value === preferences.occasion)?.label ?? preferences.occasion;
-  const budget = BUDGET_RANGES.find((b) => b.value === preferences.budget)?.label ?? preferences.budget;
+  const occasion =
+    preferences.occasion === "any"
+      ? "general"
+      : (OCCASIONS.find((o) => o.value === preferences.occasion)?.label ?? preferences.occasion);
+  const budget =
+    preferences.budget === "any"
+      ? "flexible budget"
+      : (BUDGET_RANGES.find((b) => b.value === preferences.budget)?.label ?? preferences.budget);
   const style = STYLES.find((s) => s.value === preferences.style)?.label ?? preferences.style;
+  const cats = preferences.categories ?? [];
+  const typePhrase =
+    cats.length === 0
+      ? "jewelry"
+      : `${cats.join(", ").toLowerCase()}${cats.length > 1 ? " pieces" : ""}`;
 
   if (matchCount === 0) {
-    return `We couldn't find exact matches for your ${occasion.toLowerCase()} jewelry preferences in the ${budget} range. Try adjusting your filters or explore our full collection.`;
+    const occ =
+      preferences.occasion === "any"
+        ? "jewelry"
+        : `${String(occasion).toLowerCase()} jewelry`;
+    const budgetSuffix =
+      preferences.budget === "any" ? "" : ` in the ${String(budget)} range`;
+    return `We couldn't find close matches for your ${occ} preferences (${typePhrase})${budgetSuffix}. Try adjusting your choices or explore our full collection.`;
   }
 
-  return `Based on your preferences for ${occasion.toLowerCase()} jewelry with a ${style.toLowerCase()} aesthetic in the ${budget} range, we found ${matchCount} recommendation${matchCount > 1 ? "s" : ""} that may be perfect for you.`;
+  const occPhrase =
+    preferences.occasion === "any" ? "jewelry" : `${String(occasion).toLowerCase()} jewelry`;
+  const budgetClause =
+    preferences.budget === "any"
+      ? `, across a flexible budget`
+      : ` in the ${String(budget)} range`;
+  return `Based on your preferences for ${occPhrase} (${typePhrase}) with a ${String(style).toLowerCase()} aesthetic${budgetClause}, we found ${matchCount} recommendation${matchCount > 1 ? "s" : ""} that may be perfect for you.`;
 }
 
 /**
@@ -246,9 +281,12 @@ export async function getRecommendations(
 ): Promise<{ response: AdvisorResponse; products: Product[] }> {
   const supabase = await createClient();
 
-  const budgetRange = BUDGET_RANGES.find((b) => b.value === preferences.budget);
-  const minPrice = budgetRange?.min ?? 0;
-  const maxPrice = budgetRange?.max === Infinity ? 1000000 : (budgetRange?.max ?? 100000);
+  const budgetRange =
+    preferences.budget === "any" ? undefined : BUDGET_RANGES.find((b) => b.value === preferences.budget);
+  const minPrice = budgetRange ? budgetRange.min * 0.7 : 0;
+  const maxPrice = budgetRange
+    ? (budgetRange.max === Infinity ? 1_000_000 : budgetRange.max * 1.3)
+    : 1_000_000;
 
   let query = supabase
     .from("products")
@@ -256,13 +294,17 @@ export async function getRecommendations(
       "id, store_id, name, slug, description, price, compare_at_price, category, metal_type, gold_karat, weight, created_at, updated_at, stock_quantity, status, stores!inner(id, name, slug, status), product_images(url, sort_order), reviews(rating)"
     )
     .eq("stores.status", "approved")
-    .gte("price", minPrice * 0.7)
-    .lte("price", maxPrice * 1.3)
+    .gte("price", minPrice)
+    .lte("price", maxPrice)
     .order("created_at", { ascending: false })
     .limit(100);
 
-  if (preferences.category !== "any") {
-    query = query.ilike("category", preferences.category);
+  const selectedCategories = preferences.categories ?? [];
+  if (selectedCategories.length === 1) {
+    query = query.ilike("category", selectedCategories[0]);
+  } else if (selectedCategories.length > 1) {
+    const orClause = selectedCategories.map((c) => `category.ilike.${c}`).join(",");
+    query = query.or(orClause);
   }
 
   const { data, error } = await query;

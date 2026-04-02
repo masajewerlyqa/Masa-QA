@@ -1,7 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Mail, Phone, MapPin, CreditCard, Banknote, Building2, Package, Calendar, FileText, User, ExternalLink } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, CreditCard, Banknote, Building2, Wallet, Package, Calendar, FileText, User, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,19 +14,18 @@ import { FormattedPrice } from "@/components/FormattedPrice";
 import { DeliveryAddressCard } from "@/components/order/DeliveryAddressCard";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
-
-function formatDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
-  } catch {
-    return iso;
-  }
-}
+import { formatOrderDisplayRef } from "@/lib/order-display";
+import { formatDateTime } from "@/lib/date-format";
+import { translateProductCategory } from "@/lib/product-category-i18n";
+import { getOrderExperienceRating } from "@/lib/order-experience-ratings";
+import { OrderExperienceRatingSellerView } from "@/components/account/OrderExperienceRatingCard";
+import { SellerOrderQuickActions } from "@/components/seller/SellerOrderQuickActions";
 
 function formatPaymentMethod(method: string | null, language: "en" | "ar") {
   if (!method) return t(language, "common.notSpecified", "Not specified");
   switch (method) {
     case "card": return t(language, "checkout.paymentLabels.card");
+    case "apple_pay": return t(language, "checkout.paymentLabels.applePay");
     case "cod": return t(language, "checkout.paymentLabels.cod");
     case "bank_transfer": return t(language, "checkout.paymentLabels.bankTransfer");
     default: return method;
@@ -37,13 +35,16 @@ function formatPaymentMethod(method: string | null, language: "en" | "ar") {
 function getPaymentIcon(method: string | null) {
   switch (method) {
     case "card": return <CreditCard className="w-4 h-4" />;
+    case "apple_pay": return <Wallet className="w-4 h-4" />;
     case "bank_transfer": return <Building2 className="w-4 h-4" />;
-    default: return <Banknote className="w-4 h-4" />;
+    case "cod": return <Banknote className="w-4 h-4" />;
+    default: return <CreditCard className="w-4 h-4" />;
   }
 }
 
 function getStatusColor(status: string) {
   switch (status) {
+    case "awaiting_seller": return "bg-amber-50 text-amber-800 border-amber-300";
     case "pending": return "bg-amber-50 text-amber-700 border-amber-200";
     case "accepted": return "bg-blue-50 text-blue-700 border-blue-200";
     case "processing": return "bg-indigo-50 text-indigo-700 border-indigo-200";
@@ -88,14 +89,25 @@ export default async function SellerOrderDetailPage({ params }: PageProps) {
   }
 
   const { id } = await params;
-  const order = await getSellerOrderById(id, store.id);
+  const [order, experienceRating] = await Promise.all([
+    getSellerOrderById(id, store.id),
+    getOrderExperienceRating(id),
+  ]);
   if (!order) notFound();
+
+  const orderDisplayRef = formatOrderDisplayRef(order);
 
   const itemsSubtotal = order.items.reduce((s, i) => s + i.total_price, 0);
   const addressLines = formatAddress(order.shipping_address);
 
-  const statusTimeline = ["pending", "accepted", "processing", "shipped", "delivered"];
-  const currentIndex = statusTimeline.indexOf(order.status);
+  const statusTimeline = ["awaiting_seller", "accepted", "processing", "shipped", "delivered"];
+  const statusForTimeline =
+    order.status === "pending" ? "awaiting_seller" : order.status === "confirmed" ? "accepted" : order.status;
+  const rawIndex = statusTimeline.indexOf(statusForTimeline);
+  const currentIndex = rawIndex < 0 ? 0 : rawIndex;
+  const timelineMax = Math.max(1, statusTimeline.length - 1);
+  const progressWidthPct =
+    currentIndex <= 0 ? 0 : Math.min(100, (currentIndex / timelineMax) * 100);
 
   return (
     <div className="p-6 md:p-8">
@@ -109,14 +121,14 @@ export default async function SellerOrderDetailPage({ params }: PageProps) {
         </Button>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-3xl mb-2 text-primary font-luxury">{`${t(language, "admin.orders.orderId")} #${order.id.slice(0, 8).toUpperCase()}`}</h1>
+            <h1 className="text-3xl mb-2 text-primary font-luxury">{`${t(language, "admin.orders.orderId")} ${orderDisplayRef}`}</h1>
             <p className="text-masa-gray font-sans flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              {t(language, "admin.orders.placed").replace("{date}", formatDate(order.created_at))}
+              {t(language, "admin.orders.placed").replace("{date}", formatDateTime(order.created_at, language))}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <PrintOrderButton orderId={order.id} />
+            <PrintOrderButton orderId={order.id} orderLabel={orderDisplayRef} />
             <div className="flex items-center gap-3">
               <span className="text-sm text-masa-gray font-sans">{t(language, "seller.orders.status")}</span>
               <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
@@ -124,6 +136,16 @@ export default async function SellerOrderDetailPage({ params }: PageProps) {
           </div>
         </div>
       </div>
+
+      {order.status === "awaiting_seller" && order.seller_response_deadline && (
+        <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-4 text-sm font-sans text-amber-950 space-y-3">
+          <p className="font-medium text-masa-dark">{t(language, "seller.orders.slaBanner")}</p>
+          <p className="text-masa-gray">
+            {t(language, "seller.orders.respondBy")}: {formatDateTime(order.seller_response_deadline, language)}
+          </p>
+          <SellerOrderQuickActions orderId={order.id} />
+        </div>
+      )}
 
       {/* Status Timeline */}
       {order.status !== "cancelled" && (
@@ -138,19 +160,15 @@ export default async function SellerOrderDetailPage({ params }: PageProps) {
                 {/* Progress line (colored, overlays background) */}
                 <div
                   className="absolute left-0 top-0 h-[2px] bg-primary transition-all duration-300"
-                  style={{ 
-                    width: currentIndex === 0 
-                      ? "0%" 
-                      : `${(currentIndex / (statusTimeline.length - 1)) * 100}%` 
-                  }}
+                  style={{ width: `${progressWidthPct}%` }}
                 />
               </div>
               
               {/* Steps row */}
               <div className="relative flex justify-between">
                 {statusTimeline.map((status, index) => {
-                  const isActive = index <= currentIndex;
-                  const isCurrent = index === currentIndex;
+                  const isActive = rawIndex >= 0 ? index <= rawIndex : false;
+                  const isCurrent = rawIndex >= 0 && index === rawIndex;
                   return (
                     <div key={status} className="flex flex-col items-center">
                       {/* Circle */}
@@ -181,10 +199,24 @@ export default async function SellerOrderDetailPage({ params }: PageProps) {
       )}
 
       {order.status === "cancelled" && (
-        <div className="mb-8">
+        <div className="mb-8 space-y-3">
           <Badge className="bg-red-50 text-red-700 border border-red-200 px-4 py-2 text-sm">
             {t(language, "order.statuses.cancelled")}
           </Badge>
+          {(order.seller_cancellation_reason?.trim() || order.platform_cancellation_reason?.trim()) && (
+            <Card className="border-red-200/80 bg-red-50/40">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-luxury text-primary">
+                  {order.cancellation_source === "system"
+                    ? t(language, "order.cancellation.platformHeading")
+                    : t(language, "seller.orders.cancellationNoteHeading")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="font-sans text-sm text-masa-dark whitespace-pre-wrap">
+                {(order.platform_cancellation_reason ?? order.seller_cancellation_reason ?? "").trim()}
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
@@ -218,12 +250,13 @@ export default async function SellerOrderDetailPage({ params }: PageProps) {
                         <div className="flex items-center gap-3">
                           <div className="w-14 h-14 bg-masa-light rounded-lg overflow-hidden flex-shrink-0 border border-primary/10">
                             {item.product_image ? (
-                              <Image
+                              <img
                                 src={item.product_image}
                                 alt={item.product_name}
                                 width={56}
                                 height={56}
                                 className="w-full h-full object-cover"
+                                loading="lazy"
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-masa-gray">
@@ -235,7 +268,9 @@ export default async function SellerOrderDetailPage({ params }: PageProps) {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-sans text-masa-gray capitalize">{item.product_category ?? "—"}</span>
+                        <span className="font-sans text-masa-gray">
+                          {translateProductCategory(item.product_category, (key, fb) => t(language, key, fb))}
+                        </span>
                       </TableCell>
                       <TableCell className="text-center">
                         <span className="font-sans font-medium">{item.quantity}</span>
@@ -279,6 +314,8 @@ export default async function SellerOrderDetailPage({ params }: PageProps) {
               }}
             />
           )}
+
+          {experienceRating && <OrderExperienceRatingSellerView rating={experienceRating} />}
 
           {/* Customer Information */}
           <Card className="border-primary/10 shadow-sm">
@@ -372,15 +409,15 @@ export default async function SellerOrderDetailPage({ params }: PageProps) {
             <CardContent className="pt-4 space-y-3 font-sans text-sm">
               <div className="flex justify-between">
                 <span className="text-masa-gray">{t(language, "admin.orders.orderId")}</span>
-                <span className="font-mono text-xs bg-masa-light px-2 py-1 rounded">{order.id.slice(0, 8).toUpperCase()}</span>
+                <span className="font-mono text-xs bg-masa-light px-2 py-1 rounded tracking-wide">{orderDisplayRef}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-masa-gray">{t(language, "common.created", "Created")}</span>
-                <span>{formatDate(order.created_at)}</span>
+                <span>{formatDateTime(order.created_at, language)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-masa-gray">{t(language, "common.lastUpdated", "Last Updated")}</span>
-                <span>{formatDate(order.updated_at)}</span>
+                <span>{formatDateTime(order.updated_at, language)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-masa-gray">{t(language, "seller.orders.status")}</span>
@@ -410,9 +447,9 @@ export default async function SellerOrderDetailPage({ params }: PageProps) {
           </div>
         </div>
 
-        <div className="print-title">{`${t(language, "admin.orders.orderId")} #${order.id.slice(0, 8).toUpperCase()}`}</div>
+        <div className="print-title">{`${t(language, "admin.orders.orderId")} ${orderDisplayRef}`}</div>
         <div className="print-meta">
-          <span>{t(language, "admin.orders.placed").replace("{date}", formatDate(order.created_at))}</span>
+          <span>{t(language, "admin.orders.placed").replace("{date}", formatDateTime(order.created_at, language))}</span>
           <span style={{ margin: "0 12px" }}>•</span>
           <span className="print-status-badge">{order.status}</span>
         </div>
@@ -478,14 +515,14 @@ export default async function SellerOrderDetailPage({ params }: PageProps) {
                   <td>
                     <div className="print-product-cell">
                       {item.product_image && (
-                        <Image src={item.product_image} alt="" width={56} height={56} className="print-product-img" />
+                        <img src={item.product_image} alt="" width={56} height={56} className="print-product-img" />
                       )}
                       <div>
                         <div className="print-product-name">{item.product_name}</div>
                       </div>
                     </div>
                   </td>
-                  <td style={{ textTransform: "capitalize" }}>{item.product_category ?? "—"}</td>
+                  <td>{translateProductCategory(item.product_category, (key, fb) => t(language, key, fb))}</td>
                   <td style={{ textAlign: "center" }}>{item.quantity}</td>
                   <td><FormattedPrice usd={item.unit_price} /></td>
                   <td><FormattedPrice usd={item.total_price} /></td>
@@ -505,7 +542,7 @@ export default async function SellerOrderDetailPage({ params }: PageProps) {
             </div>
             <div className="print-summary-row">
               <span>{t(language, "admin.orders.shipping")}</span>
-              <span>{order.shipping_cost > 0 ? <FormattedPrice usd={order.shipping_cost} /> : "Free"}</span>
+              <span>{order.shipping_cost > 0 ? <FormattedPrice usd={order.shipping_cost} /> : t(language, "checkout.free")}</span>
             </div>
             <div className="print-summary-row">
               <span>{language === "ar" ? "الضريبة" : "Tax"}</span>

@@ -1,9 +1,9 @@
 /**
- * GoldAPI.io client for real-time gold (XAU) and silver (XAG) prices in USD.
- * Docs: https://www.goldapi.io
- * Header: x-access-token: YOUR_API_KEY
- * Endpoints: GET https://www.goldapi.io/api/XAU/USD, /api/XAG/USD
+ * GoldAPI.io client for gold (XAU) and silver (XAG) in USD per troy oz → QAR/gram via usdPerOzToQarPerGram.
+ * Docs: https://www.goldapi.io — header x-access-token
  */
+
+import { USD_TO_QAR } from "@/lib/currency";
 
 const GOLDAPI_BASE = "https://www.goldapi.io/api";
 const TROY_OZ_TO_GRAM = 31.1035;
@@ -21,15 +21,15 @@ export type GoldApiResponse = {
   [key: string]: unknown;
 };
 
-function getApiKey(): string | undefined {
+function getGoldApiKey(): string | undefined {
   return process.env.GOLDAPI_KEY ?? process.env.GOLDAPI_API_KEY;
 }
 
-/** Fetch gold (XAU) spot price in USD per troy oz. Returns price per oz and change %. */
+/** Fetch gold (XAU) spot in USD per troy oz. */
 export async function fetchGoldFromApi(): Promise<
   { pricePerOzUsd: number; changePercent: number; timestamp: string } | null
 > {
-  const key = getApiKey();
+  const key = getGoldApiKey();
   if (!key) return null;
 
   try {
@@ -59,7 +59,7 @@ export async function fetchGoldFromApi(): Promise<
 export async function fetchSilverFromApi(): Promise<
   { pricePerOzUsd: number; changePercent: number; timestamp: string } | null
 > {
-  const key = getApiKey();
+  const key = getGoldApiKey();
   if (!key) return null;
 
   try {
@@ -86,7 +86,7 @@ export async function fetchSilverFromApi(): Promise<
 }
 
 /** Convert USD per troy oz to QAR per gram. */
-export function usdPerOzToQarPerGram(pricePerOzUsd: number, usdToQar: number = 3.64): number {
+export function usdPerOzToQarPerGram(pricePerOzUsd: number, usdToQar: number = USD_TO_QAR): number {
   const pricePerGramUsd = pricePerOzUsd / TROY_OZ_TO_GRAM;
   return Math.round(pricePerGramUsd * usdToQar * 100) / 100;
 }

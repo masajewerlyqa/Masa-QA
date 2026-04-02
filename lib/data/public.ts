@@ -1,6 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { sortMarketplaceCategoriesForFilter } from "@/lib/marketplace-category";
+import { normalizeMarketplaceSearchInput } from "@/lib/marketplace-search";
+import { resolveMarketplaceSearchOrClause } from "@/lib/marketplace-search-resolve";
 import type { Product, Store } from "@/lib/types";
 import { isDiscountValid, computeDiscountedPrice, type DiscountType } from "@/lib/discount";
 import { getServerLanguage } from "@/lib/language-server";
@@ -98,7 +101,8 @@ export type MarketplaceSortOption =
 
 export type MarketplaceFilterInput = {
   search?: string;
-  category?: string;
+  /** Canonical DB labels; OR semantics (product in any selected category). */
+  categories?: string[];
   brands?: string[];
   metals?: string[];
   karats?: string[];
@@ -119,7 +123,7 @@ const MARKETPLACE_PRODUCT_SELECT =
 
 export type MarketplacePriceBoundsInput = Pick<
   MarketplaceFilterInput,
-  "category" | "brands" | "metals" | "karats" | "search" | "onSale"
+  "categories" | "brands" | "metals" | "karats" | "search" | "onSale"
 >;
 
 /** Min/max list price (USD) for products matching non-price filters — drives slider bounds on Discover. */
@@ -139,8 +143,8 @@ export async function getMarketplacePriceBoundsForFilters(
     q = q.in("store_id", approvedIds);
   }
 
-  if (input.category && input.category !== "all") {
-    q = q.ilike("category", input.category);
+  if (input.categories && input.categories.length > 0) {
+    q = q.in("category", input.categories);
   }
   if (input.metals && input.metals.length > 0) {
     q = q.in("metal_type", input.metals);
@@ -148,9 +152,9 @@ export async function getMarketplacePriceBoundsForFilters(
   if (input.karats && input.karats.length > 0) {
     q = q.in("gold_karat", input.karats);
   }
-  if (input.search && input.search.trim()) {
-    const term = `%${input.search.trim()}%`;
-    q = q.or(`name.ilike.${term},description.ilike.${term}`);
+  {
+    const orClause = await resolveMarketplaceSearchOrClause(supabase, input.search);
+    if (orClause) q = q.or(orClause);
   }
   if (input.onSale) {
     q = q.eq("discount_active", true);
@@ -176,9 +180,9 @@ export async function getMarketplacePriceBoundsForFilters(
       maxQ = maxQ.in("store_id", approvedIds);
     }
 
-    if (input.category && input.category !== "all") {
-      minQ = minQ.ilike("category", input.category);
-      maxQ = maxQ.ilike("category", input.category);
+    if (input.categories && input.categories.length > 0) {
+      minQ = minQ.in("category", input.categories);
+      maxQ = maxQ.in("category", input.categories);
     }
     if (input.metals && input.metals.length > 0) {
       minQ = minQ.in("metal_type", input.metals);
@@ -188,10 +192,12 @@ export async function getMarketplacePriceBoundsForFilters(
       minQ = minQ.in("gold_karat", input.karats);
       maxQ = maxQ.in("gold_karat", input.karats);
     }
-    if (input.search && input.search.trim()) {
-      const term = `%${input.search.trim()}%`;
-      minQ = minQ.or(`name.ilike.${term},description.ilike.${term}`);
-      maxQ = maxQ.or(`name.ilike.${term},description.ilike.${term}`);
+    {
+      const orClause = await resolveMarketplaceSearchOrClause(supabase, input.search);
+      if (orClause) {
+        minQ = minQ.or(orClause);
+        maxQ = maxQ.or(orClause);
+      }
     }
     if (input.onSale) {
       minQ = minQ.eq("discount_active", true);
@@ -346,8 +352,8 @@ async function fetchMarketplaceProductRowsPage(
     .select(MARKETPLACE_PRODUCT_SELECT)
     .eq("stores.status", "approved");
 
-  if (filters.category && filters.category !== "all") {
-    query = query.ilike("category", filters.category);
+  if (filters.categories && filters.categories.length > 0) {
+    query = query.in("category", filters.categories);
   }
   if (filters.brands && filters.brands.length > 0) {
     query = query.in("store_id", filters.brands);
@@ -358,9 +364,9 @@ async function fetchMarketplaceProductRowsPage(
   if (filters.karats && filters.karats.length > 0) {
     query = query.in("gold_karat", filters.karats);
   }
-  if (filters.search && filters.search.trim()) {
-    const term = `%${filters.search.trim()}%`;
-    query = query.or(`name.ilike.${term},description.ilike.${term},stores.name.ilike.${term}`);
+  {
+    const orClause = await resolveMarketplaceSearchOrClause(supabase, filters.search);
+    if (orClause) query = query.or(orClause);
   }
   if (filters.onSale) {
     query = query.eq("discount_active", true);
@@ -409,13 +415,19 @@ function applyMarketplaceSort(products: Product[], sortOption: MarketplaceSortOp
 export async function getPublicProductsForMarketplace(
   filters: MarketplaceFilterInput
 ): Promise<Product[]> {
+  const searchNormalized = filters.search ? normalizeMarketplaceSearchInput(filters.search) : "";
+  const filtersEffective: MarketplaceFilterInput = {
+    ...filters,
+    search: searchNormalized || undefined,
+  };
+
   const language = getServerLanguage();
   const supabase = await createClient();
   const marketSnapshot = await getPricingMarketSnapshot();
-  const limit = Math.min(Math.max(filters.limit ?? 24, 1), 100);
-  const offset = filters.offset ?? 0;
-  const priceFilter = hasActivePriceFilter(filters.minPrice, filters.maxPrice);
-  const sortOption = filters.sort ?? "default";
+  const limit = Math.min(Math.max(filtersEffective.limit ?? 24, 1), 100);
+  const offset = filtersEffective.offset ?? 0;
+  const priceFilter = hasActivePriceFilter(filtersEffective.minPrice, filtersEffective.maxPrice);
+  const sortOption = filtersEffective.sort ?? "default";
   const needFullCatalogSort =
     priceFilter &&
     (sortOption === "lowest_price" || sortOption === "highest_discount" || sortOption === "ending_soon");
@@ -424,14 +436,14 @@ export async function getPublicProductsForMarketplace(
     const collected: Product[] = [];
     for (let start = 0; start < MARKETPLACE_MAX_ROWS_SCAN; start += MARKETPLACE_PAGE) {
       const end = start + MARKETPLACE_PAGE - 1;
-      let rows = await fetchMarketplaceProductRowsPage(supabase, filters, start, end);
+      let rows = await fetchMarketplaceProductRowsPage(supabase, filtersEffective, start, end);
       if (rows.length === 0) break;
-      if (filters.onSale) {
+      if (filtersEffective.onSale) {
         rows = filterRowsValidOnSale(rows);
       }
       for (const r of rows) {
         const p = mapProductRow(r, language, marketSnapshot);
-        if (productMeetsPriceFilter(p.price, filters.minPrice, filters.maxPrice)) {
+        if (productMeetsPriceFilter(p.price, filtersEffective.minPrice, filtersEffective.maxPrice)) {
           collected.push(p);
         }
       }
@@ -449,11 +461,11 @@ export async function getPublicProductsForMarketplace(
 
   let rows = await fetchMarketplaceProductRowsPage(
     supabase,
-    filters,
-    filters.onSale ? 0 : offset,
-    filters.onSale ? Math.min((offset + limit) * 2, 200) - 1 : offset + limit - 1
+    filtersEffective,
+    filtersEffective.onSale ? 0 : offset,
+    filtersEffective.onSale ? Math.min((offset + limit) * 2, 200) - 1 : offset + limit - 1
   );
-  if (filters.onSale) {
+  if (filtersEffective.onSale) {
     rows = filterRowsValidOnSale(rows);
     rows = rows.slice(offset, offset + limit);
   }
@@ -600,13 +612,15 @@ export async function getMarketplaceFilters(): Promise<MarketplaceFilters> {
         .eq("status", "approved")
     : { data: [] };
 
-  const categories = Array.from(
-    new Set(
-      (categoryRes.data ?? [])
-        .map((r: any) => r.category as string)
-        .filter((v) => typeof v === "string" && v.trim().length > 0)
+  const categories = sortMarketplaceCategoriesForFilter(
+    Array.from(
+      new Set(
+        (categoryRes.data ?? [])
+          .map((r: any) => r.category as string)
+          .filter((v) => typeof v === "string" && v.trim().length > 0)
+      )
     )
-  ).sort();
+  );
 
   const metals = Array.from(
     new Set(

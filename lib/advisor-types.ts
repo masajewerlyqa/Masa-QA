@@ -4,6 +4,7 @@
  */
 
 export const OCCASIONS = [
+  { value: "any", label: "No preference", labelFr: "Sans préférence" },
   { value: "wedding", label: "Wedding", labelFr: "Mariage" },
   { value: "engagement", label: "Engagement", labelFr: "Fiançailles" },
   { value: "anniversary", label: "Anniversary", labelFr: "Anniversaire" },
@@ -15,6 +16,7 @@ export const OCCASIONS = [
 ] as const;
 
 export const BUDGET_RANGES = [
+  { value: "any", label: "No preference", min: 0, max: Infinity },
   { value: "under500", label: "Under $500", min: 0, max: 500 },
   { value: "500to1000", label: "$500 - $1,000", min: 500, max: 1000 },
   { value: "1000to2500", label: "$1,000 - $2,500", min: 1000, max: 2500 },
@@ -43,6 +45,9 @@ export const CATEGORIES = [
   { value: "any", label: "Any / No Preference" },
 ] as const;
 
+/** Jewelry types for advisor (excludes `any` — use empty selection for no preference). */
+export const JEWELRY_CATEGORY_OPTIONS = CATEGORIES.filter((c) => c.value !== "any");
+
 export const STYLES = [
   { value: "minimal", label: "Minimal", description: "Clean, simple, understated elegance" },
   { value: "classic", label: "Classic", description: "Timeless, traditional designs" },
@@ -59,11 +64,14 @@ export const RECIPIENTS = [
   { value: "any", label: "Not Specified" },
 ] as const;
 
+export type JewelryCategoryValue = Exclude<(typeof CATEGORIES)[number]["value"], "any">;
+
 export type AdvisorPreferences = {
   occasion: (typeof OCCASIONS)[number]["value"];
   budget: (typeof BUDGET_RANGES)[number]["value"];
   metal: (typeof METALS)[number]["value"];
-  category: (typeof CATEGORIES)[number]["value"];
+  /** Selected jewelry types; empty = no preference (any type). */
+  categories: JewelryCategoryValue[];
   style: (typeof STYLES)[number]["value"];
   recipient: (typeof RECIPIENTS)[number]["value"];
 };

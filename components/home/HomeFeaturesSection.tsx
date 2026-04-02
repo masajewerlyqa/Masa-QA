@@ -13,7 +13,9 @@ export function HomeFeaturesSection() {
     },
     {
       title: isArabic ? "علامات فاخرة" : "Premium Brands",
-      description: isArabic ? "مختارة من أفضل صاغة العالم" : "Curated from world's finest jewelers",
+      description: isArabic
+        ? "متاجر مميزة ومختارة بعناية"
+        : "Premium stores, handpicked with care",
       icon: Award,
     },
     {

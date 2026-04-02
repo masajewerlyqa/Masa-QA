@@ -1,7 +1,18 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
-import { Package, ShoppingCart, DollarSign, TrendingUp, Plus, Edit, Trash2, Eye } from "lucide-react";
+import {
+  Package,
+  ShoppingCart,
+  DollarSign,
+  TrendingUp,
+  Plus,
+  Edit,
+  Eye,
+  CalendarClock,
+  AlertTriangle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -20,34 +31,90 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { SellerStats, SellerOrderRow, RevenueByMonth, ProductRow } from "@/lib/seller-types";
+import { getStoreLiveStatus } from "@/lib/store-availability";
+import type { StoreHoursRow } from "@/lib/store-availability";
+import { msUntilSellerDeadline } from "@/lib/orders/seller-sla";
 import { useCurrency } from "@/components/CurrencyProvider";
 import { useI18n } from "@/components/useI18n";
+import { formatOrderDisplayRef } from "@/lib/order-display";
+import { formatShortDate, localizeEnglishMonthAbbrev } from "@/lib/date-format";
+
+const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
 type Props = {
   storeName: string;
+  storeAvailability: Pick<
+    StoreHoursRow,
+    "business_timezone" | "working_days" | "opening_time_local" | "closing_time_local"
+  >;
   stats: SellerStats;
   revenueData: RevenueByMonth[];
   products: ProductRow[];
   orders: SellerOrderRow[];
 };
 
-function formatDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  } catch {
-    return iso;
-  }
-}
-
-export function SellerOverviewClient({ storeName, stats, revenueData, products, orders }: Props) {
+export function SellerOverviewClient({
+  storeName,
+  storeAvailability,
+  stats,
+  revenueData,
+  products,
+  orders,
+}: Props) {
   const { formatPrice } = useCurrency();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+
+  const revenueChartData = useMemo(
+    () =>
+      revenueData.map((r) => ({
+        ...r,
+        month: localizeEnglishMonthAbbrev(r.month, language),
+      })),
+    [revenueData, language]
+  );
+
+  const liveStatus = useMemo(() => getStoreLiveStatus(storeAvailability), [storeAvailability]);
+
+  const scheduleSummary = useMemo(() => {
+    const days = [...(storeAvailability.working_days ?? [])].sort((a, b) => a - b);
+    const dayPart = days.map((i) => t(`seller.availability.days.${DAY_KEYS[i]}`)).join(language === "ar" ? "، " : ", ");
+    const fmt = (v: string | null) => (v && v.trim().length >= 5 ? v.trim().slice(0, 5) : v?.trim() || "—");
+    return {
+      dayPart: dayPart || "—",
+      open: fmt(storeAvailability.opening_time_local),
+      close: fmt(storeAvailability.closing_time_local),
+    };
+  }, [storeAvailability, t, language]);
+
+  const urgentPendingCount = useMemo(() => {
+    const now = new Date();
+    return orders.filter((o) => {
+      if (o.status !== "awaiting_seller" || !o.seller_response_deadline) return false;
+      const ms = msUntilSellerDeadline(o.seller_response_deadline, now);
+      return ms != null && ms > 0 && ms <= 30 * 60 * 1000;
+    }).length;
+  }, [orders]);
+
   const sellerStats = [
     { label: t("seller.overview.totalRevenue"), value: formatPrice(stats.totalRevenue), change: undefined, icon: DollarSign },
     { label: t("seller.overview.totalOrders"), value: String(stats.orderCount), change: undefined, icon: ShoppingCart },
     { label: t("seller.overview.productsListed"), value: String(stats.productCount), change: undefined, icon: Package },
     { label: t("seller.overview.avgOrderValue"), value: formatPrice(stats.avgOrderValue), change: undefined, icon: TrendingUp },
   ];
+
+  const statusLabel =
+    liveStatus === "open"
+      ? t("seller.availability.statusOpenNow")
+      : liveStatus === "closed"
+        ? t("seller.availability.statusClosedNow")
+        : t("seller.availability.statusNotConfigured");
+
+  const statusHint =
+    liveStatus === "not_configured"
+      ? t("seller.availability.overviewNotConfigured")
+      : liveStatus === "closed"
+        ? t("seller.availability.overviewClosed")
+        : t("seller.availability.overviewOpen");
 
   return (
     <div className="p-4 md:p-8">
@@ -57,6 +124,89 @@ export function SellerOverviewClient({ storeName, stats, revenueData, products, 
           {t("seller.overview.welcomeBack", `Welcome back, ${storeName}`).replace("{storeName}", storeName)}
         </p>
       </div>
+
+      <div className="space-y-3 mb-6 md:mb-8">
+        {liveStatus === "not_configured" && (
+          <div
+            role="status"
+            className="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 font-sans flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+          >
+            <span>{t("seller.availability.overviewNotConfigured")}</span>
+            <Button variant="outline" size="sm" className="border-amber-300 shrink-0" asChild>
+              <Link href="/seller/availability">{t("seller.overview.manageStoreHours")}</Link>
+            </Button>
+          </div>
+        )}
+        {liveStatus === "closed" && (
+          <div
+            role="status"
+            className="rounded-xl border border-primary/20 bg-masa-light px-4 py-3 text-sm text-masa-dark font-sans flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+          >
+            <span>{t("seller.availability.overviewClosed")}</span>
+            <Button variant="outline" size="sm" className="shrink-0" asChild>
+              <Link href="/seller/availability">{t("seller.overview.manageStoreHours")}</Link>
+            </Button>
+          </div>
+        )}
+        {urgentPendingCount > 0 && (
+          <div
+            role="status"
+            className="rounded-xl border border-red-200 bg-red-50/80 px-4 py-3 text-sm text-red-950 font-sans flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2"
+          >
+            <span className="flex gap-2 items-start">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden />
+              <span>
+                {t("seller.availability.bannerUrgentOrders")}{" "}
+                <span className="font-semibold">({urgentPendingCount})</span>
+              </span>
+            </span>
+            <Button variant="outline" size="sm" className="border-red-200 shrink-0" asChild>
+              <Link href="/seller/orders">{t("seller.orders.allOrders")}</Link>
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <Card className="border-primary/10 shadow-sm mb-6 md:mb-8 overflow-hidden">
+        <CardHeader className="pb-2 flex flex-row flex-wrap items-start justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <CalendarClock className="w-5 h-5 text-primary shrink-0" aria-hidden />
+            <CardTitle className="text-lg">{t("seller.availability.overviewCardTitle")}</CardTitle>
+          </div>
+          <Badge
+            variant={liveStatus === "open" ? "default" : "secondary"}
+            className={
+              liveStatus === "not_configured"
+                ? "bg-amber-100 text-amber-950 border-amber-200"
+                : liveStatus === "closed"
+                  ? "bg-primary/10 text-primary border-primary/20"
+                  : ""
+            }
+          >
+            {statusLabel}
+          </Badge>
+        </CardHeader>
+        <CardContent className="space-y-3 font-sans text-sm text-masa-dark">
+          <p className="text-masa-gray leading-relaxed">{statusHint}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+            <div>
+              <span className="text-masa-gray">{t("seller.availability.workingDays")}: </span>
+              <span className="font-medium">{scheduleSummary.dayPart}</span>
+            </div>
+            <div>
+              <span className="text-masa-gray">
+                {t("seller.availability.openingTime")} / {t("seller.availability.closingTime")}:{" "}
+              </span>
+              <span className="font-medium tabular-nums">
+                {scheduleSummary.open} – {scheduleSummary.close}
+              </span>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/seller/availability">{t("seller.overview.manageStoreHours")}</Link>
+          </Button>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
         {sellerStats.map((stat) => (
@@ -71,7 +221,7 @@ export function SellerOverviewClient({ storeName, stats, revenueData, products, 
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={revenueData}>
+              <AreaChart data={revenueChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E7D8C3" />
                 <XAxis dataKey="month" />
                 <YAxis />
@@ -87,7 +237,7 @@ export function SellerOverviewClient({ storeName, stats, revenueData, products, 
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={revenueData}>
+              <BarChart data={revenueChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E7D8C3" />
                 <XAxis dataKey="month" />
                 <YAxis />
@@ -198,7 +348,7 @@ export function SellerOverviewClient({ storeName, stats, revenueData, products, 
                       <TableRow key={order.id}>
                         <TableCell className="font-sans font-mono text-sm">
                           <Link href={`/seller/orders/${order.id}`} className="text-primary hover:underline">
-                            {order.id.slice(0, 8)}…
+                            {formatOrderDisplayRef(order)}
                           </Link>
                         </TableCell>
                         <TableCell>{order.customer_name ?? "—"}</TableCell>
@@ -213,11 +363,18 @@ export function SellerOverviewClient({ storeName, stats, revenueData, products, 
                                   ? "secondary"
                                   : "outline"
                             }
+                            className={
+                              order.status === "awaiting_seller"
+                                ? "border-amber-400 text-amber-900 bg-amber-50"
+                                : ""
+                            }
                           >
-                            {t("order.statuses." + order.status, order.status)}
+                            {order.status === "awaiting_seller"
+                              ? t("seller.orders.pendingSellerBadge")
+                              : t("order.statuses." + order.status, order.status)}
                           </Badge>
                         </TableCell>
-                        <TableCell>{formatDate(order.created_at)}</TableCell>
+                        <TableCell>{formatShortDate(order.created_at, language)}</TableCell>
                       </TableRow>
                     ))
                   )}

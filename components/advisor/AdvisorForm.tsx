@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -17,11 +18,14 @@ import {
   OCCASIONS,
   BUDGET_RANGES,
   METALS,
-  CATEGORIES,
+  JEWELRY_CATEGORY_OPTIONS,
   STYLES,
   RECIPIENTS,
   type AdvisorPreferences,
+  type JewelryCategoryValue,
 } from "@/lib/advisor-types";
+
+type LocalizeContext = "occasion" | "budget" | "metal" | "style" | "recipient";
 
 type AdvisorFormProps = {
   onSubmit: (preferences: AdvisorPreferences) => Promise<void>;
@@ -31,10 +35,10 @@ type AdvisorFormProps = {
 export function AdvisorForm({ onSubmit, isLoading }: AdvisorFormProps) {
   const { isArabic } = useLanguage();
   const [preferences, setPreferences] = useState<AdvisorPreferences>({
-    occasion: "gift",
-    budget: "1000to2500",
+    occasion: "any",
+    budget: "any",
     metal: "any",
-    category: "any",
+    categories: [],
     style: "any",
     recipient: "any",
   });
@@ -54,9 +58,12 @@ export function AdvisorForm({ onSubmit, isLoading }: AdvisorFormProps) {
   const labelMap = {
     occasion: isArabic ? "ما المناسبة؟" : "What's the occasion?",
     budget: isArabic ? "ما ميزانيتك؟" : "What's your budget?",
-    metal: isArabic ? "المعدن المفضل؟" : "Preferred metal?",
-    category: isArabic ? "ما نوع المجوهرات؟" : "What type of jewelry?",
-    style: isArabic ? "نمطك المفضل؟" : "Style preference?",
+    metal: isArabic ? "ما نوع المجوهرات؟" : "What type of jewelry?",
+    category: isArabic ? "ما نوع القطعة؟" : "What type of piece?",
+    categoryHint: isArabic
+      ? "يمكنك اختيار أكثر من نوع، أو ترك الكل بدون تحديد."
+      : "Select one or more piece types, or leave all unchecked for no preference.",
+    style: isArabic ? "ما نمطك المفضل؟" : "What's your preferred style?",
     recipient: isArabic ? "لمن القطعة؟" : "Who is it for?",
   };
 
@@ -64,24 +71,27 @@ export function AdvisorForm({ onSubmit, isLoading }: AdvisorFormProps) {
     occasion: isArabic ? "اختر المناسبة" : "Select occasion",
     budget: isArabic ? "اختر نطاق الميزانية" : "Select budget range",
     metal: isArabic ? "اختر المعدن" : "Select metal",
-    category: isArabic ? "اختر الفئة" : "Select category",
     style: isArabic ? "اختر النمط" : "Select style",
     recipient: isArabic ? "اختر المستلم" : "Select recipient",
   };
 
-  function localizeOption(value: string, label: string): string {
-    if (!isArabic) return label;
-    const map: Record<string, string> = {
-      gift: "هدية",
-      wedding: "زفاف",
-      engagement: "خطوبة",
-      anniversary: "ذكرى سنوية",
-      birthday: "هدية عيد ميلاد",
-      daily: "يومي",
-      investment: "استثمار",
-      celebration: "احتفال",
-      self: "لنفسك",
-      any: "أي خيار",
+  function localizeOption(value: string, label: string, context: LocalizeContext): string {
+    if (isArabic) {
+      if (value === "any") {
+        if (context === "metal") return "أي خيار";
+        if (context === "style") return "أي نمط";
+        return "غير محدد";
+      }
+      const optionMap: Record<string, string> = {
+        gift: "هدية",
+        wedding: "زفاف",
+        engagement: "خطوبة",
+        anniversary: "ذكرى سنوية",
+        birthday: "هدية عيد ميلاد",
+        daily: "يومي",
+        investment: "استثمار",
+        celebration: "احتفال",
+        self: "لنفسك",
       gold: "ذهب",
       white_gold: "ذهب أبيض",
       rose_gold: "ذهب وردي",
@@ -90,13 +100,13 @@ export function AdvisorForm({ onSubmit, isLoading }: AdvisorFormProps) {
       diamond: "ألماس",
       rings: "خواتم",
       ring: "خاتم",
-      necklaces: "قلائد",
       necklace: "قلادة",
+      necklaces: "قلائد",
       earrings: "أقراط",
       earring: "قرط",
       bracelets: "أساور",
       bracelet: "سوار",
-      pendant: "قلادة",
+      pendant: "تعليقة",
       anklet: "خلخال",
       classic: "كلاسيكي",
       modern: "عصري",
@@ -117,7 +127,33 @@ export function AdvisorForm({ onSubmit, isLoading }: AdvisorFormProps) {
       "5000to10000": "5,000 - 10,000 دولار",
       over10000: "أكثر من 10,000 دولار",
     };
-    return map[value] ?? label;
+      const key = value.toLowerCase().replace(/\s+/g, "_");
+      return optionMap[key] ?? optionMap[value] ?? label;
+    }
+    return label;
+  }
+
+  function localizeJewelryTypeLabel(value: string, label: string): string {
+    if (!isArabic) return label;
+    const optionMap: Record<string, string> = {
+      ring: "خاتم",
+      necklace: "قلادة",
+      bracelet: "سوار",
+      earrings: "أقراط",
+      pendant: "تعليقة",
+      anklet: "خلخال",
+    };
+    const key = value.toLowerCase();
+    return optionMap[key] ?? label;
+  }
+
+  function toggleCategory(cat: JewelryCategoryValue, checked: boolean) {
+    setPreferences((prev) => {
+      const next = new Set(prev.categories);
+      if (checked) next.add(cat);
+      else next.delete(cat);
+      return { ...prev, categories: Array.from(next) as JewelryCategoryValue[] };
+    });
   }
 
   return (
@@ -147,7 +183,7 @@ export function AdvisorForm({ onSubmit, isLoading }: AdvisorFormProps) {
                 <SelectContent>
                   {OCCASIONS.map((occ) => (
                     <SelectItem key={occ.value} value={occ.value}>
-                      {localizeOption(occ.value, occ.label)}
+                      {localizeOption(occ.value, occ.label, "occasion")}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -167,7 +203,7 @@ export function AdvisorForm({ onSubmit, isLoading }: AdvisorFormProps) {
                 <SelectContent>
                   {BUDGET_RANGES.map((range) => (
                     <SelectItem key={range.value} value={range.value}>
-                      {localizeOption(range.value, range.label)}
+                      {localizeOption(range.value, range.label, "budget")}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -187,31 +223,42 @@ export function AdvisorForm({ onSubmit, isLoading }: AdvisorFormProps) {
                 <SelectContent>
                   {METALS.map((metal) => (
                     <SelectItem key={metal.value} value={metal.value}>
-                      {localizeOption(metal.value, metal.label)}
+                      {localizeOption(metal.value, metal.label, "metal")}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Category */}
-            <div className="space-y-2">
-              <Label htmlFor="category">{labelMap.category}</Label>
-              <Select
-                value={preferences.category}
-                onValueChange={(value) => updatePreference("category", value as typeof preferences.category)}
+            {/* Jewelry types — multi-select */}
+            <div className="space-y-3 md:col-span-2">
+              <div>
+                <Label id="jewelry-types-label">{labelMap.category}</Label>
+                <p className="text-xs text-masa-gray mt-1 font-sans">{labelMap.categoryHint}</p>
+              </div>
+              <div
+                className="grid grid-cols-2 sm:grid-cols-3 gap-3 rounded-lg border border-primary/10 bg-masa-light/50 p-4"
+                role="group"
+                aria-labelledby="jewelry-types-label"
               >
-                <SelectTrigger id="category" className="bg-masa-light">
-                  <SelectValue placeholder={placeholderMap.category} />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {localizeOption(cat.value, cat.label)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {JEWELRY_CATEGORY_OPTIONS.map((cat) => (
+                  <label
+                    key={cat.value}
+                    htmlFor={`jewelry-${cat.value}`}
+                    className={`flex items-center gap-2.5 cursor-pointer text-sm font-sans ${
+                      isArabic ? "font-arabic flex-row-reverse text-right" : ""
+                    }`}
+                  >
+                    <Checkbox
+                      id={`jewelry-${cat.value}`}
+                      checked={preferences.categories.includes(cat.value)}
+                      onCheckedChange={(c) => toggleCategory(cat.value, c === true)}
+                      aria-label={localizeJewelryTypeLabel(cat.value, cat.label)}
+                    />
+                    <span className="text-masa-dark leading-tight">{localizeJewelryTypeLabel(cat.value, cat.label)}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             {/* Style */}
@@ -227,7 +274,7 @@ export function AdvisorForm({ onSubmit, isLoading }: AdvisorFormProps) {
                 <SelectContent>
                   {STYLES.map((style) => (
                     <SelectItem key={style.value} value={style.value}>
-                      <span>{localizeOption(style.value, style.label)}</span>
+                      <span>{localizeOption(style.value, style.label, "style")}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -247,7 +294,7 @@ export function AdvisorForm({ onSubmit, isLoading }: AdvisorFormProps) {
                 <SelectContent>
                   {RECIPIENTS.map((rec) => (
                     <SelectItem key={rec.value} value={rec.value}>
-                      {localizeOption(rec.value, rec.label)}
+                      {localizeOption(rec.value, rec.label, "recipient")}
                     </SelectItem>
                   ))}
                 </SelectContent>

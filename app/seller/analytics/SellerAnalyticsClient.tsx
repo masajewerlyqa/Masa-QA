@@ -20,8 +20,10 @@ import type {
   SellerOrderStatusAnalytics,
   SellerTopProductAnalytics,
 } from "@/lib/seller-types";
+import { useMemo } from "react";
 import { useCurrency } from "@/components/CurrencyProvider";
 import { useI18n } from "@/components/useI18n";
+import { localizeEnglishMonthAbbrev } from "@/lib/date-format";
 
 type Props = {
   stats: SellerStats;
@@ -32,7 +34,16 @@ type Props = {
 
 export function SellerAnalyticsClient({ stats, revenueData, orderStatus, topProducts }: Props) {
   const { formatPrice } = useCurrency();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+
+  const revenueChartData = useMemo(
+    () =>
+      revenueData.map((r) => ({
+        ...r,
+        month: localizeEnglishMonthAbbrev(r.month, language),
+      })),
+    [revenueData, language]
+  );
   const statCards = [
     { label: t("seller.overview.totalRevenue"), value: formatPrice(stats.totalRevenue), icon: DollarSign },
     { label: t("seller.overview.totalOrders"), value: String(stats.orderCount), icon: ShoppingCart },
@@ -58,7 +69,7 @@ export function SellerAnalyticsClient({ stats, revenueData, orderStatus, topProd
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={revenueData}>
+              <AreaChart data={revenueChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E7D8C3" />
                 <XAxis dataKey="month" />
                 <YAxis />

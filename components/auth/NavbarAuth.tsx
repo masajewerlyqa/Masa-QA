@@ -72,16 +72,18 @@ export function NavbarAuth({ user, profile, notificationCount = 0, onNavigate }:
             </span>
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link
-            href={dashboardHref}
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => onNavigate?.()}
-          >
-            <LayoutDashboard className="w-4 h-4" />
-            <span>{t("dashboard.nav.overview")}</span>
-          </Link>
-        </DropdownMenuItem>
+        {dashboardHref !== "/account" && (
+          <DropdownMenuItem asChild>
+            <Link
+              href={dashboardHref}
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => onNavigate?.()}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>{t("dashboard.nav.overview")}</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
           <Link
             href="/notifications"

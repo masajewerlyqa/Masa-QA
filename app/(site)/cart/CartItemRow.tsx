@@ -50,7 +50,8 @@ export function CartItemRow({ item }: { item: CartItemWithProduct }) {
               alt={item.product.title}
               fill
               className="object-cover"
-              sizes="(max-width: 640px) 96px, 128px"
+              quality={90}
+              sizes="(max-width: 640px) 120px, 160px"
             />
           </Link>
           <div className="flex-1 min-w-0">
