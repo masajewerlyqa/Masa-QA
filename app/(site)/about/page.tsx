@@ -15,18 +15,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DiamondPattern } from "@/components/DiamondPattern";
+import { brandName } from "@/lib/brand";
+import { t } from "@/lib/i18n";
 import { getServerLanguage } from "@/lib/language-server";
 import { getLocalizedSeo } from "@/lib/seo";
 
 export function generateMetadata(): Metadata {
   const language = getServerLanguage();
   const localized = getLocalizedSeo(language, {
-    title: "About MASA | Intelligent Luxury Jewelry Marketplace",
-    titleAr: "عن MASA | سوق المجوهرات الفاخرة الذكي",
+    title: `About ${brandName("en")} | Intelligent Luxury Jewelry Marketplace`,
+    titleAr: `عن ${brandName("ar")} | سوق المجوهرات الفاخرة الذكي`,
     description:
-      "Discover who we are, our mission and values, and why buyers and sellers trust MASA—Qatar’s AI-powered jewelry marketplace.",
-    descriptionAr:
-      "تعرّف على MASA، رسالتنا وقيمنا، ولماذا يثق بنا المشترون والبائعون في منصة المجوهرات المدعومة بالذكاء الاصطناعي.",
+      `Discover who we are, our mission and values, and why buyers and sellers trust ${brandName("en")}—Qatar’s AI-powered jewelry marketplace.`,
+    descriptionAr: `تعرّف على ${brandName("ar")}، رسالتنا وقيمنا، ولماذا يثق بنا المشترون والبائعون في منصة المجوهرات المدعومة بالذكاء الاصطناعي.`,
   });
   return {
     title: localized.title,
@@ -44,7 +45,9 @@ export function generateMetadata(): Metadata {
 }
 
 export default function AboutPage() {
-  const isArabic = getServerLanguage() === "ar";
+  const language = getServerLanguage();
+  const isArabic = language === "ar";
+  const brand = t(language, "common.brand");
 
   const values = isArabic
     ? [
@@ -112,14 +115,14 @@ export default function AboutPage() {
         "شارة التوثيق والثقة—تُبرز احترافيتك وتقوّي ثقة العملاء بمتجرك.",
         "لوحة وإدارة منتجات وطلبات في مكان واحد، بواجهة واضحة وسهلة.",
         "الاستفادة من اكتشاف المنتجات والتوصيات الذكية لزيادة فرص ظهور مجموعتك.",
-        "دعم وإرشاد من فريق MASA لمساعدتك في الانطلاق والنمو على المنصة.",
+        `دعم وإرشاد من فريق ${brand} لمساعدتك في الانطلاق والنمو على المنصة.`,
       ]
     : [
         "Showcase your store and brand to buyers actively seeking trusted luxury jewelry.",
         "Verification and trust signals that highlight your professionalism and reassure customers.",
         "A unified dashboard to manage products and orders with a clear, efficient workflow.",
         "Benefit from intelligent discovery and recommendations so your collection reaches the right audience.",
-        "Guidance and support from the MASA team to help you launch and grow on the platform.",
+        `Guidance and support from the ${brand} team to help you launch and grow on the platform.`,
       ];
 
   return (
@@ -138,7 +141,7 @@ export default function AboutPage() {
             id="about-hero-heading"
             className={`text-3xl md:text-5xl lg:text-[3.25rem] text-primary tracking-tight mb-5 md:mb-6 max-w-4xl mx-auto leading-tight ${isArabic ? "font-arabic-luxury" : "font-luxury"}`}
           >
-            {isArabic ? "MASA منصة المجوهرات الفاخرة الذكية" : "MASA — the intelligent luxury jewelry marketplace"}
+            {isArabic ? `${brand} منصة المجوهرات الفاخرة الذكية` : `${brand} — the intelligent luxury jewelry marketplace`}
           </h1>
           <div className="w-12 h-px bg-primary/30 mx-auto mb-6" aria-hidden />
           <p
@@ -164,8 +167,8 @@ export default function AboutPage() {
             <div className={`space-y-5 text-masa-gray leading-relaxed ${isArabic ? "font-arabic text-lg" : "font-sans text-base md:text-lg"}`}>
               <p>
                 {isArabic
-                  ? "MASA منصة سوقية متخصصة في المجوهرات الفاخرة. هدفنا أن نجعل اكتشاف وشراء القطع الاستثنائية أبسط وأكثر أماناً—سواء كنت تبحث عن خاتم، سوار، أو قطعة توارثها الأجيال."
-                  : "MASA is a marketplace dedicated to luxury jewelry. We make it simpler and safer to discover and acquire exceptional pieces—whether you are looking for a ring, a bracelet, or a future heirloom."}
+                  ? `${brand} منصة سوقية متخصصة في المجوهرات الفاخرة. هدفنا أن نجعل اكتشاف وشراء القطع الاستثنائية أبسط وأكثر أماناً—سواء كنت تبحث عن خاتم، سوار، أو قطعة توارثها الأجيال.`
+                  : `${brand} is a marketplace dedicated to luxury jewelry. We make it simpler and safer to discover and acquire exceptional pieces—whether you are looking for a ring, a bracelet, or a future heirloom.`}
               </p>
               <p>
                 {isArabic
@@ -247,7 +250,7 @@ export default function AboutPage() {
                 id="about-clients-heading"
                 className={`text-2xl md:text-4xl text-primary mb-4 ${isArabic ? "font-arabic-luxury" : "font-luxury"}`}
               >
-                {isArabic ? "ما الذي يقدّمه MASA لك كعميل؟" : "What MASA offers you as a client"}
+                {isArabic ? `ما الذي يقدّمه ${brand} لك كعميل؟` : `What ${brand} offers you as a client`}
               </h2>
               <p className={`text-masa-gray mb-8 ${isArabic ? "font-arabic" : "font-sans"}`}>
                 {isArabic
@@ -324,7 +327,7 @@ export default function AboutPage() {
                 id="about-sellers-heading"
                 className={`text-2xl md:text-4xl text-primary mb-4 ${isArabic ? "font-arabic-luxury" : "font-luxury"}`}
               >
-                {isArabic ? "ماذا يقدّم MASA لمتاجركم وعلاماتكم؟" : "What MASA offers your store & brand"}
+                {isArabic ? `ماذا يقدّم ${brand} لمتاجركم وعلاماتكم؟` : `What ${brand} offers your store & brand`}
               </h2>
               <p className={`text-masa-gray mb-8 ${isArabic ? "font-arabic" : "font-sans"}`}>
                 {isArabic
@@ -354,8 +357,8 @@ export default function AboutPage() {
           </h2>
           <p className={`text-secondary/95 max-w-2xl mx-auto text-base md:text-lg mb-10 leading-relaxed ${isArabic ? "font-arabic" : "font-sans"}`}>
             {isArabic
-              ? "هل تمثّل علامة تجارية أو متجر مجوهرات؟ انضم إلى شبكة البائعين الموثّقين في MASA واعرض مجموعتك لجمهور يقدّر الجودة والأصالة."
-              : "Represent a brand or jewelry boutique? Join MASA’s verified seller network and showcase your collection to an audience that values quality and authenticity."}
+              ? `هل تمثّل علامة تجارية أو متجر مجوهرات؟ انضم إلى شبكة البائعين الموثّقين في ${brand} واعرض مجموعتك لجمهور يقدّر الجودة والأصالة.`
+              : `Represent a brand or jewelry boutique? Join ${brand}'s verified seller network and showcase your collection to an audience that values quality and authenticity.`}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button
@@ -364,7 +367,7 @@ export default function AboutPage() {
               className="bg-secondary text-primary hover:bg-secondary/90 font-sans rounded-full px-8"
             >
               <Link href="/apply" className="inline-flex items-center gap-2">
-                {isArabic ? "قدّم طلب البائع" : "Apply to sell on MASA"}
+                {isArabic ? "قدّم طلب البائع" : `Apply to sell on ${brand}`}
                 <ArrowRight className={`w-4 h-4 ${isArabic ? "rotate-180" : ""}`} aria-hidden />
               </Link>
             </Button>

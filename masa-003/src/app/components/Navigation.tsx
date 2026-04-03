@@ -40,14 +40,14 @@ export function Navigation() {
                 <span className="text-[#531C24]">MASA</span>
               </div>
               <div className="text-sm tracking-widest" style={{ fontFamily: 'var(--font-arabic)' }}>
-                <span className="text-[#8F8F8F]">ماسا</span>
+                <span className="text-[#635C5C]">ماسا</span>
               </div>
             </div>
           </Link>
 
           {/* Search Bar */}
           <div className="flex-1 max-w-xl relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8F8F8F]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#635C5C]" />
             <Input
               placeholder="Search for jewelry, brands, or collections..."
               className="pl-10 bg-[#F7F3EE] border-none"

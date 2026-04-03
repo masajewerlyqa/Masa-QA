@@ -32,7 +32,7 @@ export function MobileHomePage() {
             <h1 className="text-2xl text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>
               MASA
             </h1>
-            <p className="text-xs text-[#8F8F8F]" style={{ fontFamily: 'var(--font-arabic)' }}>
+            <p className="text-xs text-[#635C5C]" style={{ fontFamily: 'var(--font-arabic)' }}>
               ماسا
             </p>
           </div>
@@ -43,7 +43,7 @@ export function MobileHomePage() {
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8F8F8F]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#635C5C]" />
           <Input
             placeholder="Search jewelry..."
             className="pl-10 bg-[#F7F3EE] border-none h-10"
@@ -117,7 +117,7 @@ export function MobileHomePage() {
                 className="w-24 h-24 object-cover rounded-lg bg-[#F7F3EE]"
               />
               <div className="flex-1">
-                <div className="text-xs text-[#8F8F8F] mb-1">{product.brand}</div>
+                <div className="text-xs text-[#635C5C] mb-1">{product.brand}</div>
                 <h4 className="text-sm mb-2">{product.name}</h4>
                 <div className="text-lg text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>
                   {product.price}

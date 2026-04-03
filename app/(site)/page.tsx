@@ -11,6 +11,7 @@ import { ReviewsSection } from "@/components/home/ReviewsSection";
 import { getPublicProducts, getMarketplaceFilters, getDiscountedProducts } from "@/lib/data";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getWishlistProductIds } from "@/lib/customer";
+import { brandName } from "@/lib/brand";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
 
@@ -18,18 +19,33 @@ const HERO_IMAGE = "/image/bg-photo.jpeg";
 
 const HOME_PRODUCTS_LIMIT = 8;
 
-export const metadata: Metadata = {
-  title: "MASA | Discover Luxury Jewelry with Confidence",
-  description:
-    "MASA is a trusted, AI-powered luxury jewelry marketplace. Buy and sell authentic jewelry in Qatar. Explore the best online jewelry marketplace, gold zakat calculator and AI jewelry advisor.",
-  openGraph: {
-    title: "MASA | Discover Luxury Jewelry with Confidence",
-    description:
-      "Trusted AI-powered jewelry marketplace in Qatar. Verified sellers, secure payments, luxury jewelry in Doha. Buy gold online Qatar.",
-    type: "website",
-    images: [{ url: HERO_IMAGE, width: 1200, height: 630, alt: "MASA Luxury Jewelry Marketplace" }],
-  },
-};
+export function generateMetadata(): Metadata {
+  const language = getServerLanguage();
+  const b = brandName(language);
+  const titleEn = `${brandName("en")} | Discover Luxury Jewelry with Confidence`;
+  const titleAr = `${brandName("ar")} | اكتشف المجوهرات الفاخرة بثقة`;
+  const descEn = `${brandName("en")} is a trusted, AI-powered luxury jewelry marketplace. Buy and sell authentic jewelry in Qatar. Explore the best online jewelry marketplace, gold zakat calculator and AI jewelry advisor.`;
+  const descAr = `${brandName("ar")} منصة مجوهرات فاخرة موثوقة ومدعومة بالذكاء الاصطناعي. اشترِ وبِعْ مجوهرات أصلية في قطر.`;
+  const ogDescEn = `Trusted AI-powered jewelry marketplace in Qatar. Verified sellers, secure payments, luxury jewelry in Doha. Buy gold online Qatar.`;
+  const ogDescAr = `سوق مجوهرات موثوق في قطر. بائعون موثّقون، دفع آمن، مجوهرات فاخرة في الدوحة.`;
+  return {
+    title: language === "ar" ? titleAr : titleEn,
+    description: language === "ar" ? descAr : descEn,
+    openGraph: {
+      title: language === "ar" ? titleAr : titleEn,
+      description: language === "ar" ? ogDescAr : ogDescEn,
+      type: "website",
+      images: [
+        {
+          url: HERO_IMAGE,
+          width: 1200,
+          height: 630,
+          alt: language === "ar" ? `${b} سوق المجوهرات الفاخرة` : `${b} Luxury Jewelry Marketplace`,
+        },
+      ],
+    },
+  };
+}
 
 export default async function HomePage() {
   const language = getServerLanguage();

@@ -1,19 +1,5 @@
 -- Store business hours (per store) + seller response SLA on orders.
-
--- -----------------------------------------------------------------------------
--- Order status: awaiting seller confirmation (2h window)
--- -----------------------------------------------------------------------------
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_enum e
-    JOIN pg_type t ON e.enumtypid = t.oid
-    WHERE t.typname = 'order_status' AND e.enumlabel = 'awaiting_seller'
-  ) THEN
-    ALTER TYPE public.order_status ADD VALUE 'awaiting_seller';
-  END IF;
-END
-$$;
+-- Enum value `awaiting_seller` is added in 039a_order_status_awaiting_seller_enum.sql (separate transaction).
 
 -- -----------------------------------------------------------------------------
 -- Stores: working schedule (times interpreted in business_timezone)

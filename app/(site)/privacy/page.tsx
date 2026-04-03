@@ -1,15 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { brandName } from "@/lib/brand";
 import { getServerLanguage } from "@/lib/language-server";
+import { t } from "@/lib/i18n";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy | MASA Luxury Jewelry",
-  description:
-    "Privacy policy for MASA luxury jewelry marketplace. How we collect, use and protect your data.",
-};
+export function generateMetadata(): Metadata {
+  const language = getServerLanguage();
+  const b = brandName(language);
+  return {
+    title: language === "ar" ? `سياسة الخصوصية | ${b}` : `Privacy Policy | ${b} Luxury Jewelry`,
+    description:
+      language === "ar"
+        ? `سياسة الخصوصية لسوق ${b} للمجوهرات الفاخرة.`
+        : `Privacy policy for ${b} luxury jewelry marketplace. How we collect, use and protect your data.`,
+  };
+}
 
 export default function PrivacyPage() {
-  const isArabic = getServerLanguage() === "ar";
+  const language = getServerLanguage();
+  const isArabic = language === "ar";
+  const brand = t(language, "common.brand");
   return (
     <div>
       <section
@@ -29,7 +39,7 @@ export default function PrivacyPage() {
           </h1>
           <div className="w-12 h-px bg-primary/30 mx-auto mb-6" aria-hidden />
           <p className="text-masa-gray font-sans text-lg max-w-xl mx-auto leading-relaxed">
-            {isArabic ? "كيف نجمع بياناتك الشخصية ونستخدمها ونحميها في منصة ماسا." : "How we collect, use and protect your personal information on MASA."}
+            {isArabic ? `كيف نجمع بياناتك الشخصية ونستخدمها ونحميها في منصة ${brand}.` : `How we collect, use and protect your personal information on ${brand}.`}
           </p>
         </div>
       </section>
@@ -44,8 +54,8 @@ export default function PrivacyPage() {
               <h2 className="font-luxury text-xl text-primary mb-3">{isArabic ? "من نحن" : "Who we are"}</h2>
               <p>
                 {isArabic
-                  ? "تصف هذه السياسة كيفية تعامل منصة ماسا مع البيانات الشخصية عند استخدامك للموقع أو التطبيق أو الخدمات المرتبطة (التسوق، الحساب، التواصل، والدعم)."
-                  : "This policy describes how MASA handles personal data when you use our website, app, or related services (shopping, accounts, contact, and support)."}
+                  ? `تصف هذه السياسة كيفية تعامل منصة ${brand} مع البيانات الشخصية عند استخدامك للموقع أو التطبيق أو الخدمات المرتبطة (التسوق، الحساب، التواصل، والدعم).`
+                  : `This policy describes how ${brand} handles personal data when you use our website, app, or related services (shopping, accounts, contact, and support).`}
               </p>
             </div>
             <div>
@@ -114,7 +124,7 @@ export default function PrivacyPage() {
               <h2 className="font-luxury text-xl text-primary mb-3">{isArabic ? "الاحتفاظ بالبيانات" : "Retention"}</h2>
               <p>
                 {isArabic
-                  ? "نحتفظ بالبيانات للمدة اللازمة لتقديم الخدمات والامتثال القانوني وحل النزاعات، ثم نحذفها أو ننكّهها عندما لا تعد ضرورية."
+                  ? "نحتفظ بالبيانات للمدة اللازمة لتقديم الخدمات والامتثال القانوني وحل النزاعات، ثم نحذفها عندما لا تعد ضرورية."
                   : "We retain data for as long as needed to provide services, comply with law, and resolve disputes, then delete or anonymise it when no longer necessary."}
               </p>
             </div>

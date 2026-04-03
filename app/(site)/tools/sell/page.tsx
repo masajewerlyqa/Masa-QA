@@ -3,13 +3,20 @@ import { Coins } from "lucide-react";
 import { DiamondPattern } from "@/components/DiamondPattern";
 import { SellGoldCalculatorClient } from "@/components/tools/SellGoldCalculatorClient";
 import { getGoldPrice } from "@/lib/market-prices";
+import { brandName } from "@/lib/brand";
 import { getServerLanguage } from "@/lib/language-server";
 
-export const metadata: Metadata = {
-  title: "Sell Gold Calculator | MASA",
-  description:
-    "Estimate the current market value of your gold jewelry based on weight, karat, and live gold prices.",
-};
+export function generateMetadata(): Metadata {
+  const language = getServerLanguage();
+  const b = brandName(language);
+  return {
+    title: language === "ar" ? `حاسبة بيع الذهب | ${b}` : `Sell Gold Calculator | ${b}`,
+    description:
+      language === "ar"
+        ? "قدّر القيمة السوقية لذهبك حسب الوزن والعيار وأسعار السوق."
+        : "Estimate the current market value of your gold jewelry based on weight, karat, and live gold prices.",
+  };
+}
 
 export default async function SellGoldCalculatorPage() {
   const isArabic = getServerLanguage() === "ar";

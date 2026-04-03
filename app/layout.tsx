@@ -1,36 +1,33 @@
 import type { Metadata } from "next";
-import { Cinzel, Inter, IBM_Plex_Sans_Arabic, Noto_Naskh_Arabic } from "next/font/google";
+import { Cinzel_Decorative, IBM_Plex_Sans_Arabic } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { CurrencyProvider } from "@/components/CurrencyProvider";
 import { LanguageProvider } from "@/components/LanguageProvider";
 import { Toaster } from "@/components/ui/toaster";
 import { languageDirection } from "@/lib/language";
 import { getServerLanguage } from "@/lib/language-server";
+import { brandName } from "@/lib/brand";
 import { getBaseUrl, getLocalizedSeo } from "@/lib/seo";
 
-const cinzel = Cinzel({
+const cinzelDecorative = Cinzel_Decorative({
+  weight: "400",
   subsets: ["latin"],
   variable: "--font-cinzel",
   display: "swap",
 });
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
+const alilato = localFont({
+  src: "./fonts/Alilato-Regular.woff2",
+  variable: "--font-alilato",
   display: "swap",
+  fallback: ["system-ui", "sans-serif"],
 });
 
 const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
   weight: ["300", "400", "500", "600", "700"],
   subsets: ["arabic"],
   variable: "--font-ibm-plex-arabic",
-  display: "swap",
-});
-
-const notoNaskhArabic = Noto_Naskh_Arabic({
-  weight: ["400", "500", "600", "700"],
-  subsets: ["arabic"],
-  variable: "--font-noto-naskh-arabic",
   display: "swap",
 });
 
@@ -49,7 +46,7 @@ export function generateMetadata(): Metadata {
     metadataBase: new URL(getBaseUrl()),
     title: {
       default: localized.title,
-      template: `%s | ${language === "ar" ? "ماسا" : "MASA"}`,
+      template: `%s | ${brandName(language)}`,
     },
     description: localized.description,
     alternates: {
@@ -65,7 +62,7 @@ export function generateMetadata(): Metadata {
       description: localized.description,
       type: "website",
       locale: language === "ar" ? "ar_QA" : "en_QA",
-      siteName: "MASA",
+      siteName: brandName(language),
     },
     icons: {
       icon: "/image/logo-browser.png",
@@ -85,10 +82,12 @@ export default function RootLayout({
     <html
       lang={language}
       dir={direction}
-      className={`${cinzel.variable} ${inter.variable} ${ibmPlexSansArabic.variable} ${notoNaskhArabic.variable}`}
+      className={`${cinzelDecorative.variable} ${ibmPlexSansArabic.variable} ${alilato.variable}`}
       suppressHydrationWarning
     >
-      <body className={`min-h-screen bg-white text-masa-dark antialiased ${language === "ar" ? "font-arabic" : "font-sans"}`}>
+      <body
+        className={`min-h-screen bg-white text-masa-dark antialiased ${language === "ar" ? "font-arabic" : "font-sans"}`}
+      >
         <LanguageProvider initialLanguage={language}>
           <CurrencyProvider>
             {children}

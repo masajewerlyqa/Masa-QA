@@ -23,7 +23,7 @@ export async function sendSellerApplicationReceivedEmail(
   const lang = resolveEmailLanguage(language);
   return sendEmailWithRetry({
     to,
-    subject: lang === "ar" ? "تم استلام طلب الانضمام كبائع — MASA" : "MASA Seller Application Received",
+    subject: lang === "ar" ? "تم استلام طلب الانضمام كبائع — ماسا" : "MASA Seller Application Received",
     html: sellerApplicationReceivedHtml(planId, contactName, lang),
     tags: [{ name: "category", value: "seller_application_received" }],
   });
@@ -40,7 +40,7 @@ export async function sendSellerApplicationApprovedEmail(
   return sendEmailWithRetry({
     to,
     subject:
-      lang === "ar" ? "تمت الموافقة — لوحة البائع جاهزة — MASA" : "You’re approved — open your MASA seller dashboard",
+      lang === "ar" ? "تمت الموافقة — لوحة البائع جاهزة — ماسا" : "You’re approved — open your MASA seller dashboard",
     html: sellerApplicationApprovedHtml(contactName, storeDisplayName, lang),
     tags: [{ name: "category", value: "seller_application_approved" }],
   });
@@ -54,7 +54,7 @@ export async function sendWelcomeEmail(
   const lang = resolveEmailLanguage(language);
   return sendEmailWithRetry({
     to,
-    subject: lang === "ar" ? "مرحباً بك في MASA" : "Welcome to MASA",
+    subject: lang === "ar" ? "مرحباً بك في ماسا" : "Welcome to MASA",
     html: welcomeEmailHtml(fullName, lang),
     tags: [{ name: "category", value: "welcome" }],
   });
@@ -71,7 +71,7 @@ export async function sendOrderConfirmationEmail(
   const lang = resolveEmailLanguage(language);
   return sendEmailWithRetry({
     to,
-    subject: lang === "ar" ? "تم تأكيد طلبك — MASA" : "Your MASA order is confirmed",
+    subject: lang === "ar" ? "تم تأكيد طلبك — ماسا" : "Your MASA order is confirmed",
     html: orderConfirmationHtml(orderId, orderNumber, totalUsd, lang),
     tags: [{ name: "category", value: "order_confirmation" }],
   });
@@ -85,7 +85,7 @@ export async function sendPasswordChangedNotice(to: string, language: unknown = 
       : "Your password was successfully changed. If you did not make this change, reset your password and contact support immediately.";
   return sendEmailWithRetry({
     to,
-    subject: lang === "ar" ? "تم تحديث كلمة مرور حسابك — MASA" : "Your MASA password was updated",
+    subject: lang === "ar" ? "تم تحديث كلمة مرور حسابك — ماسا" : "Your MASA password was updated",
     html: accountSecurityNoticeHtml(message, lang),
     tags: [{ name: "category", value: "security" }],
   });
@@ -105,7 +105,7 @@ export async function sendOrderStatusEmailWithRetry(
     to,
     subject:
       lang === "ar"
-        ? `تحديث الطلب: ${statusLabel} — MASA`
+        ? `تحديث الطلب: ${statusLabel} — ماسا`
         : `Order update: ${statusLabel} — MASA`,
     html: orderStatusUpdateHtml(orderId, orderNumber, statusLabel, customerName, lang, cancellationReason),
     tags: [

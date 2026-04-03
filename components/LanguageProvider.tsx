@@ -39,8 +39,15 @@ function readStoredLanguage(): Language {
 
 function applyDocumentLanguage(language: Language) {
   if (typeof document === "undefined") return;
-  document.documentElement.lang = language;
-  document.documentElement.dir = languageDirection(language);
+  const html = document.documentElement;
+  html.lang = language;
+  html.dir = languageDirection(language);
+  /** Body keeps server-rendered font utilities; sync so Arabic/English typography matches client locale. */
+  const body = document.body;
+  if (body) {
+    body.classList.remove("font-sans", "font-arabic");
+    body.classList.add(language === "ar" ? "font-arabic" : "font-sans");
+  }
 }
 
 export function LanguageProvider({

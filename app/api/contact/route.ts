@@ -4,6 +4,7 @@ import { getContactSubjectLabel } from "@/lib/contact/subjects";
 import { maskEmailForLog, sendEmailWithRetry } from "@/lib/email/send-email";
 import { contactSupportNotificationHtml, contactUserAcknowledgmentHtml } from "@/lib/email/templates";
 import { resolveEmailLanguage } from "@/lib/email/email-language";
+import { brandName } from "@/lib/brand";
 import { contactFormBodySchema } from "@/lib/validations/contact";
 
 /**
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
     message: d.message,
   });
 
-  const inboxSubject = `[MASA Contact] ${subjectLabel}`;
+  const inboxSubject = `[${brandName("en")} Contact] ${subjectLabel}`;
 
   const supportResult = await sendEmailWithRetry({
     from: env.contactInboxFromEmail,
@@ -71,12 +72,13 @@ export async function POST(req: Request) {
   }
 
   const ackLang = resolveEmailLanguage(d.language);
+  const ackBrand = brandName(ackLang);
   const userHtml = contactUserAcknowledgmentHtml(d.fullName, ackLang);
 
   const userResult = await sendEmailWithRetry({
     from: env.contactAckFromEmail,
     to: d.email.trim(),
-    subject: ackLang === "ar" ? "استلمنا رسالتك — MASA" : "We received your message — MASA",
+    subject: ackLang === "ar" ? `استلمنا رسالتك — ${ackBrand}` : `We received your message — ${ackBrand}`,
     html: userHtml,
     tags: [{ name: "type", value: "contact_ack" }],
   });

@@ -1,5 +1,6 @@
 "use client";
 
+import type { MouseEvent } from "react";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
@@ -24,7 +25,9 @@ export function WishlistHeartButton({
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  function handleClick() {
+  function handleClick(e: MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    e.stopPropagation();
     startTransition(async () => {
       const result = await toggleWishlist(productId, isInWishlist);
       if (result.ok) router.refresh();
@@ -33,6 +36,7 @@ export function WishlistHeartButton({
 
   return (
     <Button
+      type="button"
       variant={variant}
       size={size}
       className={className}

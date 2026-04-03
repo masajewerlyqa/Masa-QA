@@ -64,7 +64,7 @@ export function VerifiedBadge({
           config.gap,
           className
         )}
-        title={isArabic ? "موثّق من MASA" : "Verified by MASA"}
+        title={isArabic ? "موثّق من ماسا" : "Verified by MASA"}
       >
         <BadgeCheck className={cn(config.icon, "fill-primary text-white")} />
         {showText && (
@@ -83,7 +83,7 @@ export function VerifiedBadge({
           config.padding,
           className
         )}
-        title={isArabic ? "موثّق من MASA" : "Verified by MASA"}
+        title={isArabic ? "موثّق من ماسا" : "Verified by MASA"}
       >
         <BadgeCheck className={cn(config.icon, "fill-primary text-white")} />
         {showText && (
@@ -102,7 +102,7 @@ export function VerifiedBadge({
           config.padding,
           className
         )}
-        title={isArabic ? "موثّق من MASA" : "Verified by MASA"}
+        title={isArabic ? "موثّق من ماسا" : "Verified by MASA"}
       >
         <BadgeCheck className={cn(config.icon, "fill-white text-masa-gold")} />
         {showText && (
@@ -122,11 +122,11 @@ export function VerifiedBadge({
         config.padding,
         className
       )}
-      title={isArabic ? "موثّق من MASA" : "Verified by MASA"}
+      title={isArabic ? "موثّق من ماسا" : "Verified by MASA"}
     >
       <BadgeCheck className={cn(config.icon, "fill-white text-primary")} />
       {showText && (
-        <span className={cn(config.text, "font-medium")}>{isArabic ? "موثّق من MASA" : "Verified by MASA"}</span>
+        <span className={cn(config.text, "font-medium")}>{isArabic ? "موثّق من ماسا" : "Verified by MASA"}</span>
       )}
     </span>
   );

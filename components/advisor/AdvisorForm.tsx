@@ -14,6 +14,9 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useLanguage } from "@/components/LanguageProvider";
+import { useCurrency } from "@/components/CurrencyProvider";
+import { formatPrice, type Currency } from "@/lib/currency";
+import { cn } from "@/lib/utils";
 import {
   OCCASIONS,
   BUDGET_RANGES,
@@ -25,7 +28,48 @@ import {
   type JewelryCategoryValue,
 } from "@/lib/advisor-types";
 
-type LocalizeContext = "occasion" | "budget" | "metal" | "style" | "recipient";
+type LocalizeContext = "occasion" | "metal" | "style" | "recipient";
+
+function budgetRangeLabel(
+  range: (typeof BUDGET_RANGES)[number],
+  currency: Currency,
+  language: "en" | "ar"
+): string {
+  const isAr = language === "ar";
+  if (range.value === "any") {
+    return isAr ? "غير محدد" : "No preference";
+  }
+
+  if (currency === "USD") {
+    if (!isAr) return range.label;
+    const arUsd: Record<string, string> = {
+      under500: "أقل من 500 دولار",
+      "500to1000": "500 - 1,000 دولار",
+      "1000to2500": "1,000 - 2,500 دولار",
+      "2500to5000": "2,500 - 5,000 دولار",
+      "5000to10000": "5,000 - 10,000 دولار",
+      over10000: "أكثر من 10,000 دولار",
+    };
+    return arUsd[range.value] ?? range.label;
+  }
+
+  const fp = (usd: number) => formatPrice(usd, "QAR", { language: isAr ? "ar" : "en" });
+  const v = range.value;
+  if (v === "under500") {
+    return isAr ? `أقل من ${fp(500)}` : `Under ${fp(500)}`;
+  }
+  if (v === "over10000") {
+    return isAr ? `أكثر من ${fp(10000)}` : `Over ${fp(10000)}`;
+  }
+  const pair: Record<string, [number, number]> = {
+    "500to1000": [500, 1000],
+    "1000to2500": [1000, 2500],
+    "2500to5000": [2500, 5000],
+    "5000to10000": [5000, 10000],
+  };
+  const [a, b] = pair[v] ?? [0, 0];
+  return `${fp(a)} – ${fp(b)}`;
+}
 
 type AdvisorFormProps = {
   onSubmit: (preferences: AdvisorPreferences) => Promise<void>;
@@ -33,7 +77,8 @@ type AdvisorFormProps = {
 };
 
 export function AdvisorForm({ onSubmit, isLoading }: AdvisorFormProps) {
-  const { isArabic } = useLanguage();
+  const { isArabic, language } = useLanguage();
+  const { currency } = useCurrency();
   const [preferences, setPreferences] = useState<AdvisorPreferences>({
     occasion: "any",
     budget: "any",
@@ -120,12 +165,6 @@ export function AdvisorForm({ onSubmit, isLoading }: AdvisorFormProps) {
       partner: "الشريك/الشريكة",
       mother: "الأم",
       family: "العائلة",
-      under500: "أقل من 500 دولار",
-      "500to1000": "500 - 1,000 دولار",
-      "1000to2500": "1,000 - 2,500 دولار",
-      "2500to5000": "2,500 - 5,000 دولار",
-      "5000to10000": "5,000 - 10,000 دولار",
-      over10000: "أكثر من 10,000 دولار",
     };
       const key = value.toLowerCase().replace(/\s+/g, "_");
       return optionMap[key] ?? optionMap[value] ?? label;
@@ -203,21 +242,24 @@ export function AdvisorForm({ onSubmit, isLoading }: AdvisorFormProps) {
                 <SelectContent>
                   {BUDGET_RANGES.map((range) => (
                     <SelectItem key={range.value} value={range.value}>
-                      {localizeOption(range.value, range.label, "budget")}
+                      {budgetRangeLabel(range, currency, language)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Metal */}
-            <div className="space-y-2">
+            {/* Metal — full row width so long labels (e.g. Any / No Preference) fit */}
+            <div className="space-y-2 w-full md:col-span-2">
               <Label htmlFor="metal">{labelMap.metal}</Label>
               <Select
                 value={preferences.metal}
                 onValueChange={(value) => updatePreference("metal", value as typeof preferences.metal)}
               >
-                <SelectTrigger id="metal" className="bg-masa-light">
+                <SelectTrigger
+                  id="metal"
+                  className="bg-masa-light w-full max-w-none [&>span]:line-clamp-none [&>span]:break-words"
+                >
                   <SelectValue placeholder={placeholderMap.metal} />
                 </SelectTrigger>
                 <SelectContent>
@@ -237,17 +279,19 @@ export function AdvisorForm({ onSubmit, isLoading }: AdvisorFormProps) {
                 <p className="text-xs text-masa-gray mt-1 font-sans">{labelMap.categoryHint}</p>
               </div>
               <div
-                className="grid grid-cols-2 sm:grid-cols-3 gap-3 rounded-lg border border-primary/10 bg-masa-light/50 p-4"
+                className="w-full rounded-xl border border-primary/10 bg-masa-light/50 p-5 sm:p-6 md:px-10 md:py-7 lg:px-14 lg:py-8"
                 role="group"
                 aria-labelledby="jewelry-types-label"
               >
+                <div className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-5 sm:gap-x-8 lg:gap-x-10 lg:gap-y-4 min-w-0">
                 {JEWELRY_CATEGORY_OPTIONS.map((cat) => (
                   <label
                     key={cat.value}
                     htmlFor={`jewelry-${cat.value}`}
-                    className={`flex items-center gap-2.5 cursor-pointer text-sm font-sans ${
+                    className={cn(
+                      "flex w-full min-w-0 items-center gap-2.5 cursor-pointer text-sm font-sans",
                       isArabic ? "font-arabic flex-row-reverse text-right" : ""
-                    }`}
+                    )}
                   >
                     <Checkbox
                       id={`jewelry-${cat.value}`}
@@ -255,9 +299,10 @@ export function AdvisorForm({ onSubmit, isLoading }: AdvisorFormProps) {
                       onCheckedChange={(c) => toggleCategory(cat.value, c === true)}
                       aria-label={localizeJewelryTypeLabel(cat.value, cat.label)}
                     />
-                    <span className="text-masa-dark leading-tight">{localizeJewelryTypeLabel(cat.value, cat.label)}</span>
+                    <span className="text-masa-dark leading-snug">{localizeJewelryTypeLabel(cat.value, cat.label)}</span>
                   </label>
                 ))}
+                </div>
               </div>
             </div>
 

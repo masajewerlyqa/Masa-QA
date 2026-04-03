@@ -86,7 +86,7 @@ export function NewsletterSection() {
 
         <p className="text-masa-gray text-sm md:text-base font-sans max-w-3xl mx-auto text-center leading-relaxed">
           {isArabic
-            ? "MASA منصة مجوهرات ذكية وسوق رقمي للذهب. نبني منظومة فاخرة موثوقة لعشاق المجوهرات والبائعين في قطر والشرق الأوسط — اكتشف واشترِ وبِع بثقة."
+            ? "ماسا منصة مجوهرات ذكية وسوق رقمي للذهب. نبني منظومة فاخرة موثوقة لعشاق المجوهرات والبائعين في قطر والشرق الأوسط — اكتشف واشترِ وبِع بثقة."
             : "MASA is an AI-powered jewelry platform and digital gold marketplace. We are building a trusted luxury ecosystem for jewelry lovers and sellers in Qatar and the Middle East—discover, buy and sell with confidence."}
         </p>
       </div>

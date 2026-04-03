@@ -62,31 +62,31 @@ const SOCIAL_LINKS: {
     href: "https://x.com/masajewelry_ar",
     Icon: Twitter,
     labelEn: "MASA on X",
-    labelAr: "MASA على إكس",
+    labelAr: "ماسا على إكس",
   },
   {
     href: "https://www.facebook.com/profile.php?id=61577488271138&mibextid=wwXIfr&rdid=ImptgqBRG5IRn98W&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1AvjkUhwt1%2F%3Fmibextid%3DwwXIfr#",
     Icon: Facebook,
     labelEn: "MASA on Facebook",
-    labelAr: "MASA على فيسبوك",
+    labelAr: "ماسا على فيسبوك",
   },
   {
     href: "https://www.tiktok.com/@masajewelry.ar",
     Icon: TikTokIcon,
     labelEn: "MASA on TikTok",
-    labelAr: "MASA على تيك توك",
+    labelAr: "ماسا على تيك توك",
   },
   {
     href: "https://www.instagram.com/masajewelry.ar",
     Icon: Instagram,
     labelEn: "MASA on Instagram",
-    labelAr: "MASA على إنستغرام",
+    labelAr: "ماسا على إنستغرام",
   },
   {
     href: "https://www.snapchat.com/@masajewelry.ar?sender_web_id=d5f28286-3644-4164-bd1a-262ea8ab1d1d&device_type=desktop&is_copy_url=true",
     Icon: SnapchatIcon,
     labelEn: "MASA on Snapchat",
-    labelAr: "MASA على سناب شات",
+    labelAr: "ماسا على سناب شات",
   },
 ];
 
@@ -95,6 +95,7 @@ const androidPlayStoreUrl = process.env.NEXT_PUBLIC_ANDROID_PLAY_STORE_URL?.trim
 
 export function Footer() {
   const { t, isArabic } = useI18n();
+  const brand = t("common.brand");
   /** Query values match `products.category` / seller `CATEGORIES` (Ring, Necklace, Bracelet, Earrings, …). */
   const shopLinks = [
     { label: t("footer.shopLinks.allJewelry"), href: "/discover" },
@@ -120,10 +121,10 @@ export function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12 mb-12">
           <div className="lg:col-span-2">
             <div className="mb-6">
-              <Link href="/" aria-label={isArabic ? "MASA الصفحة الرئيسية" : "MASA Home"}>
+              <Link href="/" aria-label={isArabic ? `${brand} الصفحة الرئيسية` : `${brand} Home`}>
                 <Image
                   src="/image/logo-footer.png"
-                  alt={isArabic ? "شعار MASA" : "MASA logo"}
+                  alt={isArabic ? `شعار ${brand}` : `${brand} logo`}
                   width={200}
                   height={80}
                   className="h-16 w-auto object-contain"
@@ -229,7 +230,9 @@ export function Footer() {
         </div>
 
         <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-secondary font-sans">
-          <p>© {new Date().getFullYear()} MASA. {t("footer.allRightsReserved")}</p>
+          <p>
+            © {new Date().getFullYear()} {brand}. {t("footer.allRightsReserved")}
+          </p>
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
             <Link href="/privacy" className="hover:text-white transition-colors">
               {t("footer.privacyPolicy")}

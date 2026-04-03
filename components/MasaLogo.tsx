@@ -5,6 +5,8 @@
 interface MasaLogoProps {
   variant?: "light" | "dark";
   size?: "sm" | "md" | "lg";
+  /** When `"ar"`, only the Arabic wordmark (ماسا) is shown. When `"en"`, Latin MASA with optional Arabic subtitle. */
+  locale?: "en" | "ar";
   showArabic?: boolean;
   className?: string;
 }
@@ -24,6 +26,7 @@ const textSizes = {
 export function MasaLogo({
   variant = "dark",
   size = "md",
+  locale = "en",
   showArabic = true,
   className = "",
 }: MasaLogoProps) {
@@ -51,17 +54,27 @@ export function MasaLogo({
         </svg>
       </div>
       <div>
-        <span
-          className={`${textSizes[size]} tracking-wider font-luxury block ${isLight ? "text-white" : "text-primary"}`}
-        >
-          MASA
-        </span>
-        {showArabic && (
+        {locale === "ar" ? (
           <span
-            className={`text-sm tracking-widest font-arabic block ${isLight ? "text-secondary" : "text-masa-gray"}`}
+            className={`${textSizes[size]} tracking-widest font-arabic block ${isLight ? "text-white" : "text-primary"}`}
           >
             ماسا
           </span>
+        ) : (
+          <>
+            <span
+              className={`${textSizes[size]} tracking-wider font-luxury block ${isLight ? "text-white" : "text-primary"}`}
+            >
+              MASA
+            </span>
+            {showArabic && (
+              <span
+                className={`text-sm tracking-widest font-arabic block ${isLight ? "text-secondary" : "text-masa-gray"}`}
+              >
+                ماسا
+              </span>
+            )}
+          </>
         )}
       </div>
     </div>

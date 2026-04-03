@@ -1,15 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { brandName } from "@/lib/brand";
 import { getServerLanguage } from "@/lib/language-server";
+import { t } from "@/lib/i18n";
 
-export const metadata: Metadata = {
-  title: "Delivery | MASA Luxury Jewelry",
-  description:
-    "Delivery information for MASA luxury jewelry marketplace. Qatar and international options.",
-};
+export function generateMetadata(): Metadata {
+  const language = getServerLanguage();
+  const b = brandName(language);
+  return {
+    title: language === "ar" ? `التوصيل | ${b}` : `Delivery | ${b} Luxury Jewelry`,
+    description:
+      language === "ar"
+        ? `معلومات التوصيل على منصة ${b} للمجوهرات الفاخرة في قطر وخارجها.`
+        : `Delivery information for ${b} luxury jewelry marketplace. Qatar and international options.`,
+  };
+}
 
 export default function DeliveryPage() {
-  const isArabic = getServerLanguage() === "ar";
+  const language = getServerLanguage();
+  const isArabic = language === "ar";
+  const brand = t(language, "common.brand");
   return (
     <div>
       <section
@@ -40,7 +50,9 @@ export default function DeliveryPage() {
             <div>
               <h2 className="font-luxury text-2xl text-primary mb-4">{isArabic ? "نطاقات التوصيل" : "Delivery areas"}</h2>
               <p className="text-masa-gray text-sm leading-relaxed mb-4">
-                {isArabic ? "يعمل MASA مع بائعين موثّقين ينظمون توصيل طلباتهم. معظم البائعين يوفرون التوصيل داخل قطر، وقد يتوفر توصيل دولي لدى بعضهم." : "MASA works with verified sellers who arrange delivery for their orders. Most sellers offer delivery within Qatar (Doha and surrounding areas). Selected sellers may deliver internationally—check the product or store page for availability in your country."}
+                {isArabic
+                  ? `يعمل ${brand} مع بائعين موثّقين ينظمون توصيل طلباتهم. معظم البائعين يوفرون التوصيل داخل قطر، وقد يتوفر توصيل دولي لدى بعضهم.`
+                  : `${brand} works with verified sellers who arrange delivery for their orders. Most sellers offer delivery within Qatar (Doha and surrounding areas). Selected sellers may deliver internationally—check the product or store page for availability in your country.`}
               </p>
             </div>
             <div>

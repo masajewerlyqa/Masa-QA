@@ -17,23 +17,23 @@ export function MobileLayout() {
             <span className="text-xs text-[#531C24]" style={{ fontFamily: 'var(--font-ui)' }}>Home</span>
           </Link>
           <Link to="/mobile/search" className="flex flex-col items-center gap-1">
-            <Search className="w-5 h-5 text-[#8F8F8F]" />
-            <span className="text-xs text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>Search</span>
+            <Search className="w-5 h-5 text-[#635C5C]" />
+            <span className="text-xs text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>Search</span>
           </Link>
           <Link to="/cart" className="flex flex-col items-center gap-1 relative">
-            <ShoppingCart className="w-5 h-5 text-[#8F8F8F]" />
-            <span className="text-xs text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>Cart</span>
+            <ShoppingCart className="w-5 h-5 text-[#635C5C]" />
+            <span className="text-xs text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>Cart</span>
             <div className="absolute -top-1 right-2 w-4 h-4 bg-[#531C24] rounded-full flex items-center justify-center text-[10px] text-white">
               2
             </div>
           </Link>
           <Link to="/mobile/wishlist" className="flex flex-col items-center gap-1">
-            <Heart className="w-5 h-5 text-[#8F8F8F]" />
-            <span className="text-xs text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>Wishlist</span>
+            <Heart className="w-5 h-5 text-[#635C5C]" />
+            <span className="text-xs text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>Wishlist</span>
           </Link>
           <Link to="/account" className="flex flex-col items-center gap-1">
-            <User className="w-5 h-5 text-[#8F8F8F]" />
-            <span className="text-xs text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>Profile</span>
+            <User className="w-5 h-5 text-[#635C5C]" />
+            <span className="text-xs text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>Profile</span>
           </Link>
         </div>
       </nav>

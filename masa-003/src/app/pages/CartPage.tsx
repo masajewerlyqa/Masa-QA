@@ -52,7 +52,7 @@ export function CartPage() {
                         <h3 className="text-lg mb-1" style={{ fontFamily: 'var(--font-ui)' }}>
                           {item.name}
                         </h3>
-                        <p className="text-sm text-[#8F8F8F]">{item.brand}</p>
+                        <p className="text-sm text-[#635C5C]">{item.brand}</p>
                       </div>
                       <Button variant="ghost" size="icon" className="text-red-600">
                         <Trash2 className="w-5 h-5" />
@@ -88,15 +88,15 @@ export function CartPage() {
               
               <div className="space-y-4 mb-6" style={{ fontFamily: 'var(--font-ui)' }}>
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#8F8F8F]">Subtotal</span>
+                  <span className="text-[#635C5C]">Subtotal</span>
                   <span>${subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#8F8F8F]">Shipping</span>
+                  <span className="text-[#635C5C]">Shipping</span>
                   <span className="text-green-600">Free</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#8F8F8F]">Tax</span>
+                  <span className="text-[#635C5C]">Tax</span>
                   <span>${tax.toLocaleString()}</span>
                 </div>
                 <div className="pt-4 border-t border-[#531C24]/10">

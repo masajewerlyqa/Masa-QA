@@ -1,15 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { brandName } from "@/lib/brand";
 import { getServerLanguage } from "@/lib/language-server";
+import { t } from "@/lib/i18n";
 
-export const metadata: Metadata = {
-  title: "Cookie Policy | MASA Luxury Jewelry",
-  description:
-    "How MASA uses cookies and similar technologies on its luxury jewelry marketplace.",
-};
+export function generateMetadata(): Metadata {
+  const language = getServerLanguage();
+  const b = brandName(language);
+  return {
+    title: language === "ar" ? `سياسة ملفات الارتباط | ${b}` : `Cookie Policy | ${b} Luxury Jewelry`,
+    description:
+      language === "ar"
+        ? `كيف تستخدم ${b} ملفات تعريف الارتباط على منصة المجوهرات.`
+        : `How ${b} uses cookies and similar technologies on its luxury jewelry marketplace.`,
+  };
+}
 
 export default function CookiesPage() {
-  const isArabic = getServerLanguage() === "ar";
+  const language = getServerLanguage();
+  const isArabic = language === "ar";
+  const brand = t(language, "common.brand");
   return (
     <div>
       <section
@@ -29,7 +39,7 @@ export default function CookiesPage() {
           </h1>
           <div className="w-12 h-px bg-primary/30 mx-auto mb-6" aria-hidden />
           <p className="text-masa-gray font-sans text-lg max-w-xl mx-auto leading-relaxed">
-            {isArabic ? "كيف نستخدم ملفات تعريف الارتباط والتقنيات المشابهة في منصة ماسا." : "How we use cookies and similar technologies on MASA."}
+            {isArabic ? `كيف نستخدم ملفات تعريف الارتباط والتقنيات المشابهة في منصة ${brand}.` : `How we use cookies and similar technologies on ${brand}.`}
           </p>
         </div>
       </section>
@@ -53,7 +63,7 @@ export default function CookiesPage() {
               <p>
                 {isArabic
                   ? "نستخدم ملفات أساسية ضرورية لعمل الموقع (مثل تسجيل الدخول والأمان وتوزيع الأحمال). قد نستخدم ملفات تحليلات لفهم استخدام المنصة بشكل مجمّع. قد نستخدم ملفات تفضيلات لتذكّر الإعدادات مثل العملة أو المنطقة. عند استخدام ملفات غير أساسية نطلب الموافقة حيث يقتضي القانون."
-                  : "We use essential cookies required for the site to work (e.g. authentication, security, load balancing). We may use analytics cookies to understand how visitors use MASA in an aggregated way. We may use preference cookies for settings like currency or region. Where we use non-essential cookies, we seek your consent where required by law."}
+                  : `We use essential cookies required for the site to work (e.g. authentication, security, load balancing). We may use analytics cookies to understand how visitors use ${brand} in an aggregated way. We may use preference cookies for settings like currency or region. Where we use non-essential cookies, we seek your consent where required by law.`}
               </p>
             </div>
             <div>

@@ -2,13 +2,16 @@ import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { getCurrentUserWithProfile, getRedirectPathForRole } from "@/lib/auth";
 import { getServerLanguage } from "@/lib/language-server";
+import { t } from "@/lib/i18n";
 
 export default async function LoginPage({
   searchParams,
 }: {
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
-  const isArabic = getServerLanguage() === "ar";
+  const language = getServerLanguage();
+  const isArabic = language === "ar";
+  const brand = t(language, "common.brand");
   const { user, profile } = await getCurrentUserWithProfile();
   if (user && profile) {
     redirect(getRedirectPathForRole(profile.role));
@@ -36,7 +39,7 @@ export default async function LoginPage({
       )}
       {verified && (
         <div className="w-full max-w-md rounded-md border border-primary/15 bg-masa-light px-4 py-3 text-sm text-masa-dark font-sans text-center">
-          {isArabic ? "تم تأكيد بريدك الإلكتروني بنجاح. أهلاً بك في MASA، سجّل الدخول للمتابعة." : "Your email is verified. Welcome to MASA — sign in to continue."}
+          {isArabic ? `تم تأكيد بريدك الإلكتروني بنجاح. أهلاً بك في ${brand}، سجّل الدخول للمتابعة.` : `Your email is verified. Welcome to ${brand} — sign in to continue.`}
         </div>
       )}
       {configError && (

@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { brandName } from "@/lib/brand";
 import { getServerLanguage } from "@/lib/language-server";
 
-export const metadata: Metadata = {
-  title: "Size Guide | MASA Luxury Jewelry",
-  description:
-    "Find the right fit for rings, bracelets, and necklaces. MASA size guide for luxury jewelry in Qatar.",
-};
+export function generateMetadata(): Metadata {
+  const language = getServerLanguage();
+  const b = brandName(language);
+  return {
+    title: language === "ar" ? `دليل المقاسات | ${b}` : `Size Guide | ${b} Luxury Jewelry`,
+    description:
+      language === "ar"
+        ? `دليل المقاسات للمجوهرات الفاخرة على ${b} في قطر.`
+        : `Find the right fit for rings, bracelets, and necklaces. ${b} size guide for luxury jewelry in Qatar.`,
+  };
+}
 
 /* Inline SVGs to avoid lucide-react in Server Component (can cause undefined type error) */
 const IconRing = () => (

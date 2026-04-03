@@ -1,15 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { brandName } from "@/lib/brand";
 import { getServerLanguage } from "@/lib/language-server";
+import { t } from "@/lib/i18n";
 
-export const metadata: Metadata = {
-  title: "Terms of Service | MASA Luxury Jewelry",
-  description:
-    "Terms of service for using MASA luxury jewelry marketplace.",
-};
+export function generateMetadata(): Metadata {
+  const language = getServerLanguage();
+  const b = brandName(language);
+  return {
+    title: language === "ar" ? `شروط الاستخدام | ${b}` : `Terms of Service | ${b} Luxury Jewelry`,
+    description:
+      language === "ar"
+        ? `شروط استخدام سوق ${b} للمجوهرات الفاخرة.`
+        : `Terms of service for using ${b} luxury jewelry marketplace.`,
+  };
+}
 
 export default function TermsPage() {
-  const isArabic = getServerLanguage() === "ar";
+  const language = getServerLanguage();
+  const isArabic = language === "ar";
+  const brand = t(language, "common.brand");
   return (
     <div>
       <section
@@ -29,7 +39,7 @@ export default function TermsPage() {
           </h1>
           <div className="w-12 h-px bg-primary/30 mx-auto mb-6" aria-hidden />
           <p className="text-masa-gray font-sans text-lg max-w-xl mx-auto leading-relaxed">
-            {isArabic ? "الشروط التي تحكم استخدامك لمنصة ماسا." : "Terms governing your use of the MASA marketplace."}
+            {isArabic ? `الشروط التي تحكم استخدامك لمنصة ${brand}.` : `Terms governing your use of the ${brand} marketplace.`}
           </p>
         </div>
       </section>
@@ -44,16 +54,16 @@ export default function TermsPage() {
               <h2 className="font-luxury text-xl text-primary mb-3">{isArabic ? "القبول" : "Acceptance"}</h2>
               <p>
                 {isArabic
-                  ? "باستخدامك لمنصة ماسا (الموقع والخدمات) فإنك توافق على هذه الشروط وعلى الشروط والأحكام الخاصة بالعملاء أو المتاجر حيث تنطبق. إذا كنت لا توافق، يرجى عدم استخدام المنصة. قد يتم تحديث الشروط؛ استمرار الاستخدام بعد التعديل يعني موافقتك على النسخة المحدثة."
-                  : "By using MASA (the website and services), you agree to these terms and to the Customer or Merchant Terms & Conditions where they apply. If you do not agree, do not use the platform. We may update these terms; continued use after changes means you accept the updated terms."}
+                  ? `باستخدامك لمنصة ${brand} (الموقع والخدمات) فإنك توافق على هذه الشروط وعلى الشروط والأحكام الخاصة بالعملاء أو المتاجر حيث تنطبق. إذا كنت لا توافق، يرجى عدم استخدام المنصة. قد يتم تحديث الشروط؛ استمرار الاستخدام بعد التعديل يعني موافقتك على النسخة المحدثة.`
+                  : `By using ${brand} (the website and services), you agree to these terms and to the Customer or Merchant Terms & Conditions where they apply. If you do not agree, do not use the platform. We may update these terms; continued use after changes means you accept the updated terms.`}
               </p>
             </div>
             <div>
               <h2 className="font-luxury text-xl text-primary mb-3">{isArabic ? "طبيعة المنصة" : "The marketplace"}</h2>
               <p>
                 {isArabic
-                  ? "ماسا منصة تربط المشترين ببائعي المجوهرات. لا نملك المنتجات المدرجة؛ كل عملية بيع هي بينك وبين المتجر. نوفر المنصة والأدوات والدعم لتسهيل المعاملات بشفافية وأمان."
-                  : "MASA is a marketplace connecting buyers with jewelry sellers. We do not own listed products; each sale is between you and the seller. We provide the platform, tools, and support to facilitate secure, transparent transactions."}
+                  ? `${brand} منصة تربط المشترين ببائعي المجوهرات. لا نملك المنتجات المدرجة؛ كل عملية بيع هي بينك وبين المتجر. نوفر المنصة والأدوات والدعم لتسهيل المعاملات بشفافية وأمان.`
+                  : `${brand} is a marketplace connecting buyers with jewelry sellers. We do not own listed products; each sale is between you and the seller. We provide the platform, tools, and support to facilitate secure, transparent transactions.`}
               </p>
             </div>
             <div>
@@ -78,8 +88,8 @@ export default function TermsPage() {
               </h2>
               <p>
                 {isArabic
-                  ? "لا تقدم منصة ماسا استرداداً نقدياً للمبالغ المدفوعة. أي استبدال أو تسوية غير نقدية يخضع حصرياً لسياسة المتجر المعمول بها كما تُعرض على صفحة المتجر. بإتمام الطلب تقر بعدم وجود التزام من المنصة بإرجاع الأموال نقداً."
-                  : "MASA does not provide cash refunds or money-back guarantees for amounts paid. Any exchange, replacement, or non-cash resolution is governed solely by the applicable store’s policy as shown on the store page. By placing an order, you acknowledge that the platform does not refund money."}
+                  ? `لا تقدم منصة ${brand} استرداداً نقدياً للمبالغ المدفوعة. أي استبدال أو تسوية غير نقدية يخضع حصرياً لسياسة المتجر المعمول بها كما تُعرض على صفحة المتجر. بإتمام الطلب تقر بعدم وجود التزام من المنصة بإرجاع الأموال نقداً.`
+                  : `${brand} does not provide cash refunds or money-back guarantees for amounts paid. Any exchange, replacement, or non-cash resolution is governed solely by the applicable store’s policy as shown on the store page. By placing an order, you acknowledge that the platform does not refund money.`}
               </p>
             </div>
             <div>
@@ -95,15 +105,15 @@ export default function TermsPage() {
               <p>
                 {isArabic
                   ? "يُحظر استخدام المنصة للاحتيال أو السلع المقلدة أو أي نشاط غير قانوني. يُحظر إساءة استخدام المنصة أو مضايقة الآخرين أو محاولة التحايل على الأنظمة. قد نعلق الحسابات أو ننهيها عند المخالفة."
-                  : "You may not use MASA for fraud, counterfeit goods, or illegal activity. You may not misuse the platform, harass others, or circumvent our systems. We may suspend or terminate accounts that violate these terms."}
+                  : `You may not use ${brand} for fraud, counterfeit goods, or illegal activity. You may not misuse the platform, harass others, or circumvent our systems. We may suspend or terminate accounts that violate these terms.`}
               </p>
             </div>
             <div>
               <h2 className="font-luxury text-xl text-primary mb-3">{isArabic ? "تحديد المسؤولية" : "Limitation of liability"}</h2>
               <p>
                 {isArabic
-                  ? "ضمن ما يسمح به القانون، تقتصر مسؤولية ماسا على المبلغ الذي دفعته مقابل الطلب أو الخدمة ذات الصلة. لا نتحمل الأضرار غير المباشرة أو التبعية، ولا مسؤولية سلوك المتاجر خارج نطاق معقول من سيطرتنا."
-                  : "To the extent permitted by law, MASA’s liability is limited to the amount you paid for the relevant order or service. We are not liable for indirect or consequential damages, or for seller conduct outside our reasonable control."}
+                  ? `ضمن ما يسمح به القانون، تقتصر مسؤولية ${brand} على المبلغ الذي دفعته مقابل الطلب أو الخدمة ذات الصلة. لا نتحمل الأضرار غير المباشرة أو التبعية، ولا مسؤولية سلوك المتاجر خارج نطاق معقول من سيطرتنا.`
+                  : `To the extent permitted by law, ${brand}'s liability is limited to the amount you paid for the relevant order or service. We are not liable for indirect or consequential damages, or for seller conduct outside our reasonable control.`}
               </p>
             </div>
             <div>

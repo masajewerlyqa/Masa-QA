@@ -33,7 +33,7 @@
 | Champagne Beige | `#E7D8C3` | Secondary accents, backgrounds |
 | Luxury Gold | `#D4AF37` | Premium highlights, badges |
 | Dark Text | `#1A1A1A` | Primary text |
-| Soft Gray | `#8F8F8F` | Secondary text |
+| Soft Gray | `#635C5C` | Secondary text |
 | Light Background | `#F7F3EE` | Page backgrounds, cards |
 | White | `#FFFFFF` | Pure white surfaces |
 
@@ -373,7 +373,7 @@ import { DiamondPattern } from '../components/DiamondPattern';
 
 // Use color classes
 className="bg-[#531C24] text-white"
-className="text-[#8F8F8F]"
+className="text-[#635C5C]"
 className="bg-[#F7F3EE]"
 ```
 

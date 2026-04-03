@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import type { MouseEvent } from "react";
+import { useState, useTransition, type SyntheticEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,13 @@ export function AddToCartButton({
   const { isArabic, t } = useI18n();
   const inStock = stockQuantity === undefined ? true : stockQuantity > 0;
 
-  function handleClick() {
+  function stopNav(e: SyntheticEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function handleClick(e: MouseEvent<HTMLButtonElement>) {
+    stopNav(e);
     if (!inStock) return;
     setErr(null);
     startTransition(async () => {
@@ -57,11 +64,13 @@ export function AddToCartButton({
   return (
     <div className="space-y-2 w-full">
       <Button
+        type="button"
         className={className}
         variant={variant}
         size={size}
         disabled={isPending || !inStock}
         onClick={handleClick}
+        onPointerDown={stopNav}
       >
         {content}
       </Button>

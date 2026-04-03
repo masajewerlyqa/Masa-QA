@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { brandName } from "@/lib/brand";
 import { getServerLanguage } from "@/lib/language-server";
 
-export const metadata: Metadata = {
-  title: "Returns & Refunds | MASA Luxury Jewelry",
-  description:
-    "Returns and refund policy for MASA luxury jewelry marketplace. How to return or exchange items.",
-};
+export function generateMetadata(): Metadata {
+  const language = getServerLanguage();
+  const b = brandName(language);
+  return {
+    title: language === "ar" ? `الإرجاع والاسترداد | ${b}` : `Returns & Refunds | ${b} Luxury Jewelry`,
+    description:
+      language === "ar"
+        ? `سياسة الإرجاع والاسترداد لسوق ${b} للمجوهرات الفاخرة.`
+        : `Returns and refund policy for ${b} luxury jewelry marketplace. How to return or exchange items.`,
+  };
+}
 
 export default function ReturnsPage() {
   const isArabic = getServerLanguage() === "ar";

@@ -1,5 +1,6 @@
 export const en = {
   common: {
+    brand: "MASA",
     noDataToDisplay: "No data to display.",
     arabic: "Arabic",
     english: "EN",
@@ -350,6 +351,8 @@ export const en = {
       refunded: "Refunded",
       confirmed: "Confirmed",
       rejected: "Rejected",
+      /** Store / seller application / review moderation */
+      approved: "Approved",
       active: "Active",
       suspended: "Suspended",
       closed: "Closed",

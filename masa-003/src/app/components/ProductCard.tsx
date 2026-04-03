@@ -69,14 +69,14 @@ export function ProductCard({
 
       {/* Content */}
       <div className="p-4" style={{ fontFamily: 'var(--font-ui)' }}>
-        <div className="text-xs text-[#8F8F8F] mb-1 uppercase tracking-wide">{brand}</div>
+        <div className="text-xs text-[#635C5C] mb-1 uppercase tracking-wide">{brand}</div>
         <Link to={`/product/${id}`}>
           <h3 className="text-sm mb-2 line-clamp-2 hover:text-[#531C24] transition-colors">
             {title}
           </h3>
         </Link>
         
-        <div className="flex items-center gap-2 mb-3 text-xs text-[#8F8F8F]">
+        <div className="flex items-center gap-2 mb-3 text-xs text-[#635C5C]">
           <span>{category}</span>
           {metal && (
             <>
@@ -91,7 +91,7 @@ export function ProductCard({
             ${price.toLocaleString()}
           </span>
           {originalPrice && (
-            <span className="text-sm text-[#8F8F8F] line-through">
+            <span className="text-sm text-[#635C5C] line-through">
               ${originalPrice.toLocaleString()}
             </span>
           )}

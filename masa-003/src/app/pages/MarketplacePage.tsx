@@ -36,7 +36,7 @@ export function MarketplacePage() {
         <h1 className="text-4xl mb-2 text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>
           Luxury Jewelry Marketplace
         </h1>
-        <p className="text-lg text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>
+        <p className="text-lg text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>
           Discover exquisite jewelry from world-renowned brands
         </p>
       </div>
@@ -79,7 +79,7 @@ export function MarketplacePage() {
                   onValueChange={setPriceRange}
                   className="mb-3"
                 />
-                <div className="flex items-center justify-between text-sm text-[#8F8F8F]">
+                <div className="flex items-center justify-between text-sm text-[#635C5C]">
                   <span>${priceRange[0].toLocaleString()}</span>
                   <span>${priceRange[1].toLocaleString()}</span>
                 </div>
@@ -152,7 +152,7 @@ export function MarketplacePage() {
         <div className="flex-1">
           {/* Toolbar */}
           <div className="flex items-center justify-between mb-6 pb-6 border-b border-[#531C24]/10">
-            <div className="text-sm text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>
+            <div className="text-sm text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>
               Showing <span className="text-[#1A1A1A]">1-12</span> of <span className="text-[#1A1A1A]">246</span> products
             </div>
 

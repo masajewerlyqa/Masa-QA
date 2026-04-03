@@ -205,9 +205,6 @@ export default async function ProductPage({ params }: PageProps) {
           >
             {t(language, "product.reviewsTab")} ({reviewStats.reviewCount})
           </TabsTrigger>
-          <TabsTrigger value="delivery" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-xs md:text-sm shrink-0 px-3 md:px-4">
-            {t(language, "product.shippingTab")}
-          </TabsTrigger>
         </TabsList>
         <TabsContent value="description" className="py-6 md:py-8">
           <p className="text-sm md:text-base text-masa-dark leading-relaxed max-w-none">
@@ -330,28 +327,6 @@ export default async function ProductPage({ params }: PageProps) {
                   {t(language, "product.signInToReview")}
                 </p>
               )}
-            </div>
-          </div>
-        </TabsContent>
-        <TabsContent value="delivery" className="py-6 md:py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-            <div>
-              <h4 className="mb-3 md:mb-4 text-primary font-luxury text-sm md:text-base">{t(language, "product.shippingInformation")}</h4>
-              <ul className="space-y-2.5 md:space-y-3 text-sm text-masa-dark list-disc list-inside">
-                <li>{t(language, "product.shippingLine1")} <FormattedPrice usd={500} /></li>
-                <li>{t(language, "product.shippingLine2")}</li>
-                <li>{t(language, "product.shippingLine3")}</li>
-                <li>{t(language, "product.shippingLine4")}</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="mb-3 md:mb-4 text-primary font-luxury text-sm md:text-base">{t(language, "product.returnsExchanges")}</h4>
-              <ul className="space-y-2.5 md:space-y-3 text-sm text-masa-dark list-disc list-inside">
-                <li>{t(language, "product.returnsLine1")}</li>
-                <li>{t(language, "product.returnsLine2")}</li>
-                <li>{t(language, "product.returnsLine3")}</li>
-                <li>{t(language, "product.returnsLine4")}</li>
-              </ul>
             </div>
           </div>
         </TabsContent>

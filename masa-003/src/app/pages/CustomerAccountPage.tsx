@@ -39,7 +39,7 @@ export function CustomerAccountPage() {
         <h1 className="text-4xl mb-2 text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>
           My Account
         </h1>
-        <p className="text-lg text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>
+        <p className="text-lg text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>
           Welcome back, Sarah
         </p>
       </div>
@@ -74,7 +74,7 @@ export function CustomerAccountPage() {
                       <div className="text-lg mb-1" style={{ fontFamily: 'var(--font-ui)' }}>
                         Order {order.id}
                       </div>
-                      <div className="text-sm text-[#8F8F8F]">
+                      <div className="text-sm text-[#635C5C]">
                         Placed on {order.date} • {order.items} item(s)
                       </div>
                     </div>
@@ -113,20 +113,20 @@ export function CustomerAccountPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm text-[#8F8F8F] mb-1">First Name</div>
+                  <div className="text-sm text-[#635C5C] mb-1">First Name</div>
                   <div>Sarah</div>
                 </div>
                 <div>
-                  <div className="text-sm text-[#8F8F8F] mb-1">Last Name</div>
+                  <div className="text-sm text-[#635C5C] mb-1">Last Name</div>
                   <div>Johnson</div>
                 </div>
               </div>
               <div>
-                <div className="text-sm text-[#8F8F8F] mb-1">Email</div>
+                <div className="text-sm text-[#635C5C] mb-1">Email</div>
                 <div>sarah.johnson@email.com</div>
               </div>
               <div>
-                <div className="text-sm text-[#8F8F8F] mb-1">Phone</div>
+                <div className="text-sm text-[#635C5C] mb-1">Phone</div>
                 <div>+1 (555) 123-4567</div>
               </div>
               <Button className="bg-[#531C24] hover:bg-[#531C24]/90">Edit Profile</Button>
@@ -147,7 +147,7 @@ export function CustomerAccountPage() {
                       <Badge className="mb-2">Default</Badge>
                       <div className="text-sm">123 Main Street</div>
                       <div className="text-sm">New York, NY 10001</div>
-                      <div className="text-sm text-[#8F8F8F]">United States</div>
+                      <div className="text-sm text-[#635C5C]">United States</div>
                     </div>
                     <Button variant="outline" size="sm">Edit</Button>
                   </div>

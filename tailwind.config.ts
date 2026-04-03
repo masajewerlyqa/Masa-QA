@@ -12,7 +12,7 @@ const config: Config = {
         primary: "#531C24",
         secondary: "#E7D8C3",
         "masa-dark": "#1A1A1A",
-        "masa-gray": "#8F8F8F",
+        "masa-gray": "#635c5c",
         "masa-light": "#F7F3EE",
         "masa-gold": "#D4AF37",
         /** shadcn-style tokens used by Card, Badge, etc. — must exist or those utilities produce no CSS */
@@ -25,10 +25,12 @@ const config: Config = {
         border: "rgba(83, 28, 36, 0.1)",
       },
       fontFamily: {
+        /** Cinzel Decorative site-wide for English (body uses font-sans). */
         luxury: ["var(--font-cinzel)", "serif"],
-        arabic: ["var(--font-ibm-plex-arabic)", "sans-serif"],
-        "arabic-luxury": ["var(--font-noto-naskh-arabic)", "var(--font-ibm-plex-arabic)", "serif"],
-        sans: ["var(--font-inter)", "sans-serif"],
+        /** Arabic copy site-wide: Alilato (see `app/fonts/Alilato-Regular.woff2`), then IBM Plex as glyph fallback. */
+        arabic: ["var(--font-alilato)", "var(--font-ibm-plex-arabic)", "sans-serif"],
+        "arabic-luxury": ["var(--font-alilato)", "var(--font-ibm-plex-arabic)", "sans-serif"],
+        sans: ["var(--font-cinzel)", "serif"],
       },
       maxWidth: {
         content: "1440px",

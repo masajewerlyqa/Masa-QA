@@ -535,7 +535,7 @@ export async function getAdminReviews(limit: number = 100): Promise<AdminReviewR
   return out;
 }
 
-const CHART_COLORS = ["#531C24", "#E7D8C3", "#D4AF37", "#8F8F8F", "#F7F3EE", "#C4A77D"];
+const CHART_COLORS = ["#531C24", "#E7D8C3", "#D4AF37", "#635c5c", "#F7F3EE", "#C4A77D"];
 
 export type CategorySlice = { name: string; value: number; color: string };
 

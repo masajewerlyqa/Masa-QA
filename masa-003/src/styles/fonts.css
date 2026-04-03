@@ -1,9 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap");
+
+@font-face {
+  font-family: "Alilato";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("https://db.onlinewebfonts.com/t/4ee300ac1b1c62a7ff64b97455ed7d7d.woff2") format("woff2");
+}
 
 :root {
-  --font-luxury: 'Cinzel', serif;
-  --font-arabic: 'Almarai', sans-serif;
-  --font-ui: 'Inter', sans-serif;
+  --font-luxury: "Cinzel Decorative", serif;
+  --font-arabic: "Alilato", "Almarai", sans-serif;
+  --font-ui: "Cinzel Decorative", serif;
 }

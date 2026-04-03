@@ -88,7 +88,7 @@ export function JewelryVaultPage() {
               <div className="text-3xl mb-2 text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>
                 {stat.value}
               </div>
-              <div className="text-sm text-[#8F8F8F] mb-2" style={{ fontFamily: 'var(--font-ui)' }}>
+              <div className="text-sm text-[#635C5C] mb-2" style={{ fontFamily: 'var(--font-ui)' }}>
                 {stat.label}
               </div>
               <Badge variant="outline" className="text-green-600 border-green-600">
@@ -141,7 +141,7 @@ export function JewelryVaultPage() {
                   <TableCell>
                     <div>
                       <div className="text-sm" style={{ fontFamily: 'var(--font-ui)' }}>{item.name}</div>
-                      <div className="text-xs text-[#8F8F8F]">{item.brand}</div>
+                      <div className="text-xs text-[#635C5C]">{item.brand}</div>
                     </div>
                   </TableCell>
                   <TableCell>{item.purchaseDate}</TableCell>
@@ -150,7 +150,7 @@ export function JewelryVaultPage() {
                   <TableCell>
                     <Badge className="bg-green-600">{item.appreciation}</Badge>
                   </TableCell>
-                  <TableCell className="text-xs text-[#8F8F8F]">{item.certificate}</TableCell>
+                  <TableCell className="text-xs text-[#635C5C]">{item.certificate}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button variant="ghost" size="sm">
@@ -173,21 +173,21 @@ export function JewelryVaultPage() {
         <Card className="border-none shadow-sm text-center p-8">
           <Shield className="w-12 h-12 text-[#531C24] mx-auto mb-4" />
           <h3 className="text-lg mb-2" style={{ fontFamily: 'var(--font-luxury)' }}>Secure Storage</h3>
-          <p className="text-sm text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>
+          <p className="text-sm text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>
             Your jewelry data is encrypted and stored securely
           </p>
         </Card>
         <Card className="border-none shadow-sm text-center p-8">
           <TrendingUp className="w-12 h-12 text-[#531C24] mx-auto mb-4" />
           <h3 className="text-lg mb-2" style={{ fontFamily: 'var(--font-luxury)' }}>Value Tracking</h3>
-          <p className="text-sm text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>
+          <p className="text-sm text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>
             Real-time market value updates for your collection
           </p>
         </Card>
         <Card className="border-none shadow-sm text-center p-8">
           <FileText className="w-12 h-12 text-[#531C24] mx-auto mb-4" />
           <h3 className="text-lg mb-2" style={{ fontFamily: 'var(--font-luxury)' }}>Digital Certificates</h3>
-          <p className="text-sm text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>
+          <p className="text-sm text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>
             Store and access all your jewelry certificates
           </p>
         </Card>

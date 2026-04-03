@@ -4,18 +4,18 @@ import { MapPin, Mail, Phone, Headphones, Shield, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiamondPattern } from "@/components/DiamondPattern";
 import { ContactForm } from "@/components/contact/ContactForm";
+import { brandName } from "@/lib/brand";
 import { getServerLanguage } from "@/lib/language-server";
 import { getLocalizedSeo } from "@/lib/seo";
+import { t } from "@/lib/i18n";
 
 export function generateMetadata(): Metadata {
   const language = getServerLanguage();
   const localized = getLocalizedSeo(language, {
-    title: "Contact MASA - Luxury Jewelry Support in Qatar",
-    titleAr: "تواصل مع ماسا - دعم منصة المجوهرات الفاخرة في قطر",
-    description:
-      "Contact MASA for jewelry support, seller partnerships, and secure marketplace assistance in Qatar.",
-    descriptionAr:
-      "تواصل مع ماسا للحصول على دعم المجوهرات، شراكات البائعين، ومساعدة احترافية داخل منصة السوق في قطر.",
+    title: `Contact ${brandName("en")} - Luxury Jewelry Support in Qatar`,
+    titleAr: `تواصل مع ${brandName("ar")} - دعم منصة المجوهرات الفاخرة في قطر`,
+    description: `Contact ${brandName("en")} for jewelry support, seller partnerships, and secure marketplace assistance in Qatar.`,
+    descriptionAr: `تواصل مع ${brandName("ar")} للحصول على دعم المجوهرات، شراكات البائعين، ومساعدة احترافية داخل منصة السوق في قطر.`,
   });
   return {
     title: localized.title,
@@ -33,7 +33,9 @@ export function generateMetadata(): Metadata {
 }
 
 export default function ContactPage() {
-  const isArabic = getServerLanguage() === "ar";
+  const language = getServerLanguage();
+  const isArabic = language === "ar";
+  const brand = t(language, "common.brand");
   return (
     <div>
       {/* 1. Hero Contact Section — minimal, elegant */}
@@ -50,7 +52,7 @@ export default function ContactPage() {
             id="contact-hero-heading"
             className="text-3xl md:text-5xl lg:text-6xl text-primary font-luxury tracking-tight mb-4 md:mb-6"
           >
-            {isArabic ? "تواصل مع MASA" : "Contact MASA"}
+            {isArabic ? `تواصل مع ${brand}` : `Contact ${brand}`}
           </h1>
           <div className="w-12 h-px bg-primary/30 mx-auto mb-6" aria-hidden />
           <p className="text-masa-gray font-sans text-lg max-w-xl mx-auto leading-relaxed">
@@ -128,7 +130,7 @@ export default function ContactPage() {
             id="trust-heading"
             className="font-luxury text-3xl md:text-4xl text-primary text-center mb-4"
           >
-            {isArabic ? "لماذا تتواصل مع MASA" : "Why Contact MASA"}
+            {isArabic ? `لماذا تتواصل مع ${brand}` : `Why Contact ${brand}`}
           </h2>
           <p className="text-masa-gray font-sans text-center max-w-lg mx-auto mb-12">
             {isArabic ? "نمزج بين الخصوصية والأمان وسرعة الاستجابة في كل تواصل." : "We combine discretion, security and speed in every response."}
@@ -183,18 +185,18 @@ export default function ContactPage() {
             {isArabic ? "الأسئلة الشائعة" : "Frequently Asked Questions"}
           </h2>
           <p className="text-masa-gray font-sans text-center max-w-lg mx-auto mb-12">
-            {isArabic ? "إجابات سريعة حول التسوق والبيع واستخدام MASA." : "Quick answers about shopping, selling, and using MASA."}
+            {isArabic ? `إجابات سريعة حول التسوق والبيع واستخدام ${brand}.` : `Quick answers about shopping, selling, and using ${brand}.`}
           </p>
           <div className="max-w-2xl mx-auto space-y-3">
             <details className="group bg-white rounded-xl border border-primary/10 overflow-hidden">
               <summary className="font-sans font-medium text-masa-dark px-6 py-4 cursor-pointer list-none flex items-center justify-between gap-4 hover:bg-masa-light/50 transition-colors [&::-webkit-details-marker]:hidden">
-                {isArabic ? "كيف أشتري المجوهرات عبر MASA؟" : "How do I buy jewelry on MASA?"}
+                {isArabic ? `كيف أشتري المجوهرات عبر ${brand}؟` : `How do I buy jewelry on ${brand}?`}
                 <span className="shrink-0 w-6 h-6 rounded-full border border-primary/20 flex items-center justify-center text-primary group-open:rotate-180 transition-transform">+</span>
               </summary>
               <div className="px-6 pb-4 pt-0 font-sans text-masa-gray text-sm leading-relaxed border-t border-primary/5">
                 {isArabic
-                  ? "تصفّح المتجر، أضف المنتجات إلى السلة، ثم أكمل الدفع بأمان. يمكنك الدفع بالبطاقة أو التحويل البنكي أو الدفع عند الاستلام حسب المتاح. جميع البائعين موثّقون من MASA."
-                  : "Browse the marketplace, add items to your cart, and checkout securely. You can pay by card, bank transfer, or cash on delivery where available. All sellers are verified by MASA."}
+                  ? `تصفّح المتجر، أضف المنتجات إلى السلة، ثم أكمل الدفع بأمان. يمكنك الدفع بالبطاقة أو التحويل البنكي أو الدفع عند الاستلام حسب المتاح. جميع البائعين موثّقون من ${brand}.`
+                  : `Browse the marketplace, add items to your cart, and checkout securely. You can pay by card, bank transfer, or cash on delivery where available. All sellers are verified by ${brand}.`}
               </div>
             </details>
             <details className="group bg-white rounded-xl border border-primary/10 overflow-hidden">
@@ -266,7 +268,7 @@ export default function ContactPage() {
                 <p>
                   {isArabic
                     ? "لا تقدم منصة ماسا استرداداً نقدياً للمبالغ المدفوعة. أي استبدال أو تسوية غير نقدية يخضع لسياسة المتجر المعروضة على صفحة المتجر وفي الشروط والأحكام للعملاء."
-                    : "MASA does not offer cash refunds. Exchanges or non-cash resolutions are governed only by each store’s policy as shown on the store page and in our Customer Terms & Conditions."}
+                    : `${brand} does not offer cash refunds. Exchanges or non-cash resolutions are governed only by each store’s policy as shown on the store page and in our Customer Terms & Conditions.`}
                 </p>
                 <p>
                   {isArabic
@@ -312,7 +314,7 @@ export default function ContactPage() {
             id="seller-cta-heading"
             className="font-luxury text-3xl md:text-4xl lg:text-5xl mb-6"
           >
-            {isArabic ? "انضم كبائع في MASA" : "Become a MASA Seller"}
+            {isArabic ? `انضم كبائع في ${brand}` : `Become a ${brand} Seller`}
           </h2>
           <p className="text-secondary font-sans text-lg max-w-2xl mx-auto mb-10">
             {isArabic
@@ -335,8 +337,8 @@ export default function ContactPage() {
         <div className="max-w-content mx-auto px-4 md:px-6">
           <p className="font-sans text-masa-gray text-sm md:text-base max-w-3xl mx-auto text-center leading-relaxed">
             {isArabic
-              ? "MASA سوق إلكتروني موثوق للمجوهرات الفاخرة في قطر، يوفّر خدمات رقمية آمنة للشراء والبيع والتقييم واكتشاف المجوهرات بذكاء."
-              : "MASA is a trusted online luxury jewelry marketplace in Qatar, offering secure digital services for buying, selling, valuation, and intelligent jewelry discovery powered by AI technology."}
+              ? `${brand} سوق إلكتروني موثوق للمجوهرات الفاخرة في قطر، يوفّر خدمات رقمية آمنة للشراء والبيع والتقييم واكتشاف المجوهرات بذكاء.`
+              : `${brand} is a trusted online luxury jewelry marketplace in Qatar, offering secure digital services for buying, selling, valuation, and intelligent jewelry discovery powered by AI technology.`}
           </p>
         </div>
       </section>

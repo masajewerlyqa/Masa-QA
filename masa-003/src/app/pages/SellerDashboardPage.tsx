@@ -94,7 +94,7 @@ export function SellerDashboardPage() {
             <h1 className="text-3xl mb-2 text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>
               Dashboard Overview
             </h1>
-            <p className="text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>
+            <p className="text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>
               Welcome back, Cartier Boutique
             </p>
           </div>
@@ -113,7 +113,7 @@ export function SellerDashboardPage() {
                   <div className="text-3xl mb-1" style={{ fontFamily: 'var(--font-luxury)' }}>
                     {stat.value}
                   </div>
-                  <div className="text-sm text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>
+                  <div className="text-sm text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>
                     {stat.label}
                   </div>
                 </CardContent>

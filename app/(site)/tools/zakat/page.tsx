@@ -3,13 +3,20 @@ import { Calculator } from "lucide-react";
 import { DiamondPattern } from "@/components/DiamondPattern";
 import { ZakatCalculatorClient } from "@/components/tools/ZakatCalculatorClient";
 import { getGoldPrice } from "@/lib/market-prices";
+import { brandName } from "@/lib/brand";
 import { getServerLanguage } from "@/lib/language-server";
 
-export const metadata: Metadata = {
-  title: "Zakat Calculator | MASA",
-  description:
-    "Calculate your annual zakat obligation on gold and jewelry holdings according to Islamic guidelines.",
-};
+export function generateMetadata(): Metadata {
+  const language = getServerLanguage();
+  const b = brandName(language);
+  return {
+    title: language === "ar" ? `حاسبة الزكاة | ${b}` : `Zakat Calculator | ${b}`,
+    description:
+      language === "ar"
+        ? "احسب زكاة الذهب والمجوهرات وفق الإرشادات."
+        : "Calculate your annual zakat obligation on gold and jewelry holdings according to Islamic guidelines.",
+  };
+}
 
 export default async function ZakatCalculatorPage() {
   const isArabic = getServerLanguage() === "ar";

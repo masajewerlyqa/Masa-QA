@@ -20,7 +20,7 @@ export function MobileLoginPage() {
       <h1 className="text-3xl mb-2 text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>
         Welcome Back
       </h1>
-      <p className="text-[#8F8F8F] mb-8" style={{ fontFamily: 'var(--font-ui)' }}>
+      <p className="text-[#635C5C] mb-8" style={{ fontFamily: 'var(--font-ui)' }}>
         Sign in to continue
       </p>
 
@@ -28,7 +28,7 @@ export function MobileLoginPage() {
         <div>
           <Label>Email</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8F8F8F]" />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#635C5C]" />
             <Input
               type="email"
               placeholder="your@email.com"
@@ -40,7 +40,7 @@ export function MobileLoginPage() {
         <div>
           <Label>Password</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8F8F8F]" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#635C5C]" />
             <Input
               type="password"
               placeholder="••••••••"
@@ -60,7 +60,7 @@ export function MobileLoginPage() {
         </Button>
       </Link>
 
-      <div className="text-center text-sm text-[#8F8F8F]">
+      <div className="text-center text-sm text-[#635C5C]">
         Don't have an account?{" "}
         <a href="#" className="text-[#531C24]">Sign Up</a>
       </div>

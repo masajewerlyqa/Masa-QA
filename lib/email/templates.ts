@@ -3,18 +3,21 @@
  * Customer-facing bodies follow `language` (en | ar).
  */
 
+import { brandName } from "@/lib/brand";
 import type { Language } from "@/lib/language";
 import { formatPrice, USD_TO_QAR } from "@/lib/currency";
 import type { SellerPlanId } from "@/lib/seller-plans";
 import { getSellerPlanEmailSummaryLines } from "@/lib/seller-plans";
 import { formatOrderDisplayRef } from "@/lib/order-display";
 import { getSiteUrl } from "./config";
+
+const ALILATO_EMAIL_STACK = "'Alilato', Tahoma, 'Segoe UI', 'Arial Unicode MS', sans-serif";
 import { resolveEmailLanguage } from "./email-language";
 
 const BRAND = {
   primary: "#531c24",
   light: "#f7f3ee",
-  muted: "#8f8f8f",
+  muted: "#635c5c",
   dark: "#1a1a1a",
 };
 
@@ -27,23 +30,37 @@ function escapeHtmlText(s: string): string {
 }
 
 function wrap(inner: string, preheader: string | undefined, lang: Language): string {
+  const b = brandName(lang);
   const dir = lang === "ar" ? "rtl" : "ltr";
   const htmlLang = lang === "ar" ? "ar" : "en";
+  const base = getSiteUrl().replace(/\/$/, "");
+  const alilatoFace =
+    lang === "ar"
+      ? `<style>@font-face{font-family:'Alilato';font-style:normal;font-weight:100 900;font-display:swap;src:url('${base}/fonts/Alilato-Regular.woff2') format('woff2');}</style>`
+      : "";
   const contentFont =
     lang === "ar"
-      ? "font-family: Tahoma, 'Segoe UI', 'Arial Unicode MS', sans-serif"
-      : "font-family: system-ui, -apple-system, sans-serif";
+      ? `font-family: ${ALILATO_EMAIL_STACK}`
+      : "font-family: 'Cinzel Decorative', Georgia, 'Times New Roman', serif";
+  const bodyFont =
+    lang === "ar"
+      ? `margin:0;background:${BRAND.light};font-family:${ALILATO_EMAIL_STACK};color:${BRAND.dark};`
+      : `margin:0;background:${BRAND.light};font-family:'Cinzel Decorative',Georgia,'Times New Roman',serif;color:${BRAND.dark};`;
   const footerLine =
     lang === "ar" ? "سوق المجوهرات الفاخرة · قطر" : "Luxury jewelry marketplace · Qatar";
+  const fontLink =
+    lang === "ar"
+      ? alilatoFace
+      : `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative&display=swap"/>`;
   return `<!DOCTYPE html>
 <html lang="${htmlLang}" dir="${dir}">
-<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/><title>MASA</title></head>
-<body style="margin:0;background:${BRAND.light};font-family:Georgia,'Times New Roman',serif;color:${BRAND.dark};">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/><title>${escapeHtmlText(b)}</title>${fontLink}</head>
+<body style="${bodyFont}">
   ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;">${preheader}</div>` : ""}
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${BRAND.light};padding:32px 16px;">
     <tr><td align="center">
       <table role="presentation" width="100%" style="max-width:560px;border:1px solid rgba(83,28,36,0.12);background:#fff;border-radius:4px;">
-        <tr><td style="padding:28px 28px 8px;font-size:20px;letter-spacing:0.06em;color:${BRAND.primary};">MASA</td></tr>
+        <tr><td style="padding:28px 28px 8px;font-size:20px;letter-spacing:0.06em;color:${BRAND.primary};">${escapeHtmlText(b)}</td></tr>
         <tr><td style="padding:8px 28px 28px;font-size:15px;line-height:1.65;${contentFont};color:${BRAND.dark};">
           ${inner}
         </td></tr>
@@ -59,26 +76,27 @@ function wrap(inner: string, preheader: string | undefined, lang: Language): str
 
 export function welcomeEmailHtml(name: string | null, language: unknown = "en"): string {
   const lang = resolveEmailLanguage(language);
+  const b = brandName(lang);
   if (lang === "ar") {
     const greeting = name ? `مرحباً ${name}،` : "مرحباً،";
     return wrap(
       `<p>${greeting}</p>
-    <p>نرحب بك في <strong style="color:${BRAND.primary};">MASA</strong> — سوق المجوهرات الفاخرة في قطر لعشاق الجمال والأناقة اليومية.</p>
+    <p>نرحب بك في <strong style="color:${BRAND.primary};">${escapeHtmlText(b)}</strong> — سوق المجوهرات الفاخرة في قطر لعشاق الجمال والأناقة اليومية.</p>
     <p>تسوّق من بائعين موثّقين، مع دفع آمن وقطع منتقاة بعناية.</p>
     <p style="margin-top:20px;font-size:14px;">يسعدنا انضمامك إلينا.</p>
     <p style="margin-top:20px;color:${BRAND.muted};font-size:13px;">لأمان حسابك، قد ندعوك لاحقاً إلى توثيق رقم هاتفك.</p>`,
-      "مرحباً بك في MASA",
+      `مرحباً بك في ${b}`,
       lang
     );
   }
   const greeting = name ? `Dear ${name},` : "Hello,";
   return wrap(
     `<p>${greeting}</p>
-    <p>Welcome to <strong style="color:${BRAND.primary};">MASA</strong> — Qatar’s luxury jewelry marketplace for discerning collectors and everyday elegance.</p>
+    <p>Welcome to <strong style="color:${BRAND.primary};">${escapeHtmlText(b)}</strong> — Qatar’s luxury jewelry marketplace for discerning collectors and everyday elegance.</p>
     <p>Browse verified sellers, secure checkout, and pieces curated with care.</p>
     <p style="margin-top:20px;font-size:14px;">We’re glad you’re here.</p>
     <p style="margin-top:20px;color:${BRAND.muted};font-size:13px;">For your security, we may invite you to verify your phone number in the future.</p>`,
-    "Welcome to MASA — luxury jewelry, with confidence",
+    `Welcome to ${b} — luxury jewelry, with confidence`,
     lang
   );
 }
@@ -167,9 +185,10 @@ export function orderStatusUpdateHtml(
 
 export function accountSecurityNoticeHtml(message: string, language: unknown = "en"): string {
   const lang = resolveEmailLanguage(language);
+  const b = brandName(lang);
   if (lang === "ar") {
     return wrap(
-      `<p>هذا إشعار أمني لحسابك على MASA.</p>
+      `<p>هذا إشعار أمني لحسابك على ${escapeHtmlText(b)}.</p>
     <p>${message}</p>
     <p style="margin-top:16px;color:${BRAND.muted};font-size:13px;">إذا لم تقم بهذا الإجراء، يُرجى تأمين حسابك والتواصل مع الدعم.</p>`,
       "تنبيه أمني للحساب",
@@ -177,7 +196,7 @@ export function accountSecurityNoticeHtml(message: string, language: unknown = "
     );
   }
   return wrap(
-    `<p>This is a security notification for your MASA account.</p>
+    `<p>This is a security notification for your ${escapeHtmlText(b)} account.</p>
     <p>${message}</p>
     <p style="margin-top:16px;color:${BRAND.muted};font-size:13px;">If you did not perform this action, please secure your account and contact support.</p>`,
     "Account security",
@@ -188,20 +207,21 @@ export function accountSecurityNoticeHtml(message: string, language: unknown = "
 export function newsletterSubscriptionConfirmationHtml(language: unknown = "en"): string {
   const lang = resolveEmailLanguage(language);
   const base = getSiteUrl();
+  const b = brandName(lang);
   if (lang === "ar") {
     return wrap(
-      `<p>شكراً لاشتراكك في النشرة الإخبارية لـ <strong style="color:${BRAND.primary};">MASA</strong>.</p>
+      `<p>شكراً لاشتراكك في النشرة الإخبارية لـ <strong style="color:${BRAND.primary};">${escapeHtmlText(b)}</strong>.</p>
     <p>ستصلك أخبار أحدث القطع واتجاهات الفخامة وعروض مختارة.</p>
-    <p style="margin-top:20px;"><a href="${base}" style="color:${BRAND.primary};">زيارة MASA</a></p>`,
-      "أنت مشترك في تحديثات MASA",
+    <p style="margin-top:20px;"><a href="${base}" style="color:${BRAND.primary};">زيارة ${escapeHtmlText(b)}</a></p>`,
+      `أنت مشترك في تحديثات ${b}`,
       lang
     );
   }
   return wrap(
-    `<p>Thank you for subscribing to the <strong style="color:${BRAND.primary};">MASA</strong> newsletter.</p>
+    `<p>Thank you for subscribing to the <strong style="color:${BRAND.primary};">${escapeHtmlText(b)}</strong> newsletter.</p>
     <p>You will receive updates on new arrivals, luxury trends, and selected offers.</p>
-    <p style="margin-top:20px;"><a href="${base}" style="color:${BRAND.primary};">Visit MASA</a></p>`,
-    "You are subscribed to MASA updates",
+    <p style="margin-top:20px;"><a href="${base}" style="color:${BRAND.primary};">Visit ${escapeHtmlText(b)}</a></p>`,
+    `You are subscribed to ${b} updates`,
     lang
   );
 }
@@ -226,6 +246,7 @@ export function sellerApplicationApprovedHtml(
   language: unknown = "en"
 ): string {
   const lang = resolveEmailLanguage(language);
+  const b = brandName(lang);
   const base = getSiteUrl();
   const dashboardUrl = `${base}/seller`;
   const availabilityUrl = `${base}/seller/availability`;
@@ -239,7 +260,7 @@ export function sellerApplicationApprovedHtml(
       : "تم إنشاء متجرك وجاهز للإعداد في لوحة البائع.";
     return wrap(
       `<p style="margin:0 0 16px;">مرحباً ${safeName}،</p>
-    <p style="margin:0 0 16px;">تمت الموافقة على طلب الانضمام كبائع على <strong style="color:${BRAND.primary};">MASA</strong>. حسابك أصبح بائعاً. ${storeSentence}</p>
+    <p style="margin:0 0 16px;">تمت الموافقة على طلب الانضمام كبائع على <strong style="color:${BRAND.primary};">${escapeHtmlText(b)}</strong>. حسابك أصبح بائعاً. ${storeSentence}</p>
     <p style="margin:0 0 12px;font-weight:600;">من لوحة البائع يمكنك:</p>
     <ul style="margin:0 0 16px;${ulPad};line-height:1.7;">
       <li>إضافة المنتجات وإدارتها</li>
@@ -258,7 +279,7 @@ export function sellerApplicationApprovedHtml(
     : "Your store has been created and is ready to set up in your dashboard.";
   return wrap(
     `<p style="margin:0 0 16px;">Dear ${safeName},</p>
-    <p style="margin:0 0 16px;">Great news — your seller application on <strong style="color:${BRAND.primary};">MASA</strong> has been approved. Your account is now a <strong>seller</strong> account. ${storeSentence}</p>
+    <p style="margin:0 0 16px;">Great news — your seller application on <strong style="color:${BRAND.primary};">${escapeHtmlText(b)}</strong> has been approved. Your account is now a <strong>seller</strong> account. ${storeSentence}</p>
     <p style="margin:0 0 12px;font-weight:600;">From your seller dashboard you can:</p>
     <ul style="margin:0 0 16px;${ulPad};line-height:1.7;">
       <li>Add and manage products</li>
@@ -268,7 +289,7 @@ export function sellerApplicationApprovedHtml(
     <p style="margin:0 0 8px;"><a href="${escapeHtmlText(dashboardUrl)}" style="${ctaStyle}">Open seller dashboard</a></p>
     <p style="margin:0 0 16px;font-size:14px;"><a href="${escapeHtmlText(availabilityUrl)}" style="color:${BRAND.primary};">Set store availability</a></p>
     <p style="margin:0;color:${BRAND.muted};font-size:13px;">Sign in with the same email if prompted. Marketplace visibility may still depend on a separate admin step — you can fully configure products and hours now.</p>`,
-    "Your MASA seller application was approved",
+    `Your ${b} seller application was approved`,
     lang
   );
 }
@@ -279,6 +300,7 @@ export function sellerApplicationReceivedHtml(
   language: unknown = "en"
 ): string {
   const lang = resolveEmailLanguage(language);
+  const b = brandName(lang);
   const safeName = escapeHtmlText((contactName ?? "").trim() || (lang === "ar" ? "صديقنا البائع" : "there"));
   const lines = getSellerPlanEmailSummaryLines(planId, lang);
   const planDetailsHtml = lines
@@ -287,12 +309,12 @@ export function sellerApplicationReceivedHtml(
   if (lang === "ar") {
     return wrap(
       `<p style="margin:0 0 16px;">مرحباً ${safeName}،</p>
-    <p style="margin:0 0 16px;">شكراً لتقديمك طلب الانضمام كبائع على <strong style="color:${BRAND.primary};">MASA</strong>. لقد استلمنا طلبك بنجاح.</p>
+    <p style="margin:0 0 16px;">شكراً لتقديمك طلب الانضمام كبائع على <strong style="color:${BRAND.primary};">${escapeHtmlText(b)}</strong>. لقد استلمنا طلبك بنجاح.</p>
     <p style="margin:0 0 12px;font-size:13px;color:${BRAND.muted};text-transform:uppercase;letter-spacing:0.06em;">ملخص الخطة المختارة</p>
     <div style="margin:0 0 20px;padding:16px 18px;background:${BRAND.light};border-radius:6px;border:1px solid rgba(83,28,36,0.08);">
       ${planDetailsHtml}
     </div>
-    <p style="margin:0 0 12px;">يراجع فريق MASA طلبك حالياً. ستصلك رسالة بريد إلكتروني أخرى عند الموافقة على حسابك وخطواتك التالية.</p>
+    <p style="margin:0 0 12px;">يراجع فريق ${escapeHtmlText(b)} طلبك حالياً. ستصلك رسالة بريد إلكتروني أخرى عند الموافقة على حسابك وخطواتك التالية.</p>
     <p style="margin:0;color:${BRAND.muted};font-size:13px;">هذه رسالة تأكيد تلقائية — لا يلزم الرد عليها.</p>`,
       "تم استلام طلب البائع",
       lang
@@ -300,12 +322,12 @@ export function sellerApplicationReceivedHtml(
   }
   return wrap(
     `<p style="margin:0 0 16px;">Dear ${safeName},</p>
-    <p style="margin:0 0 16px;">Thank you for applying to sell on <strong style="color:${BRAND.primary};">MASA</strong>. We have received your seller application.</p>
+    <p style="margin:0 0 16px;">Thank you for applying to sell on <strong style="color:${BRAND.primary};">${escapeHtmlText(b)}</strong>. We have received your seller application.</p>
     <p style="margin:0 0 12px;font-size:13px;color:${BRAND.muted};text-transform:uppercase;letter-spacing:0.06em;">Your selected plan</p>
     <div style="margin:0 0 20px;padding:16px 18px;background:${BRAND.light};border-radius:6px;border:1px solid rgba(83,28,36,0.08);">
       ${planDetailsHtml}
     </div>
-    <p style="margin:0 0 12px;">Your application is now under review by the MASA team. You will receive another email once your account has been approved and with your next steps.</p>
+    <p style="margin:0 0 12px;">Your application is now under review by the ${escapeHtmlText(b)} team. You will receive another email once your account has been approved and with your next steps.</p>
     <p style="margin:0;color:${BRAND.muted};font-size:13px;">This is an automated confirmation — no reply is required.</p>`,
     "Seller application received",
     lang
@@ -314,21 +336,22 @@ export function sellerApplicationReceivedHtml(
 
 export function contactUserAcknowledgmentHtml(fullName: string, language: unknown = "en"): string {
   const lang = resolveEmailLanguage(language);
+  const b = brandName(lang);
   const safe = escapeHtml(fullName.trim() || (lang === "ar" ? "ضيفنا" : "there"));
   if (lang === "ar") {
     return wrap(
       `<p>مرحباً ${safe}،</p>
-    <p>لقد استلمنا رسالتك — شكراً لتواصلك مع <strong style="color:${BRAND.primary};">MASA</strong>.</p>
+    <p>لقد استلمنا رسالتك — شكراً لتواصلك مع <strong style="color:${BRAND.primary};">${escapeHtmlText(b)}</strong>.</p>
     <p>سيراجعها فريقنا ويعود إليك قريباً.</p>`,
-      "تم استلام رسالتك — MASA",
+      `تم استلام رسالتك — ${b}`,
       lang
     );
   }
   return wrap(
     `<p>Dear ${safe},</p>
-    <p>We received your message — thank you for reaching out to <strong style="color:${BRAND.primary};">MASA</strong>.</p>
+    <p>We received your message — thank you for reaching out to <strong style="color:${BRAND.primary};">${escapeHtmlText(b)}</strong>.</p>
     <p>Our team will review it and get back to you soon.</p>`,
-    "We received your message — MASA",
+    `We received your message — ${b}`,
     lang
   );
 }
@@ -342,8 +365,9 @@ export function contactSupportNotificationHtml(fields: {
   message: string;
 }): string {
   const phoneDisplay = fields.phone ? escapeHtml(fields.phone) : "—";
+  const b = brandName("en");
   return wrap(
-    `<p style="margin:0 0 16px;font-size:14px;color:${BRAND.muted};">A new message was submitted through the MASA contact form.</p>
+    `<p style="margin:0 0 16px;font-size:14px;color:${BRAND.muted};">A new message was submitted through the ${escapeHtmlText(b)} contact form.</p>
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="font-size:15px;line-height:1.6;font-family:system-ui,-apple-system,sans-serif;">
       <tr><td style="padding:6px 0;border-bottom:1px solid rgba(83,28,36,0.08);color:${BRAND.muted};width:120px;vertical-align:top;">Full name</td><td style="padding:6px 0;border-bottom:1px solid rgba(83,28,36,0.08);">${escapeHtml(fields.fullName.trim())}</td></tr>
       <tr><td style="padding:6px 0;border-bottom:1px solid rgba(83,28,36,0.08);color:${BRAND.muted};vertical-align:top;">Email</td><td style="padding:6px 0;border-bottom:1px solid rgba(83,28,36,0.08);">${escapeHtml(fields.email.trim())}</td></tr>

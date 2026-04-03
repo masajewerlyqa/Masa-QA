@@ -35,7 +35,7 @@ export function CurrencyDropdown({
   const labels = currencyLabels(isArabic);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         className={`flex items-center justify-center rounded-sm p-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${triggerClassName ?? "text-masa-dark hover:text-primary"}`}
         aria-label={isArabic ? "اختيار العملة" : "Select currency"}
@@ -44,7 +44,7 @@ export function CurrencyDropdown({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className={`min-w-[160px] font-sans ${contentClassName ?? ""}`}>
         <DropdownMenuItem
-          onClick={() => {
+          onSelect={() => {
             setCurrency("USD");
             onCurrencySelected?.();
           }}
@@ -54,7 +54,7 @@ export function CurrencyDropdown({
           {currency === "USD" ? <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden /> : null}
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => {
+          onSelect={() => {
             setCurrency("QAR");
             onCurrencySelected?.();
           }}

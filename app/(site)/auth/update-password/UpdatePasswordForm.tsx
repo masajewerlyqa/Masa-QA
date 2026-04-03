@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/components/LanguageProvider";
+import { useI18n } from "@/components/useI18n";
 import { normalizeAuthError } from "@/lib/auth-error-messages";
 
 async function notifyPasswordChanged(): Promise<void> {
@@ -18,6 +19,8 @@ async function notifyPasswordChanged(): Promise<void> {
 export function UpdatePasswordForm() {
   const router = useRouter();
   const { isArabic } = useLanguage();
+  const { t } = useI18n();
+  const brand = t("common.brand");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -61,7 +64,9 @@ export function UpdatePasswordForm() {
     <Card className="w-full max-w-md border-primary/10">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-luxury text-primary">{isArabic ? "كلمة مرور جديدة" : "New password"}</CardTitle>
-        <CardDescription className="font-sans">{isArabic ? "اختر كلمة مرور قوية لحسابك في MASA." : "Choose a strong password for your MASA account."}</CardDescription>
+        <CardDescription className="font-sans">
+          {isArabic ? `اختر كلمة مرور قوية لحسابك في ${brand}.` : `Choose a strong password for your ${brand} account.`}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">

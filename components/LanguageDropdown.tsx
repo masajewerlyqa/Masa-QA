@@ -29,7 +29,7 @@ export function LanguageDropdown({
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         className={`flex items-center justify-center rounded-sm p-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${triggerClassName ?? "text-masa-dark hover:text-primary"}`}
         aria-label={isArabic ? "اختيار اللغة" : "Select language"}
@@ -41,7 +41,7 @@ export function LanguageDropdown({
         className={`min-w-[160px] font-sans ${contentClassName ?? ""}`}
       >
         <DropdownMenuItem
-          onClick={() => pick("ar")}
+          onSelect={() => pick("ar")}
           className="cursor-pointer justify-between gap-3"
         >
           <span className={language === "ar" ? "font-arabic font-medium" : "font-arabic"}>
@@ -50,7 +50,7 @@ export function LanguageDropdown({
           {language === "ar" ? <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden /> : null}
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => pick("en")}
+          onSelect={() => pick("en")}
           className="cursor-pointer justify-between gap-3"
         >
           <span className={language === "en" ? "font-medium" : undefined}>{t("common.english")}</span>

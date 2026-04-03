@@ -27,7 +27,7 @@ export function AdminDashboardPage() {
     { name: "Rings", value: 35, color: "#531C24" },
     { name: "Necklaces", value: 28, color: "#E7D8C3" },
     { name: "Earrings", value: 20, color: "#D4AF37" },
-    { name: "Bracelets", value: 12, color: "#8F8F8F" },
+    { name: "Bracelets", value: 12, color: "#635C5C" },
     { name: "Watches", value: 5, color: "#F7F3EE" },
   ];
 
@@ -95,7 +95,7 @@ export function AdminDashboardPage() {
             <h1 className="text-3xl mb-2 text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>
               Platform Overview
             </h1>
-            <p className="text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>
+            <p className="text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>
               MASA Admin Dashboard
             </p>
           </div>
@@ -114,7 +114,7 @@ export function AdminDashboardPage() {
                   <div className="text-3xl mb-1" style={{ fontFamily: 'var(--font-luxury)' }}>
                     {stat.value}
                   </div>
-                  <div className="text-sm text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>
+                  <div className="text-sm text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>
                     {stat.label}
                   </div>
                 </CardContent>
@@ -198,7 +198,7 @@ export function AdminDashboardPage() {
                       {pendingSellers.map((seller) => (
                         <TableRow key={seller.id}>
                           <TableCell style={{ fontFamily: 'var(--font-ui)' }}>{seller.name}</TableCell>
-                          <TableCell className="text-[#8F8F8F]">{seller.email}</TableCell>
+                          <TableCell className="text-[#635C5C]">{seller.email}</TableCell>
                           <TableCell>{seller.products}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className="text-orange-600 border-orange-600">

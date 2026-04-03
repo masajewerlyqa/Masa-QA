@@ -5,13 +5,20 @@ import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getWishlistProductIds } from "@/lib/customer";
 import { AdvisorClient } from "@/components/advisor/AdvisorClient";
 import { DiamondPattern } from "@/components/DiamondPattern";
+import { brandName } from "@/lib/brand";
 import { getServerLanguage } from "@/lib/language-server";
 
-export const metadata: Metadata = {
-  title: "AI Jewelry Advisor | MASA",
-  description:
-    "Let our AI Jewelry Advisor help you find the perfect piece based on your preferences, occasion, and budget.",
-};
+export function generateMetadata(): Metadata {
+  const language = getServerLanguage();
+  const b = brandName(language);
+  return {
+    title: language === "ar" ? `مستشار المجوهرات الذكي | ${b}` : `AI Jewelry Advisor | ${b}`,
+    description:
+      language === "ar"
+        ? "دع المستشار الذكي يساعدك في اختيار القطعة المناسبة."
+        : "Let our AI Jewelry Advisor help you find the perfect piece based on your preferences, occasion, and budget.",
+  };
+}
 
 export default async function AdvisorPage() {
   const isArabic = getServerLanguage() === "ar";

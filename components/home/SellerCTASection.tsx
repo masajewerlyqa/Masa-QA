@@ -26,11 +26,11 @@ export function SellerCTASection() {
             id="seller-cta-heading"
             className="font-luxury text-3xl md:text-4xl lg:text-5xl mb-6"
           >
-            {isArabic ? "نمِّ أعمالك في المجوهرات مع MASA" : "Grow Your Jewelry Business with MASA"}
+            {isArabic ? "نمِّ أعمالك في المجوهرات مع ماسا" : "Grow Your Jewelry Business with MASA"}
           </h2>
           <p className="text-secondary max-w-2xl mx-auto font-sans text-lg">
             {isArabic
-              ? "انضم إلى سوق فاخر مصمم للمحترفين في مجال المجوهرات. احصل على متجرك الرقمي، ورؤى الطلب الذكية، والخدمات اللوجستية الآمنة، والوصول إلى مشترين مميزين."
+              ? "انضم إلى سوق فاخر مصمم للمحترفين في مجال المجوهرات."
               : "Join a premium marketplace built for jewelry professionals. Get your digital storefront, AI-powered demand insights, secure logistics and access to discerning buyers."}
           </p>
         </header>

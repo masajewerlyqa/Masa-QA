@@ -60,19 +60,21 @@ function ProductCardInner({
   if (isList) {
     return (
       <article className="group flex flex-row bg-white rounded-lg overflow-hidden border border-primary/10 hover:shadow-md transition-shadow duration-200">
-        <Link
-          href={`/product/${id}`}
-          className="relative w-[5.25rem] h-[5.25rem] sm:w-28 sm:h-28 shrink-0 overflow-hidden bg-masa-light"
-        >
-          <ImageWithFallback
-            src={image}
-            alt={title}
-            fill
-            className="object-cover group-hover:scale-[1.03] transition-transform duration-300"
-            priority={priority}
-            sizes="(max-width: 640px) 120px, 160px"
-          />
-          <div className="absolute top-1 left-1 flex flex-col gap-0.5 max-w-[calc(100%-2rem)]">
+        <div className="relative w-[5.25rem] h-[5.25rem] sm:w-28 sm:h-28 shrink-0 overflow-hidden bg-masa-light">
+          <Link
+            href={`/product/${id}`}
+            className="absolute inset-0 z-0 block"
+          >
+            <ImageWithFallback
+              src={image}
+              alt={title}
+              fill
+              className="object-cover group-hover:scale-[1.03] transition-transform duration-300"
+              priority={priority}
+              sizes="(max-width: 640px) 120px, 160px"
+            />
+          </Link>
+          <div className="absolute top-1 left-1 z-[1] flex flex-col gap-0.5 max-w-[calc(100%-2rem)] pointer-events-none">
             {hasDiscount && (
               <Badge
                 className="discount-badge-pulse border-0 bg-primary/95 text-white text-[8px] uppercase tracking-wide font-sans shadow-sm px-1 py-0"
@@ -94,9 +96,9 @@ function ProductCardInner({
             isInWishlist={isInWishlist}
             size="icon"
             variant="ghost"
-            className="absolute top-1 right-1 bg-white/90 hover:bg-white h-7 w-7 transition-opacity"
+            className="absolute top-1 right-1 z-10 bg-white/90 hover:bg-white h-7 w-7 transition-opacity"
           />
-        </Link>
+        </div>
 
         <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 sm:px-3 sm:py-2.5">
           <div className="min-w-0 flex-1">
@@ -178,26 +180,29 @@ function ProductCardInner({
         isCompact ? "rounded-md hover:shadow-lg" : "rounded-lg hover:shadow-xl",
       )}
     >
-      <Link
-        href={`/product/${id}`}
-        className="block relative aspect-square overflow-hidden bg-masa-light"
-      >
-        <ImageWithFallback
-          src={image}
-          alt={title}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-500"
-          priority={priority}
-          sizes={
-            isCompact
-              ? "(max-width: 640px) 50vw, (max-width: 1024px) 30vw, (max-width: 1280px) 24vw, 22vw"
-              : "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1536px) 28vw, 26vw"
-          }
-        />
+      <div className="relative aspect-square overflow-hidden bg-masa-light">
+        <Link
+          href={`/product/${id}`}
+          className="absolute inset-0 z-0 block"
+          aria-label={title}
+        >
+          <ImageWithFallback
+            src={image}
+            alt=""
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            priority={priority}
+            sizes={
+              isCompact
+                ? "(max-width: 640px) 50vw, (max-width: 1024px) 30vw, (max-width: 1280px) 24vw, 22vw"
+                : "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1536px) 28vw, 26vw"
+            }
+          />
+        </Link>
 
         <div
           className={cn(
-            "absolute flex flex-col",
+            "absolute flex flex-col pointer-events-none z-[1]",
             isCompact ? "top-1.5 left-1.5 gap-1" : "top-2 left-2 md:top-3 md:left-3 gap-1.5 md:gap-2",
           )}
         >
@@ -243,7 +248,7 @@ function ProductCardInner({
           size="icon"
           variant="ghost"
           className={cn(
-            "absolute bg-white/90 hover:bg-white transition-opacity",
+            "absolute z-10 bg-white/90 hover:bg-white transition-opacity",
             isCompact
               ? "top-1.5 right-1.5 h-7 w-7 md:opacity-0 md:group-hover:opacity-100"
               : "top-2 right-2 md:top-3 md:right-3 h-8 w-8 md:h-10 md:w-10 md:opacity-0 md:group-hover:opacity-100",
@@ -251,14 +256,16 @@ function ProductCardInner({
         />
 
         {!isCompact && (
-          <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity hidden md:block">
+          <div
+            className="absolute bottom-0 left-0 right-0 z-20 p-3 md:p-4 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity hidden md:block pointer-events-none group-hover:pointer-events-auto"
+          >
             <AddToCartButton productId={id} stockQuantity={stockQuantity} variant="default" size="sm" className="w-full bg-white text-primary hover:bg-secondary">
               <ShoppingCart className={`w-4 h-4 ${isArabic ? "ml-2" : "mr-2"}`} />
               {t("product.quickAdd")}
             </AddToCartButton>
           </div>
         )}
-      </Link>
+      </div>
 
       <div className={cn("font-sans", isCompact ? "p-2" : "p-3 md:p-4")}>
         <div className={cn("flex items-center gap-1", isCompact ? "mb-0" : "mb-0.5 md:mb-1")}>
@@ -346,6 +353,20 @@ function ProductCardInner({
             </span>
           )}
         </div>
+        {isCompact && (
+          <div className="mt-2 pt-2 border-t border-primary/10">
+            <AddToCartButton
+              productId={id}
+              stockQuantity={stockQuantity}
+              variant="outline"
+              size="sm"
+              className="w-full h-8 text-[10px] sm:text-xs border-primary/30 text-primary hover:bg-masa-light"
+            >
+              <ShoppingCart className={cn("w-3.5 h-3.5 shrink-0", isArabic ? "ml-1.5" : "mr-1.5")} />
+              {t("product.addToCart")}
+            </AddToCartButton>
+          </div>
+        )}
       </div>
     </article>
   );

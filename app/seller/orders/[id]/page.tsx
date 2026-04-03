@@ -12,6 +12,7 @@ import { PrintOrderButton } from "@/components/seller/PrintOrderButton";
 import { TrackingInfoForm } from "@/components/seller/TrackingInfoForm";
 import { FormattedPrice } from "@/components/FormattedPrice";
 import { DeliveryAddressCard } from "@/components/order/DeliveryAddressCard";
+import { brandName } from "@/lib/brand";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
 import { formatOrderDisplayRef } from "@/lib/order-display";
@@ -74,6 +75,7 @@ interface PageProps {
 
 export default async function SellerOrderDetailPage({ params }: PageProps) {
   const language = getServerLanguage();
+  const brand = brandName(language);
   const isArabic = language === "ar";
   const { user, profile } = await getCurrentUserWithProfile();
   if (!user || profile?.role !== "seller") redirect("/login");
@@ -434,7 +436,7 @@ export default async function SellerOrderDetailPage({ params }: PageProps) {
       <div id={`order-print-${order.id}`} className="hidden">
         <div className="print-header">
           <div>
-            <div className="print-logo">MASA</div>
+            <div className="print-logo">{brand}</div>
             <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>
               {language === "ar" ? "سوق المجوهرات الفاخرة" : "Luxury Jewelry Marketplace"}
             </div>
@@ -563,7 +565,7 @@ export default async function SellerOrderDetailPage({ params }: PageProps) {
         )}
 
         <div className="print-footer">
-          <p>{language === "ar" ? "تم التحقق بواسطة سوق MASA" : "Verified by MASA Marketplace"}</p>
+          <p>{language === "ar" ? `تم التحقق بواسطة سوق ${brand}` : `Verified by ${brand} Marketplace`}</p>
           <p style={{ marginTop: "4px" }}>{language === "ar" ? "شكراً لتعاملك معنا" : "Thank you for your business"}</p>
         </div>
       </div>

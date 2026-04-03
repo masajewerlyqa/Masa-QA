@@ -40,7 +40,7 @@ export function DiscoverPage() {
         <h1 className="text-5xl mb-4 text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>
           Discover
         </h1>
-        <p className="text-xl text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>
+        <p className="text-xl text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>
           Curated collections of exceptional jewelry
         </p>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Star } from "lucide-react";
-import { useLanguage } from "@/components/LanguageProvider";
+import { useI18n } from "@/components/useI18n";
 
 function StarRating({ count }: { count: number }) {
   return (
@@ -14,20 +14,21 @@ function StarRating({ count }: { count: number }) {
 }
 
 export function ReviewsSection() {
-  const { isArabic } = useLanguage();
+  const { isArabic, t } = useI18n();
+  const brand = t("common.brand");
   const staticReviews = [
     {
       quote: isArabic
-        ? "سهّلت MASA العثور على القطعة المناسبة لذكرى زواجنا. المستشار الذكي فهم تماماً ما أبحث عنه."
-        : "MASA made finding the right piece for our anniversary so easy. The AI advisor understood exactly what I was looking for.",
+        ? `سهّلت ${brand} العثور على القطعة المناسبة لذكرى زواجنا. المستشار الذكي فهم تماماً ما أبحث عنه.`
+        : `${brand} made finding the right piece for our anniversary so easy. The AI advisor understood exactly what I was looking for.`,
       author: "Sarah M.",
       role: isArabic ? "عميلة" : "Customer",
       rating: 5,
     },
     {
       quote: isArabic
-        ? "بعت ذهبي عبر متجر موثّق في MASA. تسعير شفاف وعملية سلسة. أوصي بها جداً."
-        : "I sold my gold through a verified store on MASA. Transparent pricing and smooth process. Highly recommend.",
+        ? `بعت ذهبي عبر متجر موثّق في ${brand}. تسعير شفاف وعملية سلسة. أوصي بها جداً.`
+        : `I sold my gold through a verified store on ${brand}. Transparent pricing and smooth process. Highly recommend.`,
       author: "Ahmed K.",
       role: isArabic ? "بائع ومشتري" : "Seller & Buyer",
       rating: 5,
@@ -55,7 +56,9 @@ export function ReviewsSection() {
             {isArabic ? "تجارب العملاء" : "Customer Experiences"}
           </h2>
           <p className="text-masa-gray max-w-2xl mx-auto font-sans">
-            {isArabic ? "تعرف على آراء المشترين والبائعين حول تجربتهم في MASA." : "See what buyers and sellers say about their experience on MASA."}
+            {isArabic
+              ? `تعرف على آراء المشترين والبائعين حول تجربتهم في ${brand}.`
+              : `See what buyers and sellers say about their experience on ${brand}.`}
           </p>
         </header>
 

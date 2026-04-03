@@ -83,10 +83,10 @@ export function DashboardSidebar({ type, mobileOpen, onMobileClose }: DashboardS
     <div className="p-6">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <Link href="/" className="block" aria-label={isArabic ? "MASA الصفحة الرئيسية" : "MASA Home"}>
+          <Link href="/" className="block" aria-label={isArabic ? "ماسا الصفحة الرئيسية" : `${t("common.brand")} Home`}>
             <Image
               src="/image/logo-footer.png"
-              alt={isArabic ? "شعار MASA" : "MASA logo"}
+              alt={isArabic ? "شعار ماسا" : `${t("common.brand")} logo`}
               width={140}
               height={56}
               className="h-12 w-auto object-contain"

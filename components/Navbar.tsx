@@ -48,6 +48,7 @@ type NavbarProps = {
 
 export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notificationCount = 0 }: NavbarProps) {
   const { isArabic, t } = useI18n();
+  const brand = t("common.brand");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
@@ -69,7 +70,7 @@ export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notifi
               variant="desktop"
               formClassName="relative mx-2 min-w-0 flex-1 max-w-xl"
             />
-            <div className="flex shrink-0 items-center gap-1 md:gap-2 ms-auto">
+            <div className="relative z-20 flex shrink-0 items-center gap-1 md:gap-2 ms-auto">
               <LanguageDropdown triggerClassName="text-white hover:text-secondary" />
               <CurrencyDropdown triggerClassName="text-white hover:text-secondary" />
             </div>
@@ -88,10 +89,10 @@ export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notifi
               <Menu className="w-5 h-5" />
             </button>
 
-            <Link href="/" className="shrink-0" aria-label={isArabic ? "MASA الصفحة الرئيسية" : "MASA Home"}>
+            <Link href="/" className="shrink-0" aria-label={isArabic ? `${brand} الصفحة الرئيسية` : `${brand} Home`}>
               <Image
                 src="/image/logo-nav.png"
-                alt={isArabic ? "شعار MASA" : "MASA logo"}
+                alt={isArabic ? `شعار ${brand}` : `${brand} logo`}
                 width={200}
                 height={72}
                 priority
@@ -135,10 +136,10 @@ export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notifi
         {/* ─── Desktop Header ─── */}
         <div className="hidden md:block px-4 md:px-6 py-4">
           <div className="max-w-content mx-auto flex flex-wrap items-center justify-between gap-4 md:gap-8">
-            <Link href="/" className="shrink-0" aria-label={isArabic ? "MASA الصفحة الرئيسية" : "MASA Home"}>
+            <Link href="/" className="shrink-0" aria-label={isArabic ? `${brand} الصفحة الرئيسية` : `${brand} Home`}>
               <Image
                 src="/image/logo-nav.png"
-                alt={isArabic ? "شعار MASA" : "MASA logo"}
+                alt={isArabic ? `شعار ${brand}` : `${brand} logo`}
                 width={250}
                 height={90}
                 priority
@@ -147,16 +148,17 @@ export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notifi
             </Link>
 
             <div className="flex items-center gap-3 md:gap-6 font-sans text-sm">
+            <Link href="/about" className="text-masa-dark hover:text-primary transition-colors">
+                {t("navbar.about")}
+              </Link>
               <Link href="/discover" className="text-masa-dark hover:text-primary transition-colors">
                 {t("navbar.marketplace")}
               </Link>
               <Link href="/market-prices" className="text-masa-dark hover:text-primary transition-colors">
                 {t("navbar.marketPrices")}
               </Link>
-              <Link href="/about" className="text-masa-dark hover:text-primary transition-colors">
-                {t("navbar.about")}
-              </Link>
-              <DropdownMenu>
+              
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger className="flex items-center gap-1 text-masa-dark hover:text-primary transition-colors focus:outline-none">
                   {t("navbar.tools")}
                   <ChevronDown className="w-4 h-4" />
@@ -226,10 +228,10 @@ export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notifi
           />
           <div className={`absolute inset-y-0 ${isArabic ? "right-0" : "left-0"} w-[85%] max-w-sm bg-white shadow-2xl overflow-y-auto animate-in slide-in-from-left duration-300`}>
             <div className="flex items-center justify-between p-4 border-b border-primary/10">
-              <Link href="/" onClick={() => setMobileMenuOpen(false)} aria-label={isArabic ? "MASA الصفحة الرئيسية" : "MASA Home"}>
+              <Link href="/" onClick={() => setMobileMenuOpen(false)} aria-label={isArabic ? `${brand} الصفحة الرئيسية` : `${brand} Home`}>
                 <Image
                   src="/image/logo-nav.png"
-                  alt={isArabic ? "شعار MASA" : "MASA logo"}
+                  alt={isArabic ? `شعار ${brand}` : `${brand} logo`}
                   width={160}
                   height={56}
                   className="h-10 w-auto object-contain"

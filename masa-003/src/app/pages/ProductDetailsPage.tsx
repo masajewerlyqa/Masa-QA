@@ -94,12 +94,12 @@ export function ProductDetailsPage() {
           </h1>
 
           <div className="flex items-center gap-4 mb-6">
-            <span className="text-lg text-[#8F8F8F]">Cartier</span>
+            <span className="text-lg text-[#635C5C]">Cartier</span>
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star key={star} className="w-4 h-4 fill-[#D4AF37] text-[#D4AF37]" />
               ))}
-              <span className="text-sm text-[#8F8F8F] ml-2">(127 reviews)</span>
+              <span className="text-sm text-[#635C5C] ml-2">(127 reviews)</span>
             </div>
           </div>
 
@@ -107,7 +107,7 @@ export function ProductDetailsPage() {
             <span className="text-5xl text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>
               $12,500
             </span>
-            <span className="text-xl text-[#8F8F8F] line-through">$15,000</span>
+            <span className="text-xl text-[#635C5C] line-through">$15,000</span>
             <Badge className="bg-green-600">17% OFF</Badge>
           </div>
 
@@ -120,27 +120,27 @@ export function ProductDetailsPage() {
             <h3 className="text-lg mb-4" style={{ fontFamily: 'var(--font-luxury)' }}>Specifications</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <div className="text-[#8F8F8F] mb-1">Metal Type</div>
+                <div className="text-[#635C5C] mb-1">Metal Type</div>
                 <div className="text-[#1A1A1A]">18K White Gold</div>
               </div>
               <div>
-                <div className="text-[#8F8F8F] mb-1">Gold Karat</div>
+                <div className="text-[#635C5C] mb-1">Gold Karat</div>
                 <div className="text-[#1A1A1A]">18K (75% Pure Gold)</div>
               </div>
               <div>
-                <div className="text-[#8F8F8F] mb-1">Diamond Weight</div>
+                <div className="text-[#635C5C] mb-1">Diamond Weight</div>
                 <div className="text-[#1A1A1A]">2.5 Carats</div>
               </div>
               <div>
-                <div className="text-[#8F8F8F] mb-1">Diamond Grade</div>
+                <div className="text-[#635C5C] mb-1">Diamond Grade</div>
                 <div className="text-[#1A1A1A]">VVS1 Clarity, D Color</div>
               </div>
               <div>
-                <div className="text-[#8F8F8F] mb-1">Ring Size</div>
+                <div className="text-[#635C5C] mb-1">Ring Size</div>
                 <div className="text-[#1A1A1A]">6 (Resizable)</div>
               </div>
               <div>
-                <div className="text-[#8F8F8F] mb-1">Certificate</div>
+                <div className="text-[#635C5C] mb-1">Certificate</div>
                 <div className="text-[#1A1A1A]">GIA Certified</div>
               </div>
             </div>
@@ -164,15 +164,15 @@ export function ProductDetailsPage() {
           <div className="grid grid-cols-3 gap-4 pt-6 border-t border-[#531C24]/10">
             <div className="text-center">
               <Shield className="w-6 h-6 text-[#531C24] mx-auto mb-2" />
-              <div className="text-xs text-[#8F8F8F]">Certified Authentic</div>
+              <div className="text-xs text-[#635C5C]">Certified Authentic</div>
             </div>
             <div className="text-center">
               <Award className="w-6 h-6 text-[#531C24] mx-auto mb-2" />
-              <div className="text-xs text-[#8F8F8F]">Lifetime Warranty</div>
+              <div className="text-xs text-[#635C5C]">Lifetime Warranty</div>
             </div>
             <div className="text-center">
               <TrendingUp className="w-6 h-6 text-[#531C24] mx-auto mb-2" />
-              <div className="text-xs text-[#8F8F8F]">Investment Value</div>
+              <div className="text-xs text-[#635C5C]">Investment Value</div>
             </div>
           </div>
         </div>
@@ -213,15 +213,15 @@ export function ProductDetailsPage() {
                 <h4 className="mb-4 text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>Metal Details</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-[#8F8F8F]">Metal Type:</span>
+                    <span className="text-[#635C5C]">Metal Type:</span>
                     <span>18K White Gold</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#8F8F8F]">Purity:</span>
+                    <span className="text-[#635C5C]">Purity:</span>
                     <span>75% (18K)</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#8F8F8F]">Weight:</span>
+                    <span className="text-[#635C5C]">Weight:</span>
                     <span>4.2g</span>
                   </div>
                 </div>
@@ -230,19 +230,19 @@ export function ProductDetailsPage() {
                 <h4 className="mb-4 text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>Diamond Details</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-[#8F8F8F]">Carat Weight:</span>
+                    <span className="text-[#635C5C]">Carat Weight:</span>
                     <span>2.5ct</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#8F8F8F]">Clarity:</span>
+                    <span className="text-[#635C5C]">Clarity:</span>
                     <span>VVS1</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#8F8F8F]">Color:</span>
+                    <span className="text-[#635C5C]">Color:</span>
                     <span>D (Colorless)</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#8F8F8F]">Cut:</span>
+                    <span className="text-[#635C5C]">Cut:</span>
                     <span>Excellent</span>
                   </div>
                 </div>
@@ -251,15 +251,15 @@ export function ProductDetailsPage() {
                 <h4 className="mb-4 text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>Other Details</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-[#8F8F8F]">Ring Size:</span>
+                    <span className="text-[#635C5C]">Ring Size:</span>
                     <span>6</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#8F8F8F]">Resizable:</span>
+                    <span className="text-[#635C5C]">Resizable:</span>
                     <span>Yes</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#8F8F8F]">Certificate:</span>
+                    <span className="text-[#635C5C]">Certificate:</span>
                     <span>GIA</span>
                   </div>
                 </div>
@@ -277,13 +277,13 @@ export function ProductDetailsPage() {
                         <Star key={star} className="w-4 h-4 fill-[#D4AF37] text-[#D4AF37]" />
                       ))}
                     </div>
-                    <span className="text-sm text-[#8F8F8F]">2 days ago</span>
+                    <span className="text-sm text-[#635C5C]">2 days ago</span>
                   </div>
                   <h4 className="mb-2">Absolutely Stunning!</h4>
-                  <p className="text-[#8F8F8F] text-sm leading-relaxed">
+                  <p className="text-[#635C5C] text-sm leading-relaxed">
                     This ring exceeded all my expectations. The craftsmanship is impeccable, and the diamond sparkles brilliantly. My fiancée was absolutely thrilled!
                   </p>
-                  <div className="mt-2 text-sm text-[#8F8F8F]">
+                  <div className="mt-2 text-sm text-[#635C5C]">
                     <span className="text-[#1A1A1A]">Sarah M.</span> • Verified Purchase
                   </div>
                 </div>

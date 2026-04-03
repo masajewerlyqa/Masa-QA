@@ -6,7 +6,7 @@
   --primary: #531c24;
   --secondary: #e7d8c3;
   --masa-dark: #1a1a1a;
-  --masa-gray: #8f8f8f;
+  --masa-gray: #635c5c;
   --masa-light: #f7f3ee;
   --masa-gold: #d4af37;
   --background: #ffffff;
@@ -40,7 +40,7 @@
   html[lang="ar"] h4 {
     letter-spacing: 0;
     line-height: 1.45;
-    font-family: var(--font-noto-naskh-arabic), var(--font-ibm-plex-arabic), serif;
+    font-family: var(--font-alilato), var(--font-ibm-plex-arabic), serif;
     font-weight: 700;
     text-wrap: balance;
   }
@@ -57,13 +57,21 @@
   }
 
   html[lang="ar"] .font-luxury {
-    font-family: var(--font-noto-naskh-arabic), var(--font-ibm-plex-arabic), serif;
+    font-family: var(--font-alilato), var(--font-ibm-plex-arabic), serif;
     font-weight: 700;
   }
 
   html[lang="ar"] .font-arabic {
-    font-family: var(--font-ibm-plex-arabic), sans-serif;
+    font-family: var(--font-alilato), var(--font-ibm-plex-arabic), sans-serif;
     font-weight: 400;
+  }
+
+  /*
+   * Tailwind `font-sans` is Cinzel (English UI). Arabic pages must keep Alilato for every
+   * component that applies `font-sans` on children (cards, forms, tables, etc.).
+   */
+  html[lang="ar"] .font-sans {
+    font-family: var(--font-alilato), var(--font-ibm-plex-arabic), sans-serif;
   }
 }
 

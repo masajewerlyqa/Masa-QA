@@ -107,7 +107,7 @@ export function HomePage() {
             <p className="text-xl text-[#1A1A1A] mb-4" style={{ fontFamily: 'var(--font-arabic)' }}>
               الأناقة الخالدة
             </p>
-            <p className="text-lg text-[#8F8F8F] mb-8 leading-relaxed max-w-lg" style={{ fontFamily: 'var(--font-ui)' }}>
+            <p className="text-lg text-[#635C5C] mb-8 leading-relaxed max-w-lg" style={{ fontFamily: 'var(--font-ui)' }}>
               Discover our curated collection of luxury jewelry from the world's most prestigious brands. Every piece tells a story of craftsmanship and beauty.
             </p>
             <div className="flex gap-4">
@@ -146,28 +146,28 @@ export function HomePage() {
                 <Shield className="w-8 h-8 text-[#531C24]" />
               </div>
               <h3 className="text-lg mb-2" style={{ fontFamily: 'var(--font-luxury)' }}>Certified Authentic</h3>
-              <p className="text-sm text-[#8F8F8F]">Every piece certified and authenticated</p>
+              <p className="text-sm text-[#635C5C]">Every piece certified and authenticated</p>
             </div>
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-[#F7F3EE] rounded-full flex items-center justify-center mb-4">
                 <Award className="w-8 h-8 text-[#531C24]" />
               </div>
               <h3 className="text-lg mb-2" style={{ fontFamily: 'var(--font-luxury)' }}>Premium Brands</h3>
-              <p className="text-sm text-[#8F8F8F]">Curated from world's finest jewelers</p>
+              <p className="text-sm text-[#635C5C]">Curated from world's finest jewelers</p>
             </div>
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-[#F7F3EE] rounded-full flex items-center justify-center mb-4">
                 <Sparkles className="w-8 h-8 text-[#531C24]" />
               </div>
               <h3 className="text-lg mb-2" style={{ fontFamily: 'var(--font-luxury)' }}>AI Advisor</h3>
-              <p className="text-sm text-[#8F8F8F]">Personalized recommendations</p>
+              <p className="text-sm text-[#635C5C]">Personalized recommendations</p>
             </div>
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-[#F7F3EE] rounded-full flex items-center justify-center mb-4">
                 <TrendingUp className="w-8 h-8 text-[#531C24]" />
               </div>
               <h3 className="text-lg mb-2" style={{ fontFamily: 'var(--font-luxury)' }}>Investment Value</h3>
-              <p className="text-sm text-[#8F8F8F]">Track and grow your collection</p>
+              <p className="text-sm text-[#635C5C]">Track and grow your collection</p>
             </div>
           </div>
         </div>
@@ -180,7 +180,7 @@ export function HomePage() {
             <h2 className="text-4xl mb-2 text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>
               Featured Collection
             </h2>
-            <p className="text-lg text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>
+            <p className="text-lg text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>
               Handpicked luxury pieces from renowned brands
             </p>
           </div>
@@ -241,7 +241,7 @@ export function HomePage() {
             <h2 className="text-4xl mb-2 text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>
               Trending Now
             </h2>
-            <p className="text-lg text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>
+            <p className="text-lg text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>
               Most popular jewelry this season
             </p>
           </div>

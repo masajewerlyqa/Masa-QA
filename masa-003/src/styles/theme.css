@@ -8,7 +8,7 @@
   --masa-champagne: #E7D8C3;
   --masa-white: #FFFFFF;
   --masa-dark: #1A1A1A;
-  --masa-gray: #8F8F8F;
+  --masa-gray: #635C5C;
   --masa-light-bg: #F7F3EE;
   --masa-gold: #D4AF37;
   
@@ -23,7 +23,7 @@
   --secondary: #E7D8C3;
   --secondary-foreground: #1A1A1A;
   --muted: #F7F3EE;
-  --muted-foreground: #8F8F8F;
+  --muted-foreground: #635C5C;
   --accent: #D4AF37;
   --accent-foreground: #1A1A1A;
   --destructive: #dc2626;
@@ -38,7 +38,7 @@
   --chart-1: #531C24;
   --chart-2: #E7D8C3;
   --chart-3: #D4AF37;
-  --chart-4: #8F8F8F;
+  --chart-4: #635C5C;
   --chart-5: #F7F3EE;
   --radius: 0.375rem;
   --sidebar: #FFFFFF;

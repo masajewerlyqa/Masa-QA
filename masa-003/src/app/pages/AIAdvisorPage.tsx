@@ -96,7 +96,7 @@ export function AIAdvisorPage() {
                       {msg.role === "assistant" && (
                         <div className="flex items-center gap-2 mb-2">
                           <Sparkles className="w-4 h-4 text-[#D4AF37]" />
-                          <span className="text-xs text-[#8F8F8F]">MASA AI</span>
+                          <span className="text-xs text-[#635C5C]">MASA AI</span>
                         </div>
                       )}
                       <p className="leading-relaxed">{msg.content}</p>
@@ -107,7 +107,7 @@ export function AIAdvisorPage() {
 
               {/* Quick Suggestions */}
               <div className="px-6 pb-4">
-                <div className="text-xs text-[#8F8F8F] mb-3">Quick suggestions:</div>
+                <div className="text-xs text-[#635C5C] mb-3">Quick suggestions:</div>
                 <div className="flex flex-wrap gap-2">
                   {suggestions.map((suggestion, idx) => (
                     <Button
@@ -161,7 +161,7 @@ export function AIAdvisorPage() {
                     onValueChange={setBudget}
                     className="mb-2"
                   />
-                  <div className="text-sm text-[#8F8F8F]">
+                  <div className="text-sm text-[#635C5C]">
                     Up to ${budget[0].toLocaleString()}
                   </div>
                 </div>
@@ -233,7 +233,7 @@ export function AIAdvisorPage() {
             <h2 className="text-3xl mb-2 text-[#531C24]" style={{ fontFamily: 'var(--font-luxury)' }}>
               AI Recommended For You
             </h2>
-            <p className="text-[#8F8F8F]" style={{ fontFamily: 'var(--font-ui)' }}>
+            <p className="text-[#635C5C]" style={{ fontFamily: 'var(--font-ui)' }}>
               Based on your conversation and preferences
             </p>
           </div>

@@ -61,21 +61,21 @@ export function StorePage() {
           <div className="flex items-start gap-3">
             <MapPin className="w-5 h-5 text-[#531C24] mt-1" />
             <div>
-              <div className="text-sm text-[#8F8F8F]">Location</div>
+              <div className="text-sm text-[#635C5C]">Location</div>
               <div className="text-sm">Paris, France</div>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <Phone className="w-5 h-5 text-[#531C24] mt-1" />
             <div>
-              <div className="text-sm text-[#8F8F8F]">Phone</div>
+              <div className="text-sm text-[#635C5C]">Phone</div>
               <div className="text-sm">+33 1 234 5678</div>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <Mail className="w-5 h-5 text-[#531C24] mt-1" />
             <div>
-              <div className="text-sm text-[#8F8F8F]">Email</div>
+              <div className="text-sm text-[#635C5C]">Email</div>
               <div className="text-sm">contact@cartier.com</div>
             </div>
           </div>

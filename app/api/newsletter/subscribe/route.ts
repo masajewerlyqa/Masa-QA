@@ -4,6 +4,7 @@ import { sendEmailWithRetry } from "@/lib/email/send-email";
 import { newsletterSubscriptionConfirmationHtml } from "@/lib/email/templates";
 import { resolveEmailLanguage } from "@/lib/email/email-language";
 import { createServiceClient } from "@/lib/supabase/service";
+import { brandName } from "@/lib/brand";
 import { newsletterSubscribeBodySchema } from "@/lib/validations/newsletter";
 
 export async function POST(req: Request) {
@@ -45,11 +46,12 @@ export async function POST(req: Request) {
     }
 
     const subLang = resolveEmailLanguage(parsed.data.language);
+    const b = brandName(subLang);
     const confirmationHtml = newsletterSubscriptionConfirmationHtml(subLang);
     const emailResult = await sendEmailWithRetry({
       from: env.contactAckFromEmail,
       to: email,
-      subject: subLang === "ar" ? "أنت مشترك في نشرة MASA" : "You are subscribed — MASA Newsletter",
+      subject: subLang === "ar" ? `أنت مشترك في نشرة ${b}` : `You are subscribed — ${b} Newsletter`,
       html: confirmationHtml,
       tags: [{ name: "type", value: "newsletter_subscribe_confirmation" }],
     });

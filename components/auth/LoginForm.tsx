@@ -64,7 +64,7 @@ export function LoginForm() {
           {isArabic ? "مرحباً بعودتك" : "Welcome back"}
         </CardTitle>
         <CardDescription className="font-sans">
-          {isArabic ? "سجّل الدخول إلى حسابك في MASA" : "Sign in to your MASA account"}
+          {isArabic ? "سجّل الدخول إلى حسابك في ماسا" : `Sign in to your ${t("common.brand")} account`}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

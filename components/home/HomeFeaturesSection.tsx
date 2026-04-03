@@ -36,7 +36,7 @@ export function HomeFeaturesSection() {
     >
       <div className="max-w-content mx-auto px-4 md:px-6">
         <h2 id="home-features-heading" className="sr-only">
-          {isArabic ? "لماذا تختار MASA" : "Why choose MASA"}
+          {isArabic ? "لماذا تختار ماسا" : "Why choose MASA"}
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 font-sans">
           {features.map((item) => {
