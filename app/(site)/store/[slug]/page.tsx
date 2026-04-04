@@ -10,13 +10,16 @@ import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getWishlistProductIds } from "@/lib/customer";
 import Image from "next/image";
 import { getServerLanguage } from "@/lib/language-server";
+import { t } from "@/lib/i18n";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
 export default async function StorePage({ params }: PageProps) {
-  const isArabic = getServerLanguage() === "ar";
+  const language = getServerLanguage();
+  const isArabic = language === "ar";
   const { slug } = await params;
   const store = await getPublicStoreBySlug(slug);
   if (!store) notFound();
@@ -96,6 +99,51 @@ export default async function StorePage({ params }: PageProps) {
           <Button className="w-full bg-primary hover:bg-primary/90 mt-4">{isArabic ? "تواصل مع المتجر" : "Contact Store"}</Button>
         </div>
       </div>
+
+      {store.policy && (
+        <Card className="mb-12 border-primary/10 shadow-sm">
+          <CardHeader>
+            <CardTitle className="font-luxury text-primary text-xl">
+              {t(language, "storefront.storePolicyTitle")}
+            </CardTitle>
+            <p className="text-sm text-masa-gray font-sans">{t(language, "storefront.storePolicyIntro")}</p>
+          </CardHeader>
+          <CardContent className="font-sans text-sm text-masa-dark space-y-3">
+            <ul className="list-disc ms-5 space-y-2">
+              <li>
+                {store.policy.returnsEnabled
+                  ? t(language, "account.orders.policyReturnsOn").replace(
+                      /\{\{n\}\}/g,
+                      String(store.policy.returnPeriodDays)
+                    )
+                  : t(language, "account.orders.policyReturnsOff")}
+              </li>
+              <li>
+                {store.policy.exchangesEnabled
+                  ? t(language, "account.orders.policyExchangesOn").replace(
+                      /\{\{n\}\}/g,
+                      String(store.policy.exchangePeriodDays)
+                    )
+                  : t(language, "account.orders.policyExchangesOff")}
+              </li>
+              {store.policy.sameDayDeliveryEnabled && store.policy.sameDayCutoffLocal && (
+                <li>
+                  {t(language, "account.orders.policySameDay").replace(
+                    /\{\{t\}\}/g,
+                    store.policy.sameDayCutoffLocal.slice(0, 5)
+                  )}
+                </li>
+              )}
+            </ul>
+            {store.policy.customConditions?.trim() && (
+              <div className="rounded-md bg-masa-light/80 p-4 whitespace-pre-wrap border border-primary/10">
+                <p className="text-xs text-masa-gray mb-1">{t(language, "account.orders.policyConditions")}</p>
+                {store.policy.customConditions.trim()}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {discountedProducts.length > 0 && (
         <div className="mb-12">

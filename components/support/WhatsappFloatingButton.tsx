@@ -3,7 +3,7 @@
 import { MessageCircle } from "lucide-react";
 import { useI18n } from "@/components/useI18n";
 
-const WHATSAPP_NUMBER = "97466055546";
+const WHATSAPP_NUMBER = "97472233141";
 
 export function WhatsappFloatingButton() {
   const { t, isArabic } = useI18n();

@@ -5,6 +5,7 @@ import { sortMarketplaceCategoriesForFilter } from "@/lib/marketplace-category";
 import { normalizeMarketplaceSearchInput } from "@/lib/marketplace-search";
 import { resolveMarketplaceSearchOrClause } from "@/lib/marketplace-search-resolve";
 import type { Product, Store } from "@/lib/types";
+import { publicPolicyFromStoreRow, type StorePolicyRowInput } from "@/lib/store-policy";
 import { isDiscountValid, computeDiscountedPrice, type DiscountType } from "@/lib/discount";
 import { getServerLanguage } from "@/lib/language-server";
 import type { Language } from "@/lib/language";
@@ -44,7 +45,7 @@ type ProductRow = {
   reviews?: { rating: number | null }[];
 };
 
-type StoreRow = {
+type StoreRow = StorePolicyRowInput & {
   id: string;
   slug: string;
   name: string;
@@ -289,6 +290,15 @@ function mapProductRow(row: ProductRow, language: Language, marketSnapshot: Pric
     originalPrice = row.compare_at_price != null ? Number(row.compare_at_price) : undefined;
   }
 
+  let storePolicy: Product["storePolicy"] | undefined;
+  if (storeInfo && typeof storeInfo === "object") {
+    try {
+      storePolicy = publicPolicyFromStoreRow(storeInfo as StorePolicyRowInput);
+    } catch {
+      storePolicy = undefined;
+    }
+  }
+
   return {
     id: row.id,
     slug: row.slug,
@@ -313,6 +323,7 @@ function mapProductRow(row: ProductRow, language: Language, marketSnapshot: Pric
     updatedAt: row.updated_at,
     stockQuantity: Number(row.stock_quantity) ?? 0,
     status: (row.status as "draft" | "active" | "archived" | "out_of_stock") ?? "active",
+    storePolicy,
   };
 }
 
@@ -482,7 +493,7 @@ export async function getPublicProductById(id: string): Promise<Product | null> 
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, store_id, name, slug, description, price, compare_at_price, category, metal_type, gold_karat, weight, craftsmanship_margin, created_at, updated_at, stock_quantity, status, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, stores!inner(name, slug, status), product_images(url, sort_order), reviews(rating)"
+      "id, store_id, name, slug, description, price, compare_at_price, category, metal_type, gold_karat, weight, craftsmanship_margin, created_at, updated_at, stock_quantity, status, discount_type, discount_value, discount_start_at, discount_end_at, discount_active, stores!inner(name, slug, status, returns_enabled, exchanges_enabled, return_period_days, exchange_period_days, policy_custom_conditions, same_day_delivery_enabled, same_day_cutoff_local), product_images(url, sort_order), reviews(rating)"
     )
     .eq("id", id)
     .eq("stores.status", "approved")
@@ -730,7 +741,9 @@ export async function getPublicStoreBySlug(slug: string): Promise<Store | null> 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("stores")
-    .select("id, slug, name, description, logo_url, banner_url, location, contact_email, contact_phone, latitude, longitude")
+    .select(
+      "id, slug, name, description, logo_url, banner_url, location, contact_email, contact_phone, latitude, longitude, returns_enabled, exchanges_enabled, return_period_days, exchange_period_days, policy_custom_conditions, same_day_delivery_enabled, same_day_cutoff_local"
+    )
     .eq("slug", slug)
     .in("status", ["active", "approved"])
     .single();
@@ -743,6 +756,13 @@ export async function getPublicStoreBySlug(slug: string): Promise<Store | null> 
     supabase.from("products").select("id", { count: "exact", head: true }).eq("store_id", row.id),
     getStoreReviewStats(row.id),
   ]);
+
+  let policy: Store["policy"];
+  try {
+    policy = publicPolicyFromStoreRow(row);
+  } catch {
+    policy = undefined;
+  }
 
   return {
     id: row.id,
@@ -760,5 +780,6 @@ export async function getPublicStoreBySlug(slug: string): Promise<Store | null> 
     productCount: count ?? 0,
     latitude: row.latitude != null ? Number(row.latitude) : null,
     longitude: row.longitude != null ? Number(row.longitude) : null,
+    policy,
   };
 }

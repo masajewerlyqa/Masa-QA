@@ -168,6 +168,27 @@ export async function notifyApplicantApplicationRejected(
 }
 
 /** Notify store owners that they have a new order (one notification per store owner). */
+/** Notify the store owner when a buyer submits a return or exchange request for an order line from that store. */
+export async function notifyStoreOwnerReturnExchangeRequest(params: {
+  storeId: string;
+  orderId: string;
+  kind: "return" | "exchange";
+  orderNumber?: string | null;
+}): Promise<void> {
+  const service = requireServiceClient();
+  const { data: store } = await service.from("stores").select("owner_id, name").eq("id", params.storeId).maybeSingle();
+  if (!store?.owner_id) return;
+  const label = params.kind === "return" ? "Return request" : "Exchange request";
+  const ref = params.orderNumber?.trim() ? ` (${params.orderNumber.trim()})` : "";
+  await createNotification({
+    userId: store.owner_id,
+    type: params.kind === "return" ? "buyer_return_request" : "buyer_exchange_request",
+    title: label,
+    body: `A buyer submitted a ${params.kind} request for order${ref}. Open the order in your seller dashboard to respond.`,
+    data: { orderId: params.orderId, storeId: params.storeId, kind: params.kind },
+  });
+}
+
 export async function notifySellersNewOrder(orderId: string, storeIds: string[]): Promise<void> {
   if (storeIds.length === 0) return;
   const service = requireServiceClient();

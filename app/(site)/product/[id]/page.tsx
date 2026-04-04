@@ -16,6 +16,7 @@ import { WishlistHeartButton } from "@/components/customer/WishlistHeartButton";
 import { FormattedPrice } from "@/components/FormattedPrice";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
+import { policySummaryLine } from "@/lib/store-policy";
 import { isSupabaseStoragePublicUrl } from "@/lib/product-image-url";
 import Image from "next/image";
 
@@ -121,6 +122,12 @@ export default async function ProductPage({ params }: PageProps) {
               </span>
             )}
           </div>
+
+          {product.storePolicy && (
+            <p className="text-xs md:text-sm text-masa-gray mb-4 md:mb-6 max-w-xl leading-relaxed">
+              {policySummaryLine(product.storePolicy, language === "ar" ? "ar" : "en")}
+            </p>
+          )}
 
           {/* Price */}
           <div className="flex items-baseline gap-3 md:gap-4 mb-6 md:mb-8 flex-wrap">

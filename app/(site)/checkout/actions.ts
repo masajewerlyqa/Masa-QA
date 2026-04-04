@@ -21,6 +21,7 @@ import { validateCartStoresForCheckout } from "@/lib/cart-store-availability";
 import { sellerResponseDeadlineIso } from "@/lib/orders/seller-sla";
 import { createClient } from "@/lib/supabase/server";
 import { requireServiceClient } from "@/lib/supabase/service";
+import { buildPolicySnapshot } from "@/lib/store-policy";
 
 export type CheckoutActionResult = { ok: boolean; error?: string; orderId?: string };
 
@@ -165,6 +166,34 @@ export async function createOrder(formData: FormData): Promise<CheckoutActionRes
   const createdAt = new Date();
   const sellerDeadline = sellerResponseDeadlineIso(createdAt);
 
+  let policySnapshots: Record<string, ReturnType<typeof buildPolicySnapshot>> = {};
+  if (cartStoreIds.length > 0) {
+    const { data: policyRows } = await supabase
+      .from("stores")
+      .select(
+        "id, returns_enabled, exchanges_enabled, return_period_days, exchange_period_days, policy_custom_conditions, same_day_delivery_enabled, same_day_cutoff_local"
+      )
+      .in("id", cartStoreIds);
+    for (const row of policyRows ?? []) {
+      const r = row as Record<string, unknown>;
+      const id = String(r.id ?? "");
+      if (!id) continue;
+      policySnapshots[id] = buildPolicySnapshot(
+        {
+          returns_enabled: r.returns_enabled !== false,
+          exchanges_enabled: r.exchanges_enabled !== false,
+          return_period_days: r.return_period_days as number | null,
+          exchange_period_days: r.exchange_period_days as number | null,
+          policy_custom_conditions: r.policy_custom_conditions as string | null,
+          same_day_delivery_enabled: r.same_day_delivery_enabled === true,
+          same_day_cutoff_local:
+            r.same_day_cutoff_local != null ? String(r.same_day_cutoff_local) : null,
+        },
+        createdAt
+      );
+    }
+  }
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
@@ -182,6 +211,7 @@ export async function createOrder(formData: FormData): Promise<CheckoutActionRes
       discount_amount: discountAmount,
       commission_amount: commissionAmount,
       seller_earnings: sellerEarnings,
+      policy_snapshots: policySnapshots,
       delivery_country: country,
       delivery_city_area: deliveryCityArea,
       delivery_building_type: deliveryBuildingType,

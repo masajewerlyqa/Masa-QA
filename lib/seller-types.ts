@@ -24,6 +24,15 @@ export type StoreRow = {
   closing_time_local: string | null;
   /** Set when store is approved; drives catalog limits and placement flags. */
   seller_plan: string | null;
+  returns_enabled: boolean;
+  exchanges_enabled: boolean;
+  return_period_days: number;
+  exchange_period_days: number;
+  policy_custom_conditions: string | null;
+  same_day_delivery_enabled: boolean;
+  same_day_cutoff_local: string | null;
+  /** Last policy save; 14-day cooldown applies after each update. */
+  store_policy_updated_at: string | null;
 };
 
 export type ProductRow = {

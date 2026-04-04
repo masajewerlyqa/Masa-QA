@@ -106,11 +106,11 @@ export default function ContactPage() {
                   <div>
                     <p className="font-medium text-masa-dark">{isArabic ? "الهاتف" : "Phone"}</p>
                     <a
-                      href="tel:+97466055546"
+                      href="tel:+97472233141"
                       dir="ltr"
                       className="text-masa-dark hover:text-primary mt-0.5 inline-block tabular-nums"
                     >
-                      +974&nbsp;6605&nbsp;5546
+                      +974&nbsp;7223&nbsp;3141
                     </a>
                   </div>
                 </li>

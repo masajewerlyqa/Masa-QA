@@ -6,6 +6,17 @@
 
 export type ProductStatus = "draft" | "active" | "archived" | "out_of_stock";
 
+/** Buyer-visible store policy (from live store settings). */
+export type StorePolicyPublic = {
+  returnsEnabled: boolean;
+  exchangesEnabled: boolean;
+  returnPeriodDays: number;
+  exchangePeriodDays: number;
+  customConditions: string | null;
+  sameDayDeliveryEnabled: boolean;
+  sameDayCutoffLocal: string | null;
+};
+
 export interface Product {
   id: string;
   slug: string;
@@ -16,6 +27,8 @@ export interface Product {
   storeId: string;
   storeSlug?: string;
   storeName: string;
+  /** Current store policy for this listing (short summary on PDP). */
+  storePolicy?: StorePolicyPublic;
   /** Effective selling price (discounted if valid discount, else base). Use for cart/checkout. */
   price: number;
   /** Original price for display (strikethrough when discounted); or compare_at_price when no discount. */
@@ -59,6 +72,8 @@ export interface Store {
   /** Store location on map (Qatar). */
   latitude?: number | null;
   longitude?: number | null;
+  /** Return / exchange / same-day policy shown on the store profile. */
+  policy?: StorePolicyPublic;
 }
 
 export interface Order {

@@ -5,6 +5,7 @@ import { getPublicProductById } from "@/lib/data/public";
 import type { Product } from "@/lib/types";
 import { getServerLanguage } from "@/lib/language-server";
 import { localizeProductText } from "@/lib/i18n/product-localization";
+import { parsePolicySnapshots, type StorePolicySnapshot } from "@/lib/store-policy";
 
 /** Get or create wishlist for user; return wishlist id. */
 export async function getOrCreateWishlist(userId: string): Promise<string | null> {
@@ -106,6 +107,7 @@ export type CustomerOrderItem = {
   quantity: number;
   unit_price: number;
   total_price: number;
+  store_id: string;
 };
 
 /** Summary row for order history list. */
@@ -175,6 +177,10 @@ export type CustomerOrder = {
   platform_cancellation_reason: string | null;
   cancellation_source: "seller" | "system" | "customer" | null;
   auto_cancelled_at: string | null;
+  /** Per-store policy frozen at checkout (JSON map store_id -> snapshot). */
+  policy_snapshots: Record<string, StorePolicySnapshot>;
+  /** Set when the order is marked delivered; return windows start from this time. */
+  delivered_at: string | null;
 } & OrderDeliveryFields;
 
 export type CustomerAddressSummary = {
@@ -200,23 +206,33 @@ export async function getCustomerOrder(orderId: string, userId: string): Promise
 
   const { data: items } = await supabase
     .from("order_items")
-    .select("product_id, quantity, unit_price, total_price")
+    .select("product_id, quantity, unit_price, total_price, products(store_id)")
     .eq("order_id", orderId);
 
   const productIds = [...new Set((items ?? []).map((i) => i.product_id))];
   const { data: products } = await supabase.from("products").select("id, name").in("id", productIds);
   const nameMap = new Map((products ?? []).map((p) => [p.id, p.name]));
 
-  const orderItems: CustomerOrderItem[] = (items ?? []).map((i) => ({
-    product_id: i.product_id,
-    product_name: localizeProductText(
-      nameMap.get(i.product_id) ?? (language === "ar" ? "منتج" : "Product"),
-      language
-    ),
-    quantity: i.quantity,
-    unit_price: Number(i.unit_price),
-    total_price: Number(i.total_price),
-  }));
+  const orderItems: CustomerOrderItem[] = (items ?? []).map((i) => {
+    const rel = i.products as { store_id: string } | { store_id: string }[] | null;
+    const storeId =
+      Array.isArray(rel) && rel[0]?.store_id
+        ? rel[0].store_id
+        : rel && typeof rel === "object" && "store_id" in rel
+          ? String((rel as { store_id: string }).store_id)
+          : "";
+    return {
+      product_id: i.product_id,
+      product_name: localizeProductText(
+        nameMap.get(i.product_id) ?? (language === "ar" ? "منتج" : "Product"),
+        language
+      ),
+      quantity: i.quantity,
+      unit_price: Number(i.unit_price),
+      total_price: Number(i.total_price),
+      store_id: storeId,
+    };
+  });
 
   const rawCancel = o.seller_cancellation_reason;
   const sellerCancellationReason =
@@ -233,6 +249,12 @@ export async function getCustomerOrder(orderId: string, userId: string): Promise
   const rawAutoAt = o.auto_cancelled_at;
   const autoCancelledAt =
     typeof rawAutoAt === "string" ? rawAutoAt : rawAutoAt == null ? null : String(rawAutoAt);
+
+  const rawDelivered = o.delivered_at;
+  const deliveredAt =
+    typeof rawDelivered === "string" ? rawDelivered : rawDelivered == null ? null : String(rawDelivered);
+
+  const policySnapshots = parsePolicySnapshots(o.policy_snapshots);
 
   return {
     id: String(o.id),
@@ -268,6 +290,8 @@ export async function getCustomerOrder(orderId: string, userId: string): Promise
     platform_cancellation_reason: platformCancellationReason,
     cancellation_source: cancellationSource,
     auto_cancelled_at: autoCancelledAt,
+    policy_snapshots: policySnapshots,
+    delivered_at: deliveredAt,
   };
 }
 
@@ -311,6 +335,14 @@ export async function getOrderStatusTimeline(
 }
 
 /** Get the most recent shipping address for the current customer, if any. */
+/** Display names for store IDs (public store names). */
+export async function getStoreNamesByIds(ids: string[]): Promise<Record<string, string>> {
+  if (ids.length === 0) return {};
+  const supabase = await createClient();
+  const { data } = await supabase.from("stores").select("id, name").in("id", ids);
+  return Object.fromEntries((data ?? []).map((r: { id: string; name: string }) => [r.id, r.name]));
+}
+
 export async function getLastCustomerAddress(userId: string): Promise<CustomerAddressSummary | null> {
   const supabase = await createClient();
   const { data, error } = await supabase

@@ -12,7 +12,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getCurrentUserWithProfile } from "@/lib/auth";
-import { getCustomerOrder, getOrderStatusTimeline } from "@/lib/customer";
+import { getCustomerOrder, getOrderStatusTimeline, getStoreNamesByIds } from "@/lib/customer";
+import { OrderPolicySnapshotCards } from "@/components/account/OrderPolicySnapshotCards";
 import { getOrderExperienceRating } from "@/lib/order-experience-ratings";
 import { OrderExperienceRatingCard } from "@/components/account/OrderExperienceRatingCard";
 import { OrderStatusBadge } from "@/components/order/OrderStatusBadge";
@@ -45,9 +46,11 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
   const order = await getCustomerOrder(id, user.id);
   if (!order) notFound();
 
-  const [statusTimeline, experienceRating] = await Promise.all([
+  const storeIds = [...new Set(order.items.map((i) => i.store_id).filter(Boolean))];
+  const [statusTimeline, experienceRating, storeNames] = await Promise.all([
     getOrderStatusTimeline(id, user.id),
     getOrderExperienceRating(id),
+    getStoreNamesByIds(storeIds),
   ]);
 
   const address = order.shipping_address as Record<string, string> | null;
@@ -147,6 +150,8 @@ export default async function AccountOrderDetailPage({ params }: PageProps) {
                 </div>
               </CardContent>
             </Card>
+
+            <OrderPolicySnapshotCards order={order} language={language} storeNames={storeNames} />
 
             <OrderExperienceRatingCard orderId={order.id} orderStatus={order.status} existing={experienceRating} />
           </div>

@@ -27,6 +27,7 @@ function normalizeStoreRow(raw: Record<string, unknown>): StoreRow {
   const base = raw as unknown as StoreRow;
   const sp = raw.seller_plan;
   const sellerPlan = sp === "basic" || sp === "premium" ? sp : null;
+  const policyUpdated = raw.store_policy_updated_at;
   return {
     ...base,
     business_timezone: typeof raw.business_timezone === "string" ? raw.business_timezone : "Asia/Qatar",
@@ -34,6 +35,22 @@ function normalizeStoreRow(raw: Record<string, unknown>): StoreRow {
     opening_time_local: raw.opening_time_local != null ? String(raw.opening_time_local) : null,
     closing_time_local: raw.closing_time_local != null ? String(raw.closing_time_local) : null,
     seller_plan: sellerPlan,
+    returns_enabled: raw.returns_enabled !== false,
+    exchanges_enabled: raw.exchanges_enabled !== false,
+    return_period_days:
+      typeof raw.return_period_days === "number" && Number.isFinite(raw.return_period_days)
+        ? raw.return_period_days
+        : Number(raw.return_period_days) || 3,
+    exchange_period_days:
+      typeof raw.exchange_period_days === "number" && Number.isFinite(raw.exchange_period_days)
+        ? raw.exchange_period_days
+        : Number(raw.exchange_period_days) || 3,
+    policy_custom_conditions:
+      typeof raw.policy_custom_conditions === "string" ? raw.policy_custom_conditions : null,
+    same_day_delivery_enabled: raw.same_day_delivery_enabled === true,
+    same_day_cutoff_local:
+      raw.same_day_cutoff_local != null ? String(raw.same_day_cutoff_local) : "14:00:00",
+    store_policy_updated_at: policyUpdated != null ? String(policyUpdated) : null,
   };
 }
 
@@ -51,7 +68,9 @@ export type {
 /** Columns added across migrations; older DBs may not have every column — try narrower selects on failure. */
 const STORE_SELECT_FULL =
   "id, owner_id, name, slug, description, logo_url, banner_url, status, location, contact_email, contact_phone, social_links, latitude, longitude, " +
-  "business_timezone, working_days, opening_time_local, closing_time_local, seller_plan";
+  "business_timezone, working_days, opening_time_local, closing_time_local, seller_plan, " +
+  "returns_enabled, exchanges_enabled, return_period_days, exchange_period_days, policy_custom_conditions, " +
+  "same_day_delivery_enabled, same_day_cutoff_local, store_policy_updated_at";
 
 const STORE_SELECT_NO_AVAILABILITY =
   "id, owner_id, name, slug, description, logo_url, banner_url, status, location, contact_email, contact_phone, social_links, latitude, longitude, seller_plan";
