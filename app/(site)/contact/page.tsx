@@ -215,10 +215,31 @@ export default function ContactPage() {
                 {isArabic ? "ما خيارات التوصيل المتاحة؟" : "What delivery options are available?"}
                 <span className="shrink-0 w-6 h-6 rounded-full border border-primary/20 flex items-center justify-center text-primary group-open:rotate-180 transition-transform">+</span>
               </summary>
-              <div className="px-6 pb-4 pt-0 font-sans text-masa-gray text-sm leading-relaxed border-t border-primary/5">
-                {isArabic
-                  ? "تعتمد خيارات التوصيل على البائع. يوفر معظمهم التوصيل داخل قطر وبعضهم يوصل دولياً. ستظهر الخيارات المتاحة أثناء الدفع. قد تتطلب المنتجات عالية القيمة توقيع الاستلام أو توصيلاً مؤمّناً."
-                  : "Delivery options depend on the seller. Most offer delivery within Qatar and some deliver internationally. You will see available options at checkout. High-value items may require signature or insured delivery."}
+              <div className="px-6 pb-4 pt-0 font-sans text-masa-gray text-sm leading-relaxed border-t border-primary/5 space-y-2">
+                {isArabic ? (
+                  <>
+                    <p>
+                      يتولى كل بائع تنظيم التوصيل بنفسه. ستجد ملخصاً لسياسة التوصيل والتوقيت على صفحة المتجر وعلى صفحة
+                      المنتج؛ وقد يفعّل البائع خيار التوصيل في نفس اليوم مع وقت قطع محدد (مثلاً الطلبات قبل ساعة معيّنة).
+                    </p>
+                    <p>
+                      تؤكد صفحة الدفع عنوان التوصيل وتفاصيل الطلب. قد تتطلب المنتجات عالية القيمة توقيع استلام أو توصيلاً
+                      مؤمّناً حسب ترتيب البائع.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      Each seller arranges delivery. You will see their delivery and timing notes on the store profile and
+                      on each product page. Sellers may enable an optional same-day delivery promise with a published cutoff
+                      time (for example, orders placed before a set hour may target same-day delivery).
+                    </p>
+                    <p>
+                      Checkout confirms your delivery address and order details. High-value items may require signature or
+                      insured handling, depending on the seller.
+                    </p>
+                  </>
+                )}
               </div>
             </details>
             <details className="group bg-white rounded-xl border border-primary/10 overflow-hidden">
@@ -265,16 +286,48 @@ export default function ContactPage() {
                 className="px-6 pb-4 pt-0 font-sans text-masa-gray text-sm leading-relaxed border-t border-primary/5 space-y-2"
                 dir={isArabic ? "rtl" : "ltr"}
               >
-                <p>
-                  {isArabic
-                    ? "لا تقدم منصة ماسا استرداداً نقدياً للمبالغ المدفوعة. أي استبدال أو تسوية غير نقدية يخضع لسياسة المتجر المعروضة على صفحة المتجر وفي الشروط والأحكام للعملاء."
-                    : `${brand} does not offer cash refunds. Exchanges or non-cash resolutions are governed only by each store’s policy as shown on the store page and in our Customer Terms & Conditions.`}
-                </p>
-                <p>
-                  {isArabic
-                    ? "راجع سياسة المتجر قبل الشراء؛ للمساعدة يمكنك التواصل مع المتجر أو فريق الدعم."
-                    : "Review the store’s policy before purchase; contact the store or our support team for assistance."}
-                </p>
+                {isArabic ? (
+                  <>
+                    <p>
+                      لا توجد سياسة إرجاع واحدة لجميع المتاجر: كل بائع يضبط من لوحته ما إذا كان يقبل الإرجاع أو الاستبدال،
+                      ومدة الطلب بالأيام من وقت التسليم الفعلي (وليس من تاريخ الطلب فقط)، والشروط الإضافية التي يعرضها.
+                    </p>
+                    <p>
+                      تظهر السياسة الحالية على صفحة المتجر وملخص على صفحة المنتج. عند إتمام الشراء نحفظ نسخة من السياسة
+                      مع طلبك، فلا تؤثر تعديلات لاحقة من البائع على الطلبات السابقة.
+                    </p>
+                    <p>
+                      بعد التسليم، إذا كنت ضمن المدة المسموحة ويسمح المتجر بذلك، يمكنك طلب إرجاع أو استبدال من تفاصيل الطلب
+                      في حسابك.
+                    </p>
+                    <p>
+                      لا تقدم منصة ماسا استرداداً نقدياً؛ أي تسوية أخرى تخضع لسياسة المتجر وشروط العملاء على {brand}.
+                      راجع سياسة المتجر قبل الشراء، وللمساعدة تواصل مع المتجر أو الدعم.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      There is no single marketplace-wide return rule: each seller sets whether returns and exchanges are
+                      offered, how many days you have from the <strong>actual delivery time</strong> (not only the order
+                      date), and any extra conditions they publish.
+                    </p>
+                    <p>
+                      The current policy appears on the store profile and as a short summary on product pages. When you
+                      place an order, we save a <strong>snapshot</strong> of that policy with your order, so later seller
+                      changes do not affect purchases already made.
+                    </p>
+                    <p>
+                      After delivery, if you are still within the allowed window and the store permits it, you can request a
+                      return or exchange from your order details in your account.
+                    </p>
+                    <p>
+                      {brand} does not offer cash refunds; other resolutions follow the store’s policy and our Customer
+                      Terms &amp; Conditions. Review the store’s policy before you buy, and contact the store or support if
+                      you need help.
+                    </p>
+                  </>
+                )}
               </div>
             </details>
             <details className="group bg-white rounded-xl border border-primary/10 overflow-hidden">
