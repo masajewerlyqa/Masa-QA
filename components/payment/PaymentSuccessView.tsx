@@ -11,6 +11,10 @@ import { useI18n } from "@/components/useI18n";
 
 type VerifyStatus = "loading" | "confirmed" | "processing" | "unverified";
 
+/**
+ * Display-only success page. Never creates orders — polls read-only verify API until
+ * the webhook has stored a paid order in Supabase.
+ */
 export function PaymentSuccessView() {
   const { t, isArabic } = useI18n();
   const router = useRouter();
@@ -25,7 +29,7 @@ export function PaymentSuccessView() {
 
     let cancelled = false;
     let attempts = 0;
-    const maxAttempts = 12;
+    const maxAttempts = 15;
 
     async function poll() {
       try {
@@ -48,7 +52,11 @@ export function PaymentSuccessView() {
           return;
         }
 
-        if (data.status === "payment_failed" || data.status === "invalid") {
+        if (
+          data.status === "payment_failed" ||
+          data.status === "invalid" ||
+          data.status === "not_found"
+        ) {
           router.replace("/payment/failed");
           return;
         }
@@ -58,15 +66,16 @@ export function PaymentSuccessView() {
           setVerifyStatus("processing");
           window.setTimeout(poll, 2000);
         } else {
-          setVerifyStatus("processing");
+          router.replace("/payment/failed?reason=pending");
         }
       } catch {
         if (!cancelled) {
           attempts += 1;
           if (attempts < maxAttempts) {
+            setVerifyStatus("processing");
             window.setTimeout(poll, 2000);
           } else {
-            setVerifyStatus("processing");
+            router.replace("/payment/failed?reason=pending");
           }
         }
       }
@@ -110,7 +119,7 @@ export function PaymentSuccessView() {
                 : "bg-primary/5 text-primary border-primary/15"
             }`}
           >
-            {verifyStatus === "loading" ? (
+            {verifyStatus === "loading" || verifyStatus === "processing" ? (
               <Loader2 className="h-8 w-8 animate-spin" aria-hidden />
             ) : (
               <CheckCircle2 className="h-8 w-8" aria-hidden />
@@ -131,11 +140,11 @@ export function PaymentSuccessView() {
               <Button asChild variant="outline" className="border-primary/25 flex-1">
                 <Link href={`/account/orders/${orderId}`}>{t("payment.viewOrder")}</Link>
               </Button>
-            ) : (
+            ) : verifyStatus === "confirmed" ? (
               <Button asChild variant="outline" className="border-primary/25 flex-1">
                 <Link href="/account/orders">{t("payment.viewOrders")}</Link>
               </Button>
-            )}
+            ) : null}
           </div>
         </CardContent>
       </Card>

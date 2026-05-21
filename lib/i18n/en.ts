@@ -385,6 +385,9 @@ export const en = {
     failedTitle: "Payment failed",
     failedMessage: "Your card was declined or the payment could not be completed.",
     failedHint: "No order was created. Try again with a different card or contact your bank.",
+    failedPendingMessage: "We could not confirm your payment yet.",
+    failedPendingHint:
+      "No order was created. If you were charged, check My orders later or contact support with your payment reference.",
     backToCart: "Back to cart",
     returnToShop: "Return to shop",
     viewOrder: "View order",

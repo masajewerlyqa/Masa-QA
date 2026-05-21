@@ -379,6 +379,9 @@ export const ar = {
     failedTitle: "فشل الدفع",
     failedMessage: "تم رفض بطاقتك أو تعذر إتمام الدفع.",
     failedHint: "لم يُنشأ أي طلب. جرّب بطاقة أخرى أو تواصل مع البنك.",
+    failedPendingMessage: "تعذر تأكيد الدفع حتى الآن.",
+    failedPendingHint:
+      "لم يُنشأ أي طلب. إذا تم الخصم، راجع طلباتي لاحقاً أو تواصل مع الدعم مع مرجع الدفع.",
     backToCart: "العودة إلى السلة",
     returnToShop: "العودة للتسوق",
     viewOrder: "عرض الطلب",

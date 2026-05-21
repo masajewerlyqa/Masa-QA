@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +9,8 @@ import { useI18n } from "@/components/useI18n";
 
 export function PaymentFailedView() {
   const { t } = useI18n();
+  const reason = useSearchParams().get("reason");
+  const isPending = reason === "pending";
 
   return (
     <div className="min-h-[60vh] px-4 py-12 md:py-16 flex flex-col items-center">
@@ -20,11 +23,13 @@ export function PaymentFailedView() {
             {t("payment.failedTitle")}
           </CardTitle>
           <CardDescription className="text-base font-sans text-masa-gray leading-relaxed">
-            {t("payment.failedMessage")}
+            {isPending ? t("payment.failedPendingMessage") : t("payment.failedMessage")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 font-sans">
-          <p className="text-sm text-masa-dark text-center leading-relaxed">{t("payment.failedHint")}</p>
+          <p className="text-sm text-masa-dark text-center leading-relaxed">
+            {isPending ? t("payment.failedPendingHint") : t("payment.failedHint")}
+          </p>
           <Button asChild className="w-full h-12 bg-primary hover:bg-primary/90">
             <Link href="/cart">{t("payment.backToCart")}</Link>
           </Button>

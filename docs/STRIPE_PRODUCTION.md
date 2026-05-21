@@ -18,11 +18,14 @@
 - `checkout.session.async_payment_failed` — logged; no order
 - `payment_intent.payment_failed` — logged; no order
 
-Orders are **never** created from `/success` or client APIs. The webhook verifies:
+Orders are **never** created from `/success` or client APIs. Only `checkout.session.completed` with **`payment_status === paid`** triggers fulfillment.
+
+The webhook verifies:
 
 - Stripe signature (`STRIPE_WEBHOOK_SECRET`)
-- `session.status === complete` and `payment_status === paid`
-- `PaymentIntent.status === succeeded` when present
+- Event pre-check: `session.status === complete` and `session.payment_status === paid` (the event alone is not enough)
+- Re-fetch session + `PaymentIntent.status === succeeded` (required)
+- Idempotency via `orders.stripe_checkout_session_id`
 - DB product prices match Stripe `amount_subtotal`
 - Idempotency via `orders.stripe_checkout_session_id`
 

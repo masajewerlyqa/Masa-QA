@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { PaymentFailedView } from "@/components/payment/PaymentFailedView";
 import { brandName } from "@/lib/brand";
 import { t } from "@/lib/i18n";
@@ -13,5 +14,9 @@ export function generateMetadata(): Metadata {
 }
 
 export default function PaymentFailedPage() {
-  return <PaymentFailedView />;
+  return (
+    <Suspense fallback={null}>
+      <PaymentFailedView />
+    </Suspense>
+  );
 }

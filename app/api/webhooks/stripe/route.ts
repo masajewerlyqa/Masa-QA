@@ -4,6 +4,7 @@ import { env } from "@/lib/config/env";
 import { STRIPE_PRODUCTION_WEBHOOK_URL } from "@/lib/stripe/config";
 import { getStripe } from "@/lib/stripe/client";
 import { fulfillCheckoutSession } from "@/lib/stripe/fulfill-checkout-session";
+import { isCheckoutSessionPaid } from "@/lib/stripe/verify-payment";
 
 export const runtime = "nodejs";
 
@@ -11,8 +12,8 @@ export const runtime = "nodejs";
  * POST /api/webhooks/stripe
  * Production URL: https://masajewlery.com/api/webhooks/stripe
  *
- * Creates paid orders only after signature verification + payment_status checks.
- * Events: checkout.session.completed, checkout.session.async_payment_failed, payment_intent.payment_failed
+ * Paid orders are created ONLY here after signature verification.
+ * Never from /success or any other client/redirect route.
  */
 export async function POST(req: Request) {
   const webhookSecret = env.stripeWebhookSecret;
@@ -48,6 +49,16 @@ export async function POST(req: Request) {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
+
+      if (!isCheckoutSessionPaid(session)) {
+        console.warn("[stripe-webhook] checkout.session.completed ignored — not paid", {
+          sessionId: session.id,
+          status: session.status,
+          paymentStatus: session.payment_status,
+        });
+        break;
+      }
+
       const result = await fulfillCheckoutSession(session.id);
       if (!result.ok) {
         console.error("[stripe-webhook] fulfill failed", {
@@ -70,7 +81,7 @@ export async function POST(req: Request) {
 
     case "checkout.session.async_payment_failed": {
       const session = event.data.object as Stripe.Checkout.Session;
-      console.warn("[stripe-webhook] async payment failed", {
+      console.warn("[stripe-webhook] async payment failed — no order created", {
         sessionId: session.id,
         paymentStatus: session.payment_status,
         customerId: session.metadata?.customer_id ?? session.client_reference_id,
@@ -80,7 +91,7 @@ export async function POST(req: Request) {
 
     case "payment_intent.payment_failed": {
       const intent = event.data.object as Stripe.PaymentIntent;
-      console.warn("[stripe-webhook] payment_intent.payment_failed", {
+      console.warn("[stripe-webhook] payment_intent.payment_failed — no order created", {
         paymentIntentId: intent.id,
         lastError: intent.last_payment_error?.message,
         customerId: intent.metadata?.customer_id,

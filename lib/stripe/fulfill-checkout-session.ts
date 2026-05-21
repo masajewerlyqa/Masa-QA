@@ -3,10 +3,7 @@ import "server-only";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe/client";
 import { parseCartItemsFromMetadata } from "@/lib/stripe/checkout-metadata";
-import {
-  verifyCheckoutSessionPaid,
-  verifyPaymentIntentSucceeded,
-} from "@/lib/stripe/verify-payment";
+import { verifyCheckoutSessionForPaidOrder } from "@/lib/stripe/verify-payment";
 import {
   verifyStripeAmountMatchesCart,
   type ResolvedCheckoutLine,
@@ -120,25 +117,27 @@ export async function fulfillCheckoutSession(sessionId: string): Promise<Fulfill
     expand: ["line_items", "payment_intent"],
   });
 
-  const paidCheck = verifyCheckoutSessionPaid(session);
-  if (!paidCheck.ok) {
-    return { ok: false, error: paidCheck.error, permanent: paidCheck.permanent };
-  }
-
-  const piCheck = await verifyPaymentIntentSucceeded(session);
-  if (!piCheck.ok) {
-    return { ok: false, error: piCheck.error, permanent: piCheck.permanent };
+  const paymentCheck = await verifyCheckoutSessionForPaidOrder(session);
+  if (!paymentCheck.ok) {
+    return { ok: false, error: paymentCheck.error, permanent: paymentCheck.permanent };
   }
 
   const service = requireServiceClient();
 
   const { data: existing } = await service
     .from("orders")
-    .select("id")
+    .select("id, status")
     .eq("stripe_checkout_session_id", session.id)
     .maybeSingle();
 
   if (existing?.id) {
+    if (existing.status !== "paid") {
+      return {
+        ok: false,
+        error: "Existing order for session is not paid.",
+        permanent: true,
+      };
+    }
     return { ok: true, orderId: String(existing.id), duplicate: true };
   }
 
