@@ -341,6 +341,7 @@ export const en = {
       platformHeading: "Cancellation notice",
     },
     statuses: {
+      paid: "Paid",
       awaiting_seller: "Awaiting store confirmation",
       pending: "Pending",
       accepted: "Accepted",
@@ -366,6 +367,28 @@ export const en = {
     empty: "Your cart is empty.",
     proceedToCheckout: "Proceed to Checkout",
     continueShopping: "Continue Shopping",
+  },
+  payment: {
+    successTitle: "Payment successful",
+    successConfirmation: "Thank you — your payment was completed successfully.",
+    successOrderNote:
+      "Your order is confirmed. We will email you order details and delivery updates as they become available.",
+    successProcessingTitle: "Confirming your payment",
+    successProcessingNote: "Your payment was received. We are confirming your order now.",
+    successProcessingHint:
+      "This usually takes a few seconds. You can stay on this page or check My orders shortly.",
+    successUnverifiedTitle: "Checkout complete",
+    successUnverifiedNote: "If you completed payment, your order will appear in My orders once confirmed.",
+    successUnverifiedHint: "Orders are only created after secure payment verification — not from this page alone.",
+    cancelTitle: "Payment cancelled",
+    cancelMessage: "Your payment was not completed and no charge was made.",
+    failedTitle: "Payment failed",
+    failedMessage: "Your card was declined or the payment could not be completed.",
+    failedHint: "No order was created. Try again with a different card or contact your bank.",
+    backToCart: "Back to cart",
+    returnToShop: "Return to shop",
+    viewOrder: "View order",
+    viewOrders: "View my orders",
   },
   checkout: {
     secureCheckout: "Secure Checkout",
