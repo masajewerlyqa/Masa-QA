@@ -6,6 +6,23 @@ export type CheckoutLineItem = {
   productId?: string;
 };
 
+export type CheckoutShippingPayload = {
+  firstName: string;
+  deliveryPhone: string;
+  country: string;
+  deliveryCityArea: string;
+  deliveryBuildingType?: string | null;
+  deliveryZoneNo?: string | null;
+  deliveryStreetNo?: string | null;
+  deliveryBuildingNo?: string | null;
+  deliveryFloorNo?: string | null;
+  deliveryApartmentNo?: string | null;
+  deliveryLandmark?: string | null;
+  deliveryLat: number;
+  deliveryLng: number;
+  deliveryMapUrl?: string | null;
+};
+
 /** Cart row shape from getCartWithProducts (client or server). */
 export type CartProductLine = {
   quantity: number;
@@ -23,7 +40,8 @@ export function toCheckoutLineItems(items: CartProductLine[]): CheckoutLineItem[
 
 export type CreateCheckoutSessionRequest = {
   items: CheckoutLineItem[];
-  customerId?: string;
+  shipping: CheckoutShippingPayload;
+  promoCode?: string;
 };
 
 export type CreateCheckoutSessionResponse =
@@ -32,12 +50,17 @@ export type CreateCheckoutSessionResponse =
 
 export async function createCheckoutSession(
   items: CheckoutLineItem[],
-  customerId?: string
+  shipping: CheckoutShippingPayload,
+  options?: { promoCode?: string }
 ): Promise<CreateCheckoutSessionResponse> {
   const res = await fetch("/api/create-checkout-session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items, customerId } satisfies CreateCheckoutSessionRequest),
+    body: JSON.stringify({
+      items,
+      shipping,
+      promoCode: options?.promoCode,
+    } satisfies CreateCheckoutSessionRequest),
   });
 
   const data = (await res.json()) as CreateCheckoutSessionResponse;

@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import {
   createCheckoutSession,
   type CheckoutLineItem,
+  type CheckoutShippingPayload,
 } from "@/lib/stripe/checkout-client";
 
 /**
@@ -14,7 +15,12 @@ export function useStripeCheckout() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const startCheckout = useCallback(async (items: CheckoutLineItem[], customerId?: string) => {
+  const startCheckout = useCallback(
+    async (
+      items: CheckoutLineItem[],
+      shipping: CheckoutShippingPayload,
+      options?: { promoCode?: string }
+    ) => {
     if (items.length === 0) {
       setError("Your cart is empty.");
       return;
@@ -24,7 +30,7 @@ export function useStripeCheckout() {
     setError(null);
 
     try {
-      const result = await createCheckoutSession(items, customerId);
+      const result = await createCheckoutSession(items, shipping, options);
       if (!result.ok) {
         setError(result.error ?? "Could not start checkout. Please try again.");
         return;
@@ -35,7 +41,9 @@ export function useStripeCheckout() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  },
+  []
+);
 
   const clearError = useCallback(() => setError(null), []);
 

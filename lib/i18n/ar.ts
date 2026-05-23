@@ -424,6 +424,12 @@ export const ar = {
     locationSelected: "تم تحديد الموقع",
     paymentMethod: "طريقة الدفع",
     paymentHint: "واجهة دفع تجريبية بدون خصم فعلي. لتمكين الدفع المباشر، يرجى ربط مزوّد دفع.",
+    stripeSecureHint:
+      "يتم إتمام الدفع بالبطاقة أو Apple Pay عبر Stripe الآمن. يُنشأ الطلب فقط بعد نجاح الدفع.",
+    stripeDeclinedHint:
+      "البطاقات غير الصالحة أو المرفوضة تُرفض من Stripe. لا يُنشأ طلب حتى يُؤكَّد الدفع.",
+    continueToStripe: "المتابعة إلى الدفع الآمن",
+    redirectingToStripe: "جاري التحويل إلى Stripe…",
     cardDetailsPlaceholder: "بيانات البطاقة (عرض تجريبي غير معالج)",
     cardholderName: "اسم حامل البطاقة",
     cardholderNamePlaceholder: "الاسم كما يظهر على البطاقة",

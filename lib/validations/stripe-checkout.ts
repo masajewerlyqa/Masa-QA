@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { stripeCheckoutShippingSchema } from "@/lib/stripe/checkout-shipping";
 
 export const stripeCheckoutItemSchema = z.object({
   name: z.string().trim().min(1, "Item name is required.").max(500),
@@ -13,6 +14,8 @@ export const stripeCheckoutBodySchema = z.object({
   items: z.array(stripeCheckoutItemSchema).min(1, "Cart must include at least one item.").max(100),
   /** Logged-in buyer; stored on Checkout Session for webhook order creation. */
   customerId: z.string().uuid().optional(),
+  shipping: stripeCheckoutShippingSchema,
+  promoCode: z.string().trim().max(64).optional(),
 });
 
 export type StripeCheckoutBody = z.infer<typeof stripeCheckoutBodySchema>;

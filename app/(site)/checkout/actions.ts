@@ -73,7 +73,14 @@ export async function createOrder(formData: FormData): Promise<CheckoutActionRes
   const deliveryMapUrl = String(formData.get("delivery_map_url") ?? "").trim() || null;
   const notes = deliveryLandmark;
   const paymentMethodRaw = String(formData.get("payment_method") ?? "").trim().toLowerCase();
-  const _paymentMethod = ["card", "apple_pay"].includes(paymentMethodRaw) ? paymentMethodRaw : "card";
+  if (["card", "apple_pay"].includes(paymentMethodRaw)) {
+    return {
+      ok: false,
+      error:
+        "Online card payments are processed securely through Stripe. Please use the checkout page payment button.",
+    };
+  }
+  const _paymentMethod = paymentMethodRaw || "card";
   const promoCodeInput = String(formData.get("promo_code") ?? "").trim() || null;
 
   if (!firstName) {

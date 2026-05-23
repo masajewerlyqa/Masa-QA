@@ -9,7 +9,7 @@ import { useI18n } from "@/components/useI18n";
 export type CartSummaryItem = {
   productId: string;
   quantity: number;
-  product: { title: string; price: number };
+  product: { id: string; title: string; price: number };
 };
 
 type AppliedPromo = { code: string; discountAmount: number };

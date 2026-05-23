@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe/client";
 import { stripeCheckoutRedirectUrls } from "@/lib/stripe/config";
 import { serializeCartItemsForMetadata } from "@/lib/stripe/checkout-metadata";
+import { serializeShippingForMetadata } from "@/lib/stripe/checkout-shipping";
 import { resolveCheckoutItemsFromDatabase } from "@/lib/stripe/validate-checkout-items";
+import { validatePromoCode } from "@/lib/promo";
 import { env } from "@/lib/config/env";
 import type { StripeCheckoutBody } from "@/lib/validations/stripe-checkout";
 
@@ -27,11 +29,31 @@ export async function handleCreateCheckoutSession(body: StripeCheckoutBody) {
     return NextResponse.json({ ok: false, error: resolved.error }, { status: 400 });
   }
 
+  const subtotal = resolved.lines.reduce((sum, line) => sum + line.unitPriceUsd * line.quantity, 0);
+  const cartStoreIds = Array.from(new Set(resolved.lines.map((l) => l.storeId)));
+
+  let discountAmount = 0;
+  let appliedPromoCode: string | null = null;
+  let appliedPromoId: string | null = null;
+
+  if (body.promoCode?.trim()) {
+    const promoResult = await validatePromoCode(body.promoCode.trim(), subtotal, cartStoreIds);
+    if (!promoResult.valid) {
+      return NextResponse.json({ ok: false, error: promoResult.error }, { status: 400 });
+    }
+    discountAmount = promoResult.discountAmount;
+    appliedPromoCode = promoResult.code;
+    appliedPromoId = promoResult.promoId;
+  }
+
+  const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
+  const priceRatio = subtotal > 0 ? subtotalAfterDiscount / subtotal : 1;
+
   const lineItems = resolved.lines.map((line) => ({
     quantity: line.quantity,
     price_data: {
       currency: "usd",
-      unit_amount: Math.round(line.unitPriceUsd * 100),
+      unit_amount: Math.max(1, Math.round(line.unitPriceUsd * priceRatio * 100)),
       product_data: {
         name: line.name,
       },
@@ -43,11 +65,28 @@ export async function handleCreateCheckoutSession(body: StripeCheckoutBody) {
     quantity: line.quantity,
   }));
 
+  const shippingJson = serializeShippingForMetadata(body.shipping);
+  if (shippingJson.length > 500) {
+    return NextResponse.json(
+      { ok: false, error: "Delivery details are too long. Please shorten your address." },
+      { status: 400 }
+    );
+  }
+
   const sessionMetadata: Record<string, string> = {
     customer_id: body.customerId,
     cart_items: serializeCartItemsForMetadata(metaItems),
-    checkout_version: "1",
+    shipping: shippingJson,
+    checkout_version: "2",
+    discount_cents: String(Math.round(discountAmount * 100)),
   };
+
+  if (appliedPromoCode) {
+    sessionMetadata.promo_code = appliedPromoCode;
+  }
+  if (appliedPromoId) {
+    sessionMetadata.promo_id = appliedPromoId;
+  }
 
   const { successUrl, cancelUrl } = stripeCheckoutRedirectUrls();
 

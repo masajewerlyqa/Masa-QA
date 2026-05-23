@@ -3,6 +3,10 @@ import "server-only";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe/client";
 import { parseCartItemsFromMetadata } from "@/lib/stripe/checkout-metadata";
+import {
+  parseShippingFromMetadata,
+  shippingToOrderFields,
+} from "@/lib/stripe/checkout-shipping";
 import { verifyCheckoutSessionForPaidOrder } from "@/lib/stripe/verify-payment";
 import {
   verifyStripeAmountMatchesCart,
@@ -20,25 +24,6 @@ import { buildPolicySnapshot } from "@/lib/store-policy";
 export type FulfillCheckoutResult =
   | { ok: true; orderId: string; duplicate?: boolean }
   | { ok: false; error: string; permanent?: boolean };
-
-function shippingAddressFromSession(session: Stripe.Checkout.Session): Record<string, unknown> {
-  const shipping = (session as Stripe.Checkout.Session & {
-    shipping_details?: { name?: string | null; address?: Stripe.Address | null };
-  }).shipping_details;
-  const addr = shipping?.address ?? session.customer_details?.address;
-  const name = shipping?.name ?? session.customer_details?.name ?? null;
-  const phone = session.customer_details?.phone ?? null;
-  return {
-    name,
-    phone,
-    line1: addr?.line1 ?? null,
-    line2: addr?.line2 ?? null,
-    city: addr?.city ?? null,
-    state: addr?.state ?? null,
-    postal_code: addr?.postal_code ?? null,
-    country: addr?.country ?? session.customer_details?.address?.country ?? null,
-  };
-}
 
 async function loadLineProductsFromMetadata(
   service: ReturnType<typeof requireServiceClient>,
@@ -176,9 +161,19 @@ export async function fulfillCheckoutSession(sessionId: string): Promise<Fulfill
     return { ok: false, error: loaded.error, permanent: loaded.permanent };
   }
 
-  const amountCheck = verifyStripeAmountMatchesCart(session, loaded.lines);
+  const discountCents = Math.max(0, parseInt(session.metadata?.discount_cents ?? "0", 10) || 0);
+  const amountCheck = verifyStripeAmountMatchesCart(session, loaded.lines, discountCents);
   if (!amountCheck.ok) {
     return { ok: false, error: amountCheck.error, permanent: amountCheck.permanent };
+  }
+
+  const shippingSnapshot = parseShippingFromMetadata(session.metadata?.shipping);
+  if (!shippingSnapshot) {
+    return {
+      ok: false,
+      error: "Checkout session missing delivery address metadata.",
+      permanent: true,
+    };
   }
 
   const lineProducts = loaded.lines;
@@ -196,6 +191,10 @@ export async function fulfillCheckoutSession(sessionId: string): Promise<Fulfill
     Math.round(
       lineProducts.reduce((sum, i) => sum + i.unitPriceUsd * i.quantity, 0) * 100
     ) / 100;
+  const discountAmount = Math.round(discountCents) / 100;
+  const subtotalAfterDiscount = Math.max(0, Math.round((subtotalRounded - discountAmount) * 100) / 100);
+  const appliedPromoCode = session.metadata?.promo_code?.trim() || null;
+  const appliedPromoId = session.metadata?.promo_id?.trim() || null;
   const shipping_cost =
     session.total_details?.amount_shipping != null
       ? Math.round(session.total_details.amount_shipping) / 100
@@ -206,10 +205,10 @@ export async function fulfillCheckoutSession(sessionId: string): Promise<Fulfill
       ? Math.round(session.amount_total) / 100
       : Math.max(0, Math.round((subtotalRounded + shipping_cost + tax) * 100) / 100);
 
-  const { commissionAmount, sellerEarnings } = computeCommission(subtotalRounded);
+  const { commissionAmount, sellerEarnings } = computeCommission(subtotalAfterDiscount);
   const createdAt = new Date();
   const sellerDeadline = sellerResponseDeadlineIso(createdAt);
-  const shipping_address = shippingAddressFromSession(session);
+  const deliveryFields = shippingToOrderFields(shippingSnapshot);
   const paymentIntentId =
     typeof session.payment_intent === "string"
       ? session.payment_intent
@@ -244,7 +243,6 @@ export async function fulfillCheckoutSession(sessionId: string): Promise<Fulfill
     }
   }
 
-  const addr = shipping_address as Record<string, string | null>;
   const { data: order, error: orderError } = await service
     .from("orders")
     .insert({
@@ -255,18 +253,17 @@ export async function fulfillCheckoutSession(sessionId: string): Promise<Fulfill
       shipping_cost,
       tax,
       total,
-      shipping_address,
+      shipping_address: deliveryFields.shipping_address,
       payment_method: "card",
+      promo_code: appliedPromoCode,
+      discount_amount: discountAmount,
       commission_amount: commissionAmount,
       seller_earnings: sellerEarnings,
       policy_snapshots: policySnapshots,
       stripe_checkout_session_id: session.id,
       stripe_payment_intent_id: paymentIntentId,
       paid_at: new Date().toISOString(),
-      delivery_country: addr.country ?? null,
-      delivery_city_area: addr.city ?? null,
-      delivery_phone: addr.phone ?? null,
-      notes: null,
+      ...deliveryFields,
     })
     .select("id, order_number")
     .single();
@@ -300,6 +297,16 @@ export async function fulfillCheckoutSession(sessionId: string): Promise<Fulfill
     source: "checkout",
     metadata: { stripe_session_id: session.id, payment_intent_id: paymentIntentId },
   });
+
+  if (appliedPromoId) {
+    const { data: promoRow } = await service
+      .from("promo_codes")
+      .select("used_count")
+      .eq("id", appliedPromoId)
+      .single();
+    const nextCount = ((promoRow as { used_count: number } | null)?.used_count ?? 0) + 1;
+    await service.from("promo_codes").update({ used_count: nextCount }).eq("id", appliedPromoId);
+  }
 
   const storeIds = Array.from(new Set(lineProducts.map((i) => i.storeId)));
   await notifySellersNewOrder(placed.id, storeIds);

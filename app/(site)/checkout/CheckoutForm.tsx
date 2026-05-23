@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useFormStatus } from "react-dom";
-import { CreditCard, Lock, Wallet, Check, MapPin, Info } from "lucide-react";
+import { CreditCard, Lock, Wallet, Check, MapPin, Info, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +15,12 @@ import {
 } from "@/components/ui/select";
 import { CheckoutMapPicker } from "@/components/checkout/CheckoutMapPicker";
 import { useI18n } from "@/components/useI18n";
-import { createOrder } from "./actions";
+import {
+  createCheckoutSession,
+  toCheckoutLineItems,
+  type CartProductLine,
+} from "@/lib/stripe/checkout-client";
+import type { CartSummaryItem } from "./CheckoutSummary";
 
 const PAYMENT_METHODS = [
   { value: "card", label: "Credit / Debit Card", icon: CreditCard },
@@ -24,8 +28,6 @@ const PAYMENT_METHODS = [
 ] as const;
 
 type PaymentMethod = (typeof PAYMENT_METHODS)[number]["value"];
-
-const VALID_PAYMENT_METHODS = new Set<string>(PAYMENT_METHODS.map((m) => m.value));
 
 const BUILDING_TYPES = [
   { value: "house_villa", label: "House / Villa" },
@@ -39,23 +41,14 @@ const BUILDING_TYPES = [
 export type AppliedPromo = { code: string; discountAmount: number };
 
 type CheckoutFormProps = {
+  cartItems: CartSummaryItem[];
   appliedPromo: AppliedPromo | null;
   checkoutBlocked?: boolean;
   checkoutBlockReason?: "not_configured" | "closed" | null;
 };
 
-function SubmitButton({ disabled }: { disabled?: boolean }) {
-  const { pending } = useFormStatus();
-  const { isArabic, t } = useI18n();
-  return (
-    <Button type="submit" className="w-full bg-primary hover:bg-primary/90 h-12" disabled={disabled ?? pending}>
-      <Lock className={`w-5 h-5 ${isArabic ? "ml-2" : "mr-2"}`} />
-      {pending ? t("checkout.placingOrder") : t("checkout.placeSecureOrder")}
-    </Button>
-  );
-}
-
 export function CheckoutForm({
+  cartItems,
   appliedPromo,
   checkoutBlocked = false,
   checkoutBlockReason = null,
@@ -75,6 +68,7 @@ export function CheckoutForm({
   };
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isPaying, setIsPaying] = useState(false);
   const [buildingType, setBuildingType] = useState("");
   const [deliveryLat, setDeliveryLat] = useState<number | null>(null);
   const [deliveryLng, setDeliveryLng] = useState<number | null>(null);
@@ -109,31 +103,74 @@ export function CheckoutForm({
     }
 
     const form = e.currentTarget;
-    const formData = new FormData(form);
-    formData.set("payment_method", VALID_PAYMENT_METHODS.has(paymentMethod) ? paymentMethod : "card");
-    formData.set("delivery_building_type", buildingType);
-    formData.set("delivery_lat", String(deliveryLat));
-    formData.set("delivery_lng", String(deliveryLng));
-    formData.set("delivery_map_url", mapUrl);
+    const fd = new FormData(form);
 
+    const firstName = String(fd.get("firstName") ?? "").trim();
+    const deliveryPhone = String(fd.get("delivery_phone") ?? "").trim();
+    const deliveryCityArea = String(fd.get("delivery_city_area") ?? "").trim();
+
+    if (!firstName) {
+      setSubmitError(t("checkout.fullNameRequired"));
+      return;
+    }
+    if (!deliveryPhone) {
+      setSubmitError(t("checkout.phoneNumberRequired"));
+      return;
+    }
+    if (!deliveryCityArea) {
+      setSubmitError(t("checkout.cityAreaRequired"));
+      return;
+    }
+    if (!buildingType) {
+      setSubmitError(t("checkout.buildingTypeRequired"));
+      return;
+    }
+
+    const lines = toCheckoutLineItems(cartItems as CartProductLine[]);
+    if (lines.length === 0) {
+      setSubmitError(t("cart.empty"));
+      return;
+    }
+
+    const shipping = {
+      firstName,
+      deliveryPhone,
+      country: String(fd.get("country") ?? "Qatar").trim(),
+      deliveryCityArea,
+      deliveryBuildingType: buildingType,
+      deliveryZoneNo: String(fd.get("delivery_zone_no") ?? "").trim() || null,
+      deliveryStreetNo: String(fd.get("delivery_street_no") ?? "").trim() || null,
+      deliveryBuildingNo: String(fd.get("delivery_building_no") ?? "").trim() || null,
+      deliveryFloorNo: String(fd.get("delivery_floor_no") ?? "").trim() || null,
+      deliveryApartmentNo: String(fd.get("delivery_apartment_no") ?? "").trim() || null,
+      deliveryLandmark: String(fd.get("delivery_landmark") ?? "").trim() || null,
+      deliveryLat,
+      deliveryLng,
+      deliveryMapUrl: mapUrl || null,
+    };
+
+    setIsPaying(true);
     try {
-      const result = await createOrder(formData);
-      if (result?.ok === false) {
-        const code = result.error;
-        if (code === "STORE_HOURS_NOT_SET") setSubmitError(t("storefront.storeHoursNotSet"));
-        else if (code === "STORE_CLOSED") setSubmitError(t("storefront.storeClosed"));
-        else setSubmitError(code ?? t("checkout.placeOrderFailed"));
+      const result = await createCheckoutSession(lines, shipping, {
+        promoCode: appliedPromo?.code,
+      });
+      if (!result.ok) {
+        setSubmitError(result.error ?? t("checkout.placeOrderFailed"));
+        return;
       }
-    } catch (err) {
-      const digest = err && typeof err === "object" && "digest" in err ? String((err as { digest?: string }).digest) : "";
-      if (digest.includes("NEXT_REDIRECT")) throw err;
-      setSubmitError(err instanceof Error ? err.message : t("checkout.placeOrderFailed"));
+      window.location.assign(result.url);
+    } catch {
+      setSubmitError(t("checkout.placeOrderFailed"));
+    } finally {
+      setIsPaying(false);
     }
   }
 
   const blockMessage =
     checkoutBlocked &&
     (checkoutBlockReason === "not_configured" ? t("storefront.storeHoursNotSet") : t("storefront.storeClosed"));
+
+  const submitDisabled = checkoutBlocked || isPaying;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
@@ -145,8 +182,6 @@ export function CheckoutForm({
           {blockMessage}
         </div>
       )}
-      <input type="hidden" name="payment_method" value={paymentMethod} aria-hidden />
-      <input type="hidden" name="promo_code" value={appliedPromo?.code ?? ""} aria-hidden />
 
       {/* Delivery address */}
       <Card className="border-primary/10 shadow-sm">
@@ -187,7 +222,7 @@ export function CheckoutForm({
 
           <div className="space-y-2">
             <Label htmlFor="delivery_building_type" className="font-sans">{t("checkout.buildingTypeRequired")}</Label>
-            <Select value={buildingType} onValueChange={setBuildingType}>
+            <Select value={buildingType} onValueChange={setBuildingType} required>
               <SelectTrigger className="font-sans border-primary/20">
                 <SelectValue placeholder={t("checkout.selectBuildingType")} />
               </SelectTrigger>
@@ -240,23 +275,16 @@ export function CheckoutForm({
         </CardContent>
       </Card>
 
-      {/* Map Location Picker */}
       <Card className="border-primary/10 shadow-sm">
         <CardHeader>
           <CardTitle className="font-luxury text-primary flex items-center gap-2">
             <MapPin className="w-5 h-5" />
             {t("checkout.exactDeliveryLocation")}
           </CardTitle>
-          <p className="text-sm text-masa-gray font-sans mt-1">
-            {t("checkout.pinLocationHint")}
-          </p>
+          <p className="text-sm text-masa-gray font-sans mt-1">{t("checkout.pinLocationHint")}</p>
         </CardHeader>
         <CardContent className="space-y-3">
-          <CheckoutMapPicker
-            onSelect={handleMapSelect}
-            initialLat={deliveryLat}
-            initialLng={deliveryLng}
-          />
+          <CheckoutMapPicker onSelect={handleMapSelect} initialLat={deliveryLat} initialLng={deliveryLng} />
           {deliveryLat != null && deliveryLng != null && (
             <p className="text-sm text-green-600 font-sans flex items-center gap-1">
               <Check className="w-4 h-4" />
@@ -271,13 +299,9 @@ export function CheckoutForm({
         </CardContent>
       </Card>
 
-      {/* Payment Method */}
       <Card className="border-primary/10 shadow-sm">
         <CardHeader className="space-y-1">
           <CardTitle className="font-luxury text-primary">{t("checkout.paymentMethod")}</CardTitle>
-          <p className="text-sm text-masa-gray font-sans" role="status">
-            {t("checkout.paymentHint")}
-          </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -304,37 +328,16 @@ export function CheckoutForm({
             ))}
           </div>
 
-          {paymentMethod === "card" && (
-            <div className="rounded-lg border border-primary/10 bg-masa-light/30 p-4 space-y-4" role="group" aria-labelledby="card-fields-label">
-              <p id="card-fields-label" className="text-sm font-medium text-masa-dark font-sans">
-                {t("checkout.cardDetailsPlaceholder")}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2 space-y-2">
-                  <Label htmlFor="cardholderName" className="font-sans">{t("checkout.cardholderName")}</Label>
-                  <Input id="cardholderName" name="cardholder_name" placeholder={t("checkout.cardholderNamePlaceholder")} className="font-sans border-primary/20" autoComplete="cc-name" />
-                </div>
-                <div className="sm:col-span-2 space-y-2">
-                  <Label htmlFor="cardNumber" className="font-sans">{t("checkout.cardNumber")}</Label>
-                  <Input id="cardNumber" name="card_number" placeholder="4242 4242 4242 4242" className="font-sans border-primary/20 font-mono tracking-wider" autoComplete="cc-number" maxLength={19} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="expiry" className="font-sans">{t("checkout.expiryDate")}</Label>
-                  <Input id="expiry" name="card_expiry" placeholder="MM/YY" className="font-sans border-primary/20 font-mono" autoComplete="cc-exp" maxLength={5} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cvv" className="font-sans">{isArabic ? "رمز الأمان (CVV)" : "CVV"}</Label>
-                  <Input id="cvv" name="card_cvv" placeholder="123" type="password" className="font-sans border-primary/20 font-mono" autoComplete="cc-csc" maxLength={4} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {paymentMethod === "apple_pay" && (
-            <p className="text-sm text-masa-gray font-sans" role="status">
-              {t("checkout.applePayHint")}
+          <div
+            className="rounded-lg border border-primary/15 bg-masa-light/50 p-4 space-y-2 font-sans"
+            role="status"
+          >
+            <p className="flex items-start gap-2 text-sm text-masa-dark">
+              <ShieldCheck className="w-5 h-5 shrink-0 text-primary mt-0.5" aria-hidden />
+              <span>{t("checkout.stripeSecureHint")}</span>
             </p>
-          )}
+            <p className="text-xs text-masa-gray leading-relaxed">{t("checkout.stripeDeclinedHint")}</p>
+          </div>
         </CardContent>
       </Card>
 
@@ -344,7 +347,14 @@ export function CheckoutForm({
         </div>
       )}
 
-      <SubmitButton disabled={checkoutBlocked} />
+      <Button
+        type="submit"
+        className="w-full bg-primary hover:bg-primary/90 h-12"
+        disabled={submitDisabled}
+      >
+        <Lock className={`w-5 h-5 ${isArabic ? "ml-2" : "mr-2"}`} />
+        {isPaying ? t("checkout.redirectingToStripe") : t("checkout.continueToStripe")}
+      </Button>
     </form>
   );
 }

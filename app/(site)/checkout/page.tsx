@@ -22,7 +22,7 @@ export default async function CheckoutPage() {
   const cartItems = cartWithProducts.map((item) => ({
     productId: item.productId,
     quantity: item.quantity,
-    product: { title: item.product.title, price: item.product.price },
+    product: { id: item.productId, title: item.product.title, price: item.product.price },
   }));
 
   return (

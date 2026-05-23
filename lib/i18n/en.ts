@@ -431,6 +431,12 @@ export const en = {
     paymentMethod: "Payment Method",
     paymentHint:
       "Payment-ready placeholder - no real charges. For demo only; integrate a payment provider to enable live payments.",
+    stripeSecureHint:
+      "Card and Apple Pay are completed on Stripe’s secure checkout. Your order is created only after payment succeeds.",
+    stripeDeclinedHint:
+      "Invalid or declined cards are rejected by Stripe. No order is placed until payment is confirmed.",
+    continueToStripe: "Continue to secure payment",
+    redirectingToStripe: "Redirecting to Stripe…",
     cardDetailsPlaceholder: "Card details (placeholder - not processed)",
     cardholderName: "Cardholder name",
     cardholderNamePlaceholder: "John Doe",

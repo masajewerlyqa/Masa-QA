@@ -95,14 +95,16 @@ export async function resolveCheckoutItemsFromDatabase(
   return { ok: true, lines };
 }
 
-/** Compare Stripe charged subtotal (cents) to DB-backed cart subtotal. */
+/** Compare Stripe charged subtotal (cents) to DB-backed cart subtotal (minus optional discount). */
 export function verifyStripeAmountMatchesCart(
   session: { amount_subtotal: number | null; amount_total: number | null },
-  lines: ResolvedCheckoutLine[]
+  lines: ResolvedCheckoutLine[],
+  discountCents = 0
 ): PaymentVerificationResult {
-  const expectedSubtotalCents = lines.reduce(
-    (sum, line) => sum + Math.round(line.unitPriceUsd * 100) * line.quantity,
-    0
+  const expectedSubtotalCents = Math.max(
+    0,
+    lines.reduce((sum, line) => sum + Math.round(line.unitPriceUsd * 100) * line.quantity, 0) -
+      discountCents
   );
 
   if (session.amount_subtotal != null) {
