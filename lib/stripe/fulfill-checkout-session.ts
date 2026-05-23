@@ -253,7 +253,6 @@ export async function fulfillCheckoutSession(sessionId: string): Promise<Fulfill
       shipping_cost,
       tax,
       total,
-      shipping_address: deliveryFields.shipping_address,
       payment_method: "card",
       promo_code: appliedPromoCode,
       discount_amount: discountAmount,
