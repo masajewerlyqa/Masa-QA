@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { getCurrentUserWithProfile } from "@/lib/auth";
+import { getUserFromRequest } from "@/lib/auth/request-user";
 import { handleCreateCheckoutSession } from "@/lib/stripe/create-checkout-session";
 import { stripeCheckoutBodySchema } from "@/lib/validations/stripe-checkout";
+import { checkRateLimit, getRateLimitKey, rateLimitHeaders } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -9,9 +10,17 @@ export const runtime = "nodejs";
  * POST /api/create-checkout-session — authenticated; prices validated server-side from DB.
  */
 export async function POST(req: Request) {
-  const { user } = await getCurrentUserWithProfile();
+  const user = await getUserFromRequest(req);
   if (!user) {
     return NextResponse.json({ ok: false, error: "Sign in to checkout." }, { status: 401 });
+  }
+
+  const rl = checkRateLimit(`checkout:${getRateLimitKey(req)}`, { limit: 10, windowSeconds: 60 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "Too many requests. Please try again later." },
+      { status: 429, headers: rateLimitHeaders(rl) }
+    );
   }
 
   let json: unknown;

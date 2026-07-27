@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://masajewelry.com/sitemap.xml
+
+Disallow: /admin
+Disallow: /seller
+Disallow: /api/
+Disallow: /auth/

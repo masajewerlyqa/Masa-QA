@@ -88,7 +88,9 @@ export async function handleCreateCheckoutSession(body: StripeCheckoutBody) {
     sessionMetadata.promo_id = appliedPromoId;
   }
 
-  const { successUrl, cancelUrl } = stripeCheckoutRedirectUrls();
+  const { successUrl, cancelUrl } = stripeCheckoutRedirectUrls({
+    clientPlatform: body.clientPlatform,
+  });
 
   try {
     const stripe = getStripe();

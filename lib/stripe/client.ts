@@ -9,6 +9,11 @@ export function getStripe(): Stripe {
   if (!key) {
     throw new Error("STRIPE_SECRET_KEY is not configured.");
   }
+  if (env.isProduction && key.startsWith("sk_test_")) {
+    throw new Error(
+      "STRIPE_SECRET_KEY is a test key (sk_test_...). Set sk_live_... in Vercel production env for real payments."
+    );
+  }
   if (!stripeClient) {
     stripeClient = new Stripe(key);
   }

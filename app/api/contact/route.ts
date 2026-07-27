@@ -6,12 +6,20 @@ import { contactSupportNotificationHtml, contactUserAcknowledgmentHtml } from "@
 import { resolveEmailLanguage } from "@/lib/email/email-language";
 import { brandName } from "@/lib/brand";
 import { contactFormBodySchema } from "@/lib/validations/contact";
+import { checkRateLimit, getRateLimitKey, rateLimitHeaders } from "@/lib/rate-limit";
 
 /**
  * POST /api/contact — (1) From support@ → internal inbox (Reply-To = visitor),
  * (2) From noreply@ → acknowledgment to visitor only. Never use visitor as From.
  */
 export async function POST(req: Request) {
+  const rl = checkRateLimit(`contact:${getRateLimitKey(req)}`, { limit: 5, windowSeconds: 60 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "Too many requests. Please try again later." },
+      { status: 429, headers: rateLimitHeaders(rl) }
+    );
+  }
   let json: unknown;
   try {
     json = await req.json();

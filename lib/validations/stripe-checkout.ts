@@ -16,6 +16,8 @@ export const stripeCheckoutBodySchema = z.object({
   customerId: z.string().uuid().optional(),
   shipping: stripeCheckoutShippingSchema,
   promoCode: z.string().trim().max(64).optional(),
+  /** When `mobile`, Stripe redirects back into the native app (`masa://` deep link). */
+  clientPlatform: z.enum(["web", "mobile"]).optional(),
 });
 
 export type StripeCheckoutBody = z.infer<typeof stripeCheckoutBodySchema>;

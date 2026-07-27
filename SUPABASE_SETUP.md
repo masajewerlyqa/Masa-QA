@@ -10,10 +10,8 @@ This project uses Supabase for auth, database, and storage. This doc describes t
 | `lib/supabase/server.ts` | **Server client** – use in Server Components, Route Handlers, and Server Actions. Cookie-based session for current user. |
 | `lib/supabase/service.ts` | **Service-role client** – server-only. Use when you need to bypass RLS (admin, cron, server actions). Never expose to the browser. |
 | `lib/supabase/middleware.ts` | **Session refresh** – used by Next.js middleware to refresh auth tokens so server code sees an up-to-date session. |
-| `lib/supabase/test-connection.ts` | **Connection test** – server-only helper to check that Supabase is reachable. |
-| `lib/supabase/index.ts` | Re-exports all clients and the test helper. |
+| `lib/supabase/index.ts` | Re-exports the browser client. |
 | `middleware.ts` | Next.js middleware that runs `updateSession()` on matching routes. |
-| `app/api/supabase-test/route.ts` | **GET /api/supabase-test** – API route that runs the connection test and returns JSON. |
 
 ## Environment variables
 
@@ -88,13 +86,14 @@ export async function adminAction() {
 }
 ```
 
-### Connection test in code
+### Connection check in code
 
 ```ts
-import { testSupabaseConnection } from "@/lib/supabase";
+import { createServiceClient } from "@/lib/supabase/service";
 
-const result = await testSupabaseConnection();
-// result.ok, result.message, result.error
+const supabase = createServiceClient();
+const { error } = await supabase.auth.getSession();
+// error === null means Supabase is reachable
 ```
 
 ## How to verify the project is connected to Supabase
@@ -102,20 +101,8 @@ const result = await testSupabaseConnection();
 1. **Env**  
    Ensure `.env.local` exists and contains `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
 
-2. **API route**  
-   Start the app (`npm run dev`) and open:
-   - **http://localhost:3000/api/supabase-test**
-
-   A successful response looks like:
-   ```json
-   { "ok": true, "message": "Successfully connected to Supabase", "timestamp": "..." }
-   ```
-   If `ok` is `false`, check `message` and `error` and fix env or network.
-
-3. **Optional: programmatic test**  
-   In any server context (e.g. Server Component or API route), call `testSupabaseConnection()` and assert `result.ok === true`.
-
-No UI was changed; only new Supabase utilities and the test route were added.
+2. **Programmatic check**  
+   In any server context (e.g. Server Component or API route), use the service client to call `supabase.auth.getSession()` and confirm no error is returned.
 
 ---
 

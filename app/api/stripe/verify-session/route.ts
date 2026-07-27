@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUserWithProfile } from "@/lib/auth";
+import { getUserFromRequest } from "@/lib/auth/request-user";
 import { verifyCheckoutSessionForClient } from "@/lib/stripe/session-verification";
 
 export const runtime = "nodejs";
@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: "Missing session_id." }, { status: 400 });
   }
 
-  const { user } = await getCurrentUserWithProfile();
+  const user = await getUserFromRequest(req);
   const result = await verifyCheckoutSessionForClient(sessionId, user?.id ?? null);
 
   return NextResponse.json({

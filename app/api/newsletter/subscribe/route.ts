@@ -6,8 +6,16 @@ import { resolveEmailLanguage } from "@/lib/email/email-language";
 import { createServiceClient } from "@/lib/supabase/service";
 import { brandName } from "@/lib/brand";
 import { newsletterSubscribeBodySchema } from "@/lib/validations/newsletter";
+import { checkRateLimit, getRateLimitKey, rateLimitHeaders } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const rl = checkRateLimit(`newsletter:${getRateLimitKey(req)}`, { limit: 3, windowSeconds: 60 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "Too many requests. Please try again later." },
+      { status: 429, headers: rateLimitHeaders(rl) }
+    );
+  }
   let json: unknown;
   try {
     json = await req.json();

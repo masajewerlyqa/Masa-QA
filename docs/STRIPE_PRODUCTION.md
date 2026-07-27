@@ -1,46 +1,83 @@
-# Stripe production deployment
+# Stripe: test mode vs live (real) payments
 
-## Environment
+## Why you see “Test mode” on Stripe Checkout
 
-| Variable | Production |
-|----------|------------|
-| `STRIPE_SECRET_KEY` | `sk_live_...` from Stripe Dashboard |
-| `STRIPE_WEBHOOK_SECRET` | Signing secret for the live webhook endpoint |
-| `NEXT_PUBLIC_SITE_URL` | `https://masajewlery.com` (dev uses localhost) |
+Stripe shows **Test mode** when your server uses a **test secret key**:
 
-## Webhook (required)
+| Key prefix | Mode | Charges |
+|------------|------|---------|
+| `sk_test_...` | Test | Fake — use cards like `4242 4242 4242 4242` |
+| `sk_live_...` | Live | **Real money** — real cards only |
 
-**URL:** `https://masajewlery.com/api/webhooks/stripe`
+Session IDs confirm this: `cs_test_...` = test, `cs_live_...` = live.
 
-**Events:**
+Your code is correct. Switch **environment variables** on the host (Vercel), not the card fields on the checkout form.
 
-- `checkout.session.completed` — creates Supabase order with `status = paid`
-- `checkout.session.async_payment_failed` — logged; no order
-- `payment_intent.payment_failed` — logged; no order
+---
 
-Orders are **never** created from `/success` or client APIs. Only `checkout.session.completed` with **`payment_status === paid`** triggers fulfillment.
+## Enable real payments (production)
 
-The webhook verifies:
+### 1. Stripe Dashboard — activate live payments
 
-- Stripe signature (`STRIPE_WEBHOOK_SECRET`)
-- Event pre-check: `session.status === complete` and `session.payment_status === paid` (the event alone is not enough)
-- Re-fetch session + `PaymentIntent.status === succeeded` (required)
-- Idempotency via `orders.stripe_checkout_session_id`
-- DB product prices match Stripe `amount_subtotal`
-- Idempotency via `orders.stripe_checkout_session_id`
+1. [Stripe Dashboard](https://dashboard.stripe.com) → complete business verification if prompted.
+2. Toggle **Test mode** OFF (top right) to view **Live** data.
+3. **Developers → API keys** → copy **Secret key** (`sk_live_...`).  
+   Never commit this key to git.
 
-## Checkout flow
+### 2. Vercel — production environment variables
 
-1. Signed-in buyer calls `POST /api/create-checkout-session` (session required).
-2. Server loads prices from Supabase (client prices must match DB).
-3. Stripe Checkout redirect; success URL includes `?session_id={CHECKOUT_SESSION_ID}`.
-4. `/success` polls `GET /api/stripe/verify-session` until the webhook order exists.
-5. Failed cards: no order; user may land on `/payment/failed` if verification fails.
+Project → **Settings → Environment Variables** → **Production** only:
 
-## Pre-launch checklist
+| Variable | Value |
+|----------|--------|
+| `STRIPE_SECRET_KEY` | `sk_live_...` (not `sk_test_`) |
+| `STRIPE_WEBHOOK_SECRET` | Signing secret from a **live** webhook (below) |
+| `NEXT_PUBLIC_SITE_URL` | Your real site, e.g. `https://masajewelry.com` |
 
-- [ ] Run migration `045_stripe_orders.sql` on production Supabase
-- [ ] Live Stripe keys in Vercel/host env
-- [ ] Webhook endpoint live and returning 200
-- [ ] Test card payment end-to-end; confirm order in Supabase with `status = paid`
-- [ ] Test declined card; confirm **no** order row created
+Redeploy after saving.
+
+> Production builds **reject** `sk_test_...` and return an error so test keys are not used for live traffic by mistake.
+
+### 3. Live webhook (required for orders)
+
+In Stripe (**Live mode**, test toggle OFF):
+
+1. **Developers → Webhooks → Add endpoint**
+2. URL: `https://YOUR-DOMAIN.com/api/webhooks/stripe`  
+   (must match `NEXT_PUBLIC_SITE_URL` and be publicly reachable)
+3. Events: `checkout.session.completed`, `checkout.session.async_payment_failed`, `payment_intent.payment_failed`
+4. Copy **Signing secret** → `STRIPE_WEBHOOK_SECRET` in Vercel (Production)
+
+Use a **separate** webhook for test (`sk_test_` + test webhook secret) on Preview/local if needed.
+
+### 4. DNS / success URL
+
+After payment, Stripe redirects to:
+
+`{NEXT_PUBLIC_SITE_URL}/success?session_id=...`
+
+That domain must resolve (no `DNS_PROBE_FINISHED_NXDOMAIN`). Set `NEXT_PUBLIC_SITE_URL` to the domain that actually works in the browser.
+
+---
+
+## Local development (keep using test)
+
+In `.env.local`:
+
+```env
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...   # from Stripe CLI or test webhook
+NEXT_PUBLIC_SITE_URL=http://localhost:3001
+```
+
+Use [Stripe test cards](https://docs.stripe.com/testing). Do **not** use live keys locally unless you intend to charge real cards.
+
+---
+
+## Quick checklist
+
+- [ ] Vercel Production has `sk_live_...` and live `STRIPE_WEBHOOK_SECRET`
+- [ ] Live webhook endpoint returns 200 in Stripe Dashboard
+- [ ] `NEXT_PUBLIC_SITE_URL` is your real HTTPS domain
+- [ ] Supabase migration `045_stripe_orders.sql` applied on production
+- [ ] Small real charge test (then refund in Stripe if needed)

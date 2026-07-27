@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 
 /**
  * POST /api/webhooks/stripe
- * Production URL: https://masajewlery.com/api/webhooks/stripe
+ * Production URL: https://masajewelry.com/api/webhooks/stripe
  *
  * Paid orders are created ONLY here after signature verification.
  * Never from /success or any other client/redirect route.

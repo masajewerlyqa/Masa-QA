@@ -298,13 +298,7 @@ export async function fulfillCheckoutSession(sessionId: string): Promise<Fulfill
   });
 
   if (appliedPromoId) {
-    const { data: promoRow } = await service
-      .from("promo_codes")
-      .select("used_count")
-      .eq("id", appliedPromoId)
-      .single();
-    const nextCount = ((promoRow as { used_count: number } | null)?.used_count ?? 0) + 1;
-    await service.from("promo_codes").update({ used_count: nextCount }).eq("id", appliedPromoId);
+    await service.rpc("increment_promo_used_count", { promo_id: appliedPromoId });
   }
 
   const storeIds = Array.from(new Set(lineProducts.map((i) => i.storeId)));
