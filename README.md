@@ -50,3 +50,6 @@ npm start
 ## Next steps
 
 See **BACKEND_INTEGRATION.md** for what is implemented with placeholder data and what still needs backend/API integration (auth, products, cart, orders, admin/seller APIs).
+ 
+ VERCEL TEST DEPLOYMENT
+ 
