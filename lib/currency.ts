@@ -9,6 +9,9 @@ export type Currency = (typeof CURRENCIES)[number];
 /** Official display conversion for the whole app (UI, emails, seller tools). DB stores USD. */
 export const USD_TO_QAR = 3.64;
 
+/** Canonical free-delivery threshold: 1,000 QAR, stored in USD since all order math is USD-based. */
+export const FREE_DELIVERY_THRESHOLD_USD = 1000 / USD_TO_QAR;
+
 export function convertPrice(priceUSD: number, toCurrency: Currency): number {
   if (toCurrency === "USD") return priceUSD;
   return Math.round(priceUSD * USD_TO_QAR * 100) / 100;
@@ -26,13 +29,10 @@ export type FormatPriceOptions = {
   language?: "en" | "ar";
 };
 
-/** Format: USD "$ 120.00"; QAR uses "QAR" in English and "ر.ق" in Arabic. */
+/** Format: USD "$ 120"; QAR uses "QAR" in English and "ر.ق" in Arabic. Rounded to whole units — no cents/fils. */
 export function formatPrice(priceUSD: number, currency: Currency, options?: FormatPriceOptions): string {
   const amount = currency === "USD" ? priceUSD : convertPrice(priceUSD, "QAR");
-  const formatted = amount.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  const formatted = Math.round(amount).toLocaleString("en-US");
   if (currency === "USD") return `$ ${formatted}`;
   const lang = options?.language ?? "en";
   const qarPrefix = lang === "ar" ? "ر.ق" : "QAR";

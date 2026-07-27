@@ -31,6 +31,9 @@ type SortKey =
 
 export function DiscoverClient({
   initialProducts,
+  totalCount,
+  pageSize,
+  currentPage = 1,
   wishlistIds = [],
   search = "",
   filters,
@@ -38,6 +41,10 @@ export function DiscoverClient({
   selectedFilters,
 }: {
   initialProducts: Product[];
+  /** Total products matching current filters, across all pages — drives pagination. */
+  totalCount?: number;
+  pageSize?: number;
+  currentPage?: number;
   wishlistIds?: string[];
   search?: string;
   filters: MarketplaceFilters;
@@ -83,6 +90,7 @@ export function DiscoverClient({
       const trimmed = q.trim();
       if (trimmed === "") params.delete("q");
       else params.set("q", trimmed);
+      params.delete("page");
       const qs = params.toString();
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     },
@@ -97,6 +105,7 @@ export function DiscoverClient({
     setQuery("");
     const params = new URLSearchParams(searchParams.toString());
     params.delete("q");
+    params.delete("page");
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
@@ -152,6 +161,7 @@ export function DiscoverClient({
     } else {
       params.set(name, value);
     }
+    if (name !== "page") params.delete("page");
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
@@ -315,21 +325,47 @@ export function DiscoverClient({
             </div>
           )}
 
-          {products.length > 0 && (
-            <div className="mt-8 md:mt-12 flex justify-center gap-2">
-              <Button variant="outline" size="sm">
-                {t("marketplace.previous")}
-              </Button>
-              <Button size="sm" className="bg-primary">
-                1
-              </Button>
-              <Button variant="outline" size="sm">
-                2
-              </Button>
-              <Button variant="outline" size="sm">
-                {t("marketplace.next")}
-              </Button>
-            </div>
+          {products.length > 0 && pageSize && totalCount != null && totalCount > pageSize && (
+            (() => {
+              const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+              const maxButtons = 5;
+              let start = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+              const end = Math.min(totalPages, start + maxButtons - 1);
+              start = Math.max(1, end - maxButtons + 1);
+              const pageNumbers = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+
+              return (
+                <div className="mt-8 md:mt-12 flex justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage <= 1}
+                    onClick={() => updateSearchParam("page", String(currentPage - 1))}
+                  >
+                    {t("marketplace.previous")}
+                  </Button>
+                  {pageNumbers.map((n) => (
+                    <Button
+                      key={n}
+                      size="sm"
+                      variant={n === currentPage ? "default" : "outline"}
+                      className={n === currentPage ? "bg-primary" : undefined}
+                      onClick={() => updateSearchParam("page", String(n))}
+                    >
+                      {n}
+                    </Button>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => updateSearchParam("page", String(currentPage + 1))}
+                  >
+                    {t("marketplace.next")}
+                  </Button>
+                </div>
+              );
+            })()
           )}
         </div>
       </div>

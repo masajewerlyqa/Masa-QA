@@ -132,13 +132,9 @@ export function AccountSettingsForm({ profile, email, phonePolicy }: Props) {
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <Label htmlFor="phone">{t("common.phone")}</Label>
-                {hasPhone && (
-                  <span
-                    className={`text-xs font-sans px-2 py-0.5 rounded ${
-                      phoneVerified ? "bg-green-50 text-green-800 border border-green-200" : "bg-amber-50 text-amber-900 border border-amber-200"
-                    }`}
-                  >
-                    {phoneVerified ? t("common.verified") : t("common.notVerifiedYet")}
+                {hasPhone && phoneVerified && (
+                  <span className="text-xs font-sans px-2 py-0.5 rounded bg-green-50 text-green-800 border border-green-200">
+                    {t("common.verified")}
                   </span>
                 )}
               </div>

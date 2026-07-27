@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,9 +12,18 @@ import { SocialAuthButtons } from "./SocialAuthButtons";
 import { useI18n } from "@/components/useI18n";
 import { normalizeAuthError } from "@/lib/auth-error-messages";
 
-/** Single sign-in for buyers and sellers; `/api/auth/me` redirects by role after login. */
+function safeNextPath(raw: string | null): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+  return raw;
+}
+
+/** Single sign-in for buyers and sellers. Honors `?next=` (e.g. returning to a product after
+ * "sign in to add to cart"); falls back to `/api/auth/me`'s role-based redirect otherwise. */
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = safeNextPath(searchParams.get("next"));
   const { language, isArabic, t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,7 +56,7 @@ export function LoginForm() {
 
       const res = await fetch("/api/auth/me", { cache: "no-store" });
       const data = await res.json();
-      const redirectPath = data?.redirectPath ?? "/";
+      const redirectPath = nextPath ?? data?.redirectPath ?? "/";
       router.refresh();
       router.push(redirectPath);
     } catch (err) {
@@ -68,7 +77,7 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <SocialAuthButtons nextPath="/account" />
+        <SocialAuthButtons nextPath={nextPath ?? "/account"} />
         <div className="relative py-2">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-primary/10" />

@@ -36,23 +36,42 @@ function readStoredCurrency(): Currency {
   return "USD";
 }
 
-export function CurrencyProvider({ children }: { children: ReactNode }) {
+function persistCurrency(c: Currency) {
+  try {
+    localStorage.setItem(CURRENCY_STORAGE_KEY, c);
+    document.cookie = `${CURRENCY_STORAGE_KEY}=${c}; path=/; max-age=31536000; samesite=lax`;
+  } catch {
+    // ignore
+  }
+}
+
+export function CurrencyProvider({
+  children,
+  initialCurrency,
+}: {
+  children: ReactNode;
+  /** Read server-side from the currency cookie so first paint already matches the stored
+   * preference — avoids both a flash back to USD and a hydration mismatch. */
+  initialCurrency: Currency;
+}) {
   const { language } = useLanguage();
-  const [currency, setCurrencyState] = useState<Currency>("USD");
-  const [mounted, setMounted] = useState(false);
+  const [currency, setCurrencyState] = useState<Currency>(initialCurrency);
 
   useEffect(() => {
-    setCurrencyState(readStoredCurrency());
-    setMounted(true);
+    // Cookie may be missing/stale (e.g. cleared) while localStorage still has a preference —
+    // reconcile once after mount. No page-content depends on currency server-side, so no
+    // router.refresh() is needed here (unlike language).
+    const stored = readStoredCurrency();
+    if (stored !== currency) {
+      setCurrencyState(stored);
+      persistCurrency(stored);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setCurrency = useCallback((c: Currency) => {
     setCurrencyState(c);
-    try {
-      localStorage.setItem(CURRENCY_STORAGE_KEY, c);
-    } catch {
-      // ignore
-    }
+    persistCurrency(c);
   }, []);
 
   const convertPrice = useCallback(

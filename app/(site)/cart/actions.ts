@@ -11,7 +11,7 @@ export type CartActionResult = { ok: boolean; error?: string };
 
 export async function addToCart(productId: string, quantity: number = 1): Promise<CartActionResult> {
   const { user } = await getCurrentUserWithProfile();
-  if (!user) return { ok: false, error: "Sign in to add to cart" };
+  if (!user) return { ok: false, error: "UNAUTHENTICATED" };
   if (quantity < 1) return { ok: false, error: "Invalid quantity" };
 
   const product = await getPublicProductById(productId);

@@ -67,7 +67,7 @@
   }
 
   /*
-   * Tailwind `font-sans` is Cinzel (English UI). Arabic pages must keep Alilato for every
+   * Tailwind `font-sans` is Playfair Display (English UI). Arabic pages must keep Alilato for every
    * component that applies `font-sans` on children (cards, forms, tables, etc.).
    */
   html[lang="ar"] .font-sans {

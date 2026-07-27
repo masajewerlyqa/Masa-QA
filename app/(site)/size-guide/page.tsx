@@ -107,7 +107,7 @@ export default function SizeGuidePage() {
                     [9, "S", 59, 59.6],
                     [10, "U", 60.5, 62.2],
                   ].map(([us, uk, eu, circ]) => (
-                    <tr key={String(us)} className="border-b border-primary/5 last:border-0 hover:bg-masa-light/30 transition-colors">
+                    <tr key={String(us)} className="border-b border-primary/15 last:border-0 hover:bg-masa-light/30 transition-colors">
                       <td className="py-4 px-5">{us}</td>
                       <td className="py-4 px-5">{uk}</td>
                       <td className="py-4 px-5">{eu}</td>
@@ -149,9 +149,9 @@ export default function SizeGuidePage() {
                   </tr>
                 </thead>
                 <tbody className="text-masa-gray">
-                  <tr className="border-b border-primary/5 hover:bg-white/50 transition-colors"><td className="py-4 px-5">{isArabic ? "مشدود" : "Snug"}</td><td className="py-4 px-5">14 – 15</td><td className="py-4 px-5">{isArabic ? "معصم صغير" : "Small wrist, bangle-style"}</td></tr>
-                  <tr className="border-b border-primary/5 hover:bg-white/50 transition-colors"><td className="py-4 px-5">{isArabic ? "قياسي" : "Standard"}</td><td className="py-4 px-5">16 – 18</td><td className="py-4 px-5">{isArabic ? "معظم البالغين" : "Most adults"}</td></tr>
-                  <tr className="border-b border-primary/5 last:border-0 hover:bg-white/50 transition-colors"><td className="py-4 px-5">{isArabic ? "واسع" : "Loose"}</td><td className="py-4 px-5">19 – 21</td><td className="py-4 px-5">{isArabic ? "مظهر طبقات / معصم أكبر" : "Layered look, larger wrist"}</td></tr>
+                  <tr className="border-b border-primary/15 hover:bg-white/50 transition-colors"><td className="py-4 px-5">{isArabic ? "مشدود" : "Snug"}</td><td className="py-4 px-5">14 – 15</td><td className="py-4 px-5">{isArabic ? "معصم صغير" : "Small wrist, bangle-style"}</td></tr>
+                  <tr className="border-b border-primary/15 hover:bg-white/50 transition-colors"><td className="py-4 px-5">{isArabic ? "قياسي" : "Standard"}</td><td className="py-4 px-5">16 – 18</td><td className="py-4 px-5">{isArabic ? "معظم البالغين" : "Most adults"}</td></tr>
+                  <tr className="border-b border-primary/15 last:border-0 hover:bg-white/50 transition-colors"><td className="py-4 px-5">{isArabic ? "واسع" : "Loose"}</td><td className="py-4 px-5">19 – 21</td><td className="py-4 px-5">{isArabic ? "مظهر طبقات / معصم أكبر" : "Layered look, larger wrist"}</td></tr>
                 </tbody>
               </table>
             </div>
@@ -187,10 +187,10 @@ export default function SizeGuidePage() {
                   </tr>
                 </thead>
                 <tbody className="text-masa-gray">
-                  <tr className="border-b border-primary/5 hover:bg-masa-light/30 transition-colors"><td className="py-4 px-5">14 – 16</td><td className="py-4 px-5">35 – 40</td><td className="py-4 px-5">{isArabic ? "تشوكر / طوق" : "Choker, collar"}</td></tr>
-                  <tr className="border-b border-primary/5 hover:bg-masa-light/30 transition-colors"><td className="py-4 px-5">18 – 20</td><td className="py-4 px-5">45 – 50</td><td className="py-4 px-5">{isArabic ? "برنسس / ماتينيه" : "Princess, matinee"}</td></tr>
-                  <tr className="border-b border-primary/5 hover:bg-masa-light/30 transition-colors"><td className="py-4 px-5">22 – 24</td><td className="py-4 px-5">55 – 60</td><td className="py-4 px-5">Opera</td></tr>
-                  <tr className="border-b border-primary/5 last:border-0 hover:bg-masa-light/30 transition-colors"><td className="py-4 px-5">28 – 36</td><td className="py-4 px-5">70 – 90</td><td className="py-4 px-5">{isArabic ? "طويل / حبل" : "Rope, long"}</td></tr>
+                  <tr className="border-b border-primary/15 hover:bg-masa-light/30 transition-colors"><td className="py-4 px-5">14 – 16</td><td className="py-4 px-5">35 – 40</td><td className="py-4 px-5">{isArabic ? "تشوكر / طوق" : "Choker, collar"}</td></tr>
+                  <tr className="border-b border-primary/15 hover:bg-masa-light/30 transition-colors"><td className="py-4 px-5">18 – 20</td><td className="py-4 px-5">45 – 50</td><td className="py-4 px-5">{isArabic ? "برنسس / ماتينيه" : "Princess, matinee"}</td></tr>
+                  <tr className="border-b border-primary/15 hover:bg-masa-light/30 transition-colors"><td className="py-4 px-5">22 – 24</td><td className="py-4 px-5">55 – 60</td><td className="py-4 px-5">Opera</td></tr>
+                  <tr className="border-b border-primary/15 last:border-0 hover:bg-masa-light/30 transition-colors"><td className="py-4 px-5">28 – 36</td><td className="py-4 px-5">70 – 90</td><td className="py-4 px-5">{isArabic ? "طويل / حبل" : "Rope, long"}</td></tr>
                 </tbody>
               </table>
             </div>

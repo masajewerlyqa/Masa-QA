@@ -11,6 +11,7 @@ import { FormattedPrice } from "@/components/FormattedPrice";
 import { useI18n } from "@/components/useI18n";
 import { applyPromoCode } from "@/app/(site)/checkout/actions";
 import { CHECKOUT_PROMO_CODE_STORAGE_KEY } from "@/lib/checkout-promo-storage";
+import { FREE_DELIVERY_THRESHOLD_USD } from "@/lib/currency";
 import type { AppliedPromo } from "@/app/(site)/checkout/CheckoutForm";
 
 type CartOrderSummaryProps = {
@@ -27,14 +28,17 @@ export function CartOrderSummary({
   checkoutBlockReason = null,
 }: CartOrderSummaryProps) {
   const { t, isArabic } = useI18n();
-  const shippingUsd = 0;
   const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
   const [promoInput, setPromoInput] = useState("");
   const [promoError, setPromoError] = useState<string | null>(null);
   const [applyPending, setApplyPending] = useState(false);
 
   const discountAmount = appliedPromo?.discountAmount ?? 0;
+  const qualifiesForFreeDelivery = subtotalUsd >= FREE_DELIVERY_THRESHOLD_USD;
+  const shippingUsd = 0;
   const totalUsd = Math.max(0, subtotalUsd - discountAmount + shippingUsd);
+
+  if (!hasItems) return null;
 
   async function handleApply() {
     const code = promoInput.trim();
@@ -107,7 +111,9 @@ export function CartOrderSummary({
           )}
           <div className="flex justify-between">
             <span className="text-masa-gray">{t("checkout.shipping")}</span>
-            <span className="text-green-600">{t("checkout.free")}</span>
+            <span className={qualifiesForFreeDelivery ? "text-green-600" : "text-masa-gray"}>
+              {qualifiesForFreeDelivery ? t("checkout.free") : t("checkout.calculatedAtCheckout")}
+            </span>
           </div>
           <div className="pt-4 border-t border-primary/10">
             <div className="flex justify-between">

@@ -86,6 +86,8 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
 
   const { user } = await getCurrentUserWithProfile();
   const DISCOVER_PAGE_SIZE = 24;
+  const rawPage = parseFinitePrice(params.page);
+  const page = rawPage && rawPage >= 1 ? Math.floor(rawPage) : 1;
   const priceBoundsInput = {
     categories: categoriesForQuery,
     brands: brandIds.length > 0 ? brandIds : undefined,
@@ -95,7 +97,7 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
     onSale: onSale || undefined,
   };
 
-  const [filters, priceExtent, initialProducts, wishlistIds] = await Promise.all([
+  const [filters, priceExtent, productsResult, wishlistIds] = await Promise.all([
     getMarketplaceFilters(),
     getMarketplacePriceBoundsForFilters(priceBoundsInput),
     getPublicProductsForMarketplace({
@@ -107,6 +109,7 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
       minPrice,
       maxPrice,
       limit: DISCOVER_PAGE_SIZE,
+      offset: (page - 1) * DISCOVER_PAGE_SIZE,
       onSale: onSale || undefined,
       sort: validSort !== "default" ? validSort : undefined,
     }),
@@ -115,7 +118,10 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
 
   return (
     <DiscoverClient
-      initialProducts={initialProducts}
+      initialProducts={productsResult.products}
+      totalCount={productsResult.totalCount}
+      pageSize={DISCOVER_PAGE_SIZE}
+      currentPage={page}
       wishlistIds={wishlistIds}
       search={search}
       filters={filters}

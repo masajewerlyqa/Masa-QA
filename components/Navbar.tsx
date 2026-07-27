@@ -151,9 +151,39 @@ export function Navbar({ user, profile, wishlistCount = 0, cartCount = 0, notifi
             <Link href="/about" className="text-masa-dark hover:text-primary transition-colors">
                 {t("navbar.about")}
               </Link>
-              <Link href="/discover" className="text-masa-dark hover:text-primary transition-colors">
-                {t("navbar.marketplace")}
-              </Link>
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger className="flex items-center gap-1 text-masa-dark hover:text-primary transition-colors focus:outline-none">
+                  {t("navbar.marketplace")}
+                  <ChevronDown className="w-4 h-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="min-w-[180px] font-sans">
+                  <DropdownMenuItem asChild>
+                    <Link href="/discover" className="cursor-pointer">
+                      {t("footer.shopLinks.allJewelry")}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/discover?category=Ring" className="cursor-pointer">
+                      {t("footer.shopLinks.rings")}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/discover?category=Necklace" className="cursor-pointer">
+                      {t("footer.shopLinks.necklaces")}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/discover?category=Earrings" className="cursor-pointer">
+                      {t("footer.shopLinks.earrings")}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/discover?category=Bracelet" className="cursor-pointer">
+                      {t("footer.shopLinks.bracelets")}
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Link href="/market-prices" className="text-masa-dark hover:text-primary transition-colors">
                 {t("navbar.marketPrices")}
               </Link>

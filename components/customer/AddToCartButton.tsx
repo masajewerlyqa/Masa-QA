@@ -2,7 +2,7 @@
 
 import type { MouseEvent } from "react";
 import { useState, useTransition, type SyntheticEvent } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { addToCart } from "@/app/(site)/cart/actions";
@@ -29,6 +29,7 @@ export function AddToCartButton({
   const [isPending, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const { isArabic, t } = useI18n();
   const inStock = stockQuantity === undefined ? true : stockQuantity > 0;
 
@@ -44,7 +45,9 @@ export function AddToCartButton({
     startTransition(async () => {
       const result = await addToCart(productId, quantity);
       if (result.ok) router.refresh();
-      else if (result.error === "STORE_HOURS_NOT_SET") setErr(t("storefront.storeHoursNotSet"));
+      else if (result.error === "UNAUTHENTICATED") {
+        router.push(`/login?next=${encodeURIComponent(pathname)}`);
+      } else if (result.error === "STORE_HOURS_NOT_SET") setErr(t("storefront.storeHoursNotSet"));
       else if (result.error === "STORE_CLOSED") setErr(t("storefront.storeClosed"));
       else if (result.error) setErr(result.error);
     });

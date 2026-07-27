@@ -93,4 +93,6 @@ export type AdvisorResponse = {
   products: ProductRecommendation[];
   stores: StoreRecommendation[];
   summary: string;
+  /** True when no product cleared the match-score bar and these are best-available fallbacks. */
+  isFallback?: boolean;
 };

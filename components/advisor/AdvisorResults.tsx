@@ -50,13 +50,21 @@ export function AdvisorResults({
       {/* Products Grid */}
       {products.length > 0 ? (
         <div>
-          <h3 className="font-luxury text-xl mb-4">{isArabic ? "القطع الموصى بها" : "Recommended Pieces"}</h3>
+          <h3 className="font-luxury text-xl mb-4">
+            {response.isFallback
+              ? isArabic
+                ? "أقرب القطع المتوفرة"
+                : "Closest Available Pieces"
+              : isArabic
+                ? "القطع الموصى بها"
+                : "Recommended Pieces"}
+          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products.map((product, index) => {
               const rec = recommendationMap.get(product.id);
               return (
                 <div key={product.id} className="relative">
-                  {index === 0 && (
+                  {index === 0 && !response.isFallback && (
                     <Badge className="absolute -top-2 -left-2 z-10 bg-primary text-white border-0">
                       {isArabic ? "أفضل تطابق" : "Best Match"}
                     </Badge>

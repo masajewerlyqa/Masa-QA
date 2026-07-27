@@ -65,7 +65,7 @@ const SOCIAL_LINKS: {
     labelAr: "ماسا على إكس",
   },
   {
-    href: "https://www.facebook.com/profile.php?id=61577488271138&mibextid=wwXIfr&rdid=ImptgqBRG5IRn98W&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1AvjkUhwt1%2F%3Fmibextid%3DwwXIfr#",
+    href: "https://www.facebook.com/profile.php?id=61577488271138",
     Icon: Facebook,
     labelEn: "MASA on Facebook",
     labelAr: "ماسا على فيسبوك",

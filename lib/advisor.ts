@@ -8,6 +8,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import type { Language } from "@/lib/language";
 import type { Product } from "@/lib/types";
 import {
   type AdvisorPreferences,
@@ -236,8 +237,11 @@ function getOccasionConfig(occasion: string): OccasionConfig | null {
 
 function generateSummary(
   preferences: AdvisorPreferences,
-  matchCount: number
+  matchCount: number,
+  language: Language = "en",
+  isFallback = false
 ): string {
+  const isArabic = language === "ar";
   const occasion =
     preferences.occasion === "any"
       ? "general"
@@ -250,7 +254,7 @@ function generateSummary(
   const cats = preferences.categories ?? [];
   const typePhrase =
     cats.length === 0
-      ? "jewelry"
+      ? (isArabic ? "المجوهرات" : "jewelry")
       : `${cats.join(", ").toLowerCase()}${cats.length > 1 ? " pieces" : ""}`;
 
   if (matchCount === 0) {
@@ -260,7 +264,14 @@ function generateSummary(
         : `${String(occasion).toLowerCase()} jewelry`;
     const budgetSuffix =
       preferences.budget === "any" ? "" : ` in the ${String(budget)} range`;
-    return `We couldn't find close matches for your ${occ} preferences (${typePhrase})${budgetSuffix}. Try adjusting your choices or explore our full collection.`;
+    if (isArabic) {
+      return isFallback
+        ? `لم نجد تطابقًا دقيقًا لتفضيلاتك (${typePhrase})${preferences.budget === "any" ? "" : ` ضمن نطاق ${String(budget)}`}، لكن إليك بعض القطع الأقرب إلى ذوقك من مجموعتنا.`
+        : `لم نتمكن من إيجاد تطابق قريب لتفضيلاتك (${typePhrase})${preferences.budget === "any" ? "" : ` ضمن نطاق ${String(budget)}`}. جرّب تعديل اختياراتك أو تصفح مجموعتنا الكاملة.`;
+    }
+    return isFallback
+      ? `We couldn't find an exact match for your ${occ} preferences (${typePhrase})${budgetSuffix}, but here are some of our closest pieces.`
+      : `We couldn't find close matches for your ${occ} preferences (${typePhrase})${budgetSuffix}. Try adjusting your choices or explore our full collection.`;
   }
 
   const occPhrase =
@@ -269,6 +280,11 @@ function generateSummary(
     preferences.budget === "any"
       ? `, across a flexible budget`
       : ` in the ${String(budget)} range`;
+  if (isArabic) {
+    const budgetClauseAr =
+      preferences.budget === "any" ? "" : `، ضمن نطاق ${String(budget)}`;
+    return `بناءً على تفضيلاتك لـ ${occPhrase} (${typePhrase}) بأسلوب ${String(style).toLowerCase()}${budgetClauseAr}، وجدنا ${matchCount} ${matchCount > 1 ? "توصية" : "توصية"} قد تكون مثالية لك.`;
+  }
   return `Based on your preferences for ${occPhrase} (${typePhrase}) with a ${String(style).toLowerCase()} aesthetic${budgetClause}, we found ${matchCount} recommendation${matchCount > 1 ? "s" : ""} that may be perfect for you.`;
 }
 
@@ -277,7 +293,8 @@ function generateSummary(
  * Currently rule-based; can be upgraded to use LLM for smarter matching.
  */
 export async function getRecommendations(
-  preferences: AdvisorPreferences
+  preferences: AdvisorPreferences,
+  language: Language = "en"
 ): Promise<{ response: AdvisorResponse; products: Product[] }> {
   const supabase = await createClient();
 
@@ -321,14 +338,18 @@ export async function getRecommendations(
 
   const allProducts = (data ?? []).map(mapProductRow);
 
-  const scoredProducts = allProducts
+  const scoredAll = allProducts
     .map((product) => {
       const { score, reasons } = scoreProduct(product, preferences);
       return { product, score, reasons };
     })
-    .filter((item) => item.score >= 20)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 8);
+    .sort((a, b) => b.score - a.score);
+
+  const strongMatches = scoredAll.filter((item) => item.score >= 20).slice(0, 8);
+  // No strong match: fall back to the best-available products instead of a dead end, so the
+  // advisor always suggests something rather than leaving the user with nothing.
+  const scoredProducts = strongMatches.length > 0 ? strongMatches : scoredAll.slice(0, 4);
+  const isFallback = strongMatches.length === 0 && scoredProducts.length > 0;
 
   const recommendations: ProductRecommendation[] = scoredProducts.map((item) => ({
     productId: item.product.id,
@@ -360,13 +381,14 @@ export async function getRecommendations(
       matchReason: `${info.count} matching products in your preferences`,
     }));
 
-  const summary = generateSummary(preferences, recommendations.length);
+  const summary = generateSummary(preferences, recommendations.length, language, isFallback);
 
   return {
     response: {
       products: recommendations,
       stores: storeRecommendations,
       summary,
+      isFallback,
     },
     products: scoredProducts.map((item) => item.product),
   };

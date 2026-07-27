@@ -77,9 +77,13 @@ function buildHistories(
   };
 }
 
-// Fallback baseline prices (QAR) when API is not used
-const GOLD_24K_BASE = 272.5;
-const SILVER_BASE = 3.88;
+// Fallback baseline prices (QAR) when GOLDAPI_KEY is not set or the live call fails.
+// These are NOT live — they drift from the real market over time and must be refreshed
+// periodically by hand. Set GOLDAPI_KEY in the environment to use real, always-current prices
+// instead of relying on this fallback. (Last manually refreshed 2026-07-27, ~$4,089/oz gold,
+// ~$59/oz silver.)
+const GOLD_24K_BASE = 478.5;
+const SILVER_BASE = 6.93;
 const DIAMOND_1CT_BASE = 19200;
 
 /** Gold: 24K per gram. GoldAPI.io when GOLDAPI_KEY set; else mock. Scraper only if GOLD_PRICE_USE_SCRAPER=true. */
@@ -97,6 +101,9 @@ export async function getGoldPrice(): Promise<GoldMarketData> {
   }
 
   const api = await fetchGoldFromApi();
+  if (api == null) {
+    console.warn("[getGoldPrice] GOLDAPI_KEY missing or fetch failed — using stale fallback price.");
+  }
   const price24K =
     api != null
       ? usdPerOzToQarPerGram(api.pricePerOzUsd, USD_TO_QAR)
@@ -158,6 +165,9 @@ function buildGoldMarketDataFrom24kGram(
 /** Silver per gram. Uses GoldAPI.io when GOLDAPI_KEY is set. */
 export async function getSilverPrice(): Promise<SilverMarketData> {
   const api = await fetchSilverFromApi();
+  if (api == null) {
+    console.warn("[getSilverPrice] GOLDAPI_KEY missing or fetch failed — using stale fallback price.");
+  }
   const pricePerGram =
     api != null
       ? usdPerOzToQarPerGram(api.pricePerOzUsd, USD_TO_QAR)

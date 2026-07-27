@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Hero } from "@/components/Hero";
 import { SmartFeaturesSection } from "@/components/home/SmartFeaturesSection";
 import { TrustSection } from "@/components/home/TrustSection";
@@ -47,7 +48,24 @@ export function generateMetadata(): Metadata {
   };
 }
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams?: Record<string, string | string[] | undefined>;
+}) {
+  // Safety net: if Supabase's Site URL fallback drops the OAuth redirect at "/"
+  // (redirect URL not allow-listed in Supabase → Auth → URL Configuration),
+  // the `code` lands here unconsumed. Forward it to the real handler instead
+  // of leaving the user stuck on a signed-out home page.
+  const code = searchParams?.code;
+  if (typeof code === "string" && code) {
+    const qs = new URLSearchParams();
+    for (const [key, value] of Object.entries(searchParams ?? {})) {
+      if (typeof value === "string") qs.set(key, value);
+    }
+    redirect(`/auth/callback?${qs.toString()}`);
+  }
+
   const language = getServerLanguage();
   const { user } = await getCurrentUserWithProfile();
   const [products, filters, discountedProducts, wishlistIds] = await Promise.all([

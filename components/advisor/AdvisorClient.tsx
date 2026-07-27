@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { AdvisorForm } from "./AdvisorForm";
 import { AdvisorResults } from "./AdvisorResults";
 import { getRecommendations } from "@/lib/advisor";
+import { useLanguage } from "@/components/LanguageProvider";
 import type { AdvisorPreferences, AdvisorResponse, ProductRecommendation } from "@/lib/advisor-types";
 import type { Product } from "@/lib/types";
 
@@ -18,6 +19,7 @@ type AdvisorState = {
 };
 
 export function AdvisorClient({ wishlistIds }: AdvisorClientProps) {
+  const { language } = useLanguage();
   const [isPending, startTransition] = useTransition();
   const [state, setState] = useState<AdvisorState>({
     response: null,
@@ -27,7 +29,7 @@ export function AdvisorClient({ wishlistIds }: AdvisorClientProps) {
 
   const handleSubmit = async (preferences: AdvisorPreferences) => {
     startTransition(async () => {
-      const { response, products } = await getRecommendations(preferences);
+      const { response, products } = await getRecommendations(preferences, language);
       setState({
         response,
         products,

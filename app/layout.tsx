@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cinzel_Decorative, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { Playfair_Display, IBM_Plex_Sans_Arabic } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { CurrencyProvider } from "@/components/CurrencyProvider";
@@ -7,13 +7,13 @@ import { LanguageProvider } from "@/components/LanguageProvider";
 import { Toaster } from "@/components/ui/toaster";
 import { languageDirection } from "@/lib/language";
 import { getServerLanguage } from "@/lib/language-server";
+import { getServerCurrency } from "@/lib/currency-server";
 import { brandName } from "@/lib/brand";
 import { getBaseUrl, getLocalizedSeo } from "@/lib/seo";
 
-const cinzelDecorative = Cinzel_Decorative({
-  weight: "400",
+const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
-  variable: "--font-cinzel",
+  variable: "--font-playfair",
   display: "swap",
 });
 
@@ -78,18 +78,19 @@ export default function RootLayout({
 }>) {
   const language = getServerLanguage();
   const direction = languageDirection(language);
+  const currency = getServerCurrency();
   return (
     <html
       lang={language}
       dir={direction}
-      className={`${cinzelDecorative.variable} ${ibmPlexSansArabic.variable} ${alilato.variable}`}
+      className={`${playfairDisplay.variable} ${ibmPlexSansArabic.variable} ${alilato.variable}`}
       suppressHydrationWarning
     >
       <body
         className={`min-h-screen bg-white text-masa-dark antialiased ${language === "ar" ? "font-arabic" : "font-sans"}`}
       >
         <LanguageProvider initialLanguage={language}>
-          <CurrencyProvider>
+          <CurrencyProvider initialCurrency={currency}>
             {children}
             <Toaster />
           </CurrencyProvider>

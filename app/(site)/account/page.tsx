@@ -4,6 +4,7 @@ import { Heart, MapPin, Package, Settings } from "lucide-react";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getLastCustomerAddress } from "@/lib/customer";
 import { ResendVerificationEmail } from "@/components/account/ResendVerificationEmail";
+import { CopyAccountId } from "@/components/account/CopyAccountId";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getServerLanguage } from "@/lib/language-server";
@@ -140,7 +141,7 @@ export default async function AccountPage({
               </div>
               <div>
                 <p className="text-sm text-masa-gray">{t(language, "account.accountPage.accountId")}</p>
-                <p className="text-masa-dark text-xs sm:text-sm break-all">{user.id}</p>
+                <CopyAccountId id={user.id} />
               </div>
             </div>
           </CardContent>

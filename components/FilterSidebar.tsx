@@ -56,6 +56,7 @@ export function FilterSidebar({ filters, priceExtent: _priceExtent, selected }: 
   function updateParams(updater: (params: URLSearchParams) => void) {
     const params = new URLSearchParams(searchParams.toString());
     updater(params);
+    params.delete("page");
     router.push(`?${params.toString()}`, { scroll: false });
   }
 

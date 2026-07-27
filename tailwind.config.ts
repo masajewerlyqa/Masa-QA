@@ -5,6 +5,7 @@ const config: Config = {
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
@@ -25,12 +26,12 @@ const config: Config = {
         border: "rgba(83, 28, 36, 0.1)",
       },
       fontFamily: {
-        /** Cinzel Decorative site-wide for English (body uses font-sans). */
-        luxury: ["var(--font-cinzel)", "serif"],
+        /** Playfair Display site-wide for English (body uses font-sans). */
+        luxury: ["var(--font-playfair)", "serif"],
         /** Arabic copy site-wide: Alilato (see `app/fonts/Alilato-Regular.woff2`), then IBM Plex as glyph fallback. */
         arabic: ["var(--font-alilato)", "var(--font-ibm-plex-arabic)", "sans-serif"],
         "arabic-luxury": ["var(--font-alilato)", "var(--font-ibm-plex-arabic)", "sans-serif"],
-        sans: ["var(--font-cinzel)", "serif"],
+        sans: ["var(--font-playfair)", "serif"],
       },
       maxWidth: {
         content: "1440px",

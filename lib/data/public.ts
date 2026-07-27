@@ -423,9 +423,15 @@ function applyMarketplaceSort(products: Product[], sortOption: MarketplaceSortOp
 }
 
 /** Public products for marketplace with search and structured filters. */
+export type MarketplaceProductsResult = {
+  products: Product[];
+  /** Total products matching the filters (across all pages) — drives pagination. */
+  totalCount: number;
+};
+
 export async function getPublicProductsForMarketplace(
   filters: MarketplaceFilterInput
-): Promise<Product[]> {
+): Promise<MarketplaceProductsResult> {
   const searchNormalized = filters.search ? normalizeMarketplaceSearchInput(filters.search) : "";
   const filtersEffective: MarketplaceFilterInput = {
     ...filters,
@@ -439,9 +445,6 @@ export async function getPublicProductsForMarketplace(
   const offset = filtersEffective.offset ?? 0;
   const priceFilter = hasActivePriceFilter(filtersEffective.minPrice, filtersEffective.maxPrice);
   const sortOption = filtersEffective.sort ?? "default";
-  const needFullCatalogSort =
-    priceFilter &&
-    (sortOption === "lowest_price" || sortOption === "highest_discount" || sortOption === "ending_soon");
 
   if (priceFilter) {
     const collected: Product[] = [];
@@ -458,16 +461,14 @@ export async function getPublicProductsForMarketplace(
           collected.push(p);
         }
       }
-      if (!needFullCatalogSort && collected.length >= limit + offset) {
-        break;
-      }
       if (rows.length < MARKETPLACE_PAGE) {
         break;
       }
     }
     let products = applyMarketplaceSort(collected, sortOption);
+    const totalCount = products.length;
     products = products.slice(offset, offset + limit);
-    return products;
+    return { products, totalCount };
   }
 
   let rows = await fetchMarketplaceProductRowsPage(
@@ -482,7 +483,43 @@ export async function getPublicProductsForMarketplace(
   }
   let products = rows.map((r: ProductRow) => mapProductRow(r, language, marketSnapshot));
   products = applyMarketplaceSort(products, sortOption);
-  return products;
+  const totalCount = await countMarketplaceProducts(supabase, filtersEffective);
+  return { products, totalCount };
+}
+
+/** Exact count of products matching the same filters as `fetchMarketplaceProductRowsPage`, for pagination. */
+async function countMarketplaceProducts(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  filters: MarketplaceFilterInput
+): Promise<number> {
+  let query = supabase
+    .from("products")
+    .select("id, stores!inner(id)", { count: "exact", head: true })
+    .eq("stores.status", "approved");
+
+  if (filters.categories && filters.categories.length > 0) {
+    query = query.in("category", filters.categories);
+  }
+  if (filters.brands && filters.brands.length > 0) {
+    query = query.in("store_id", filters.brands);
+  }
+  if (filters.metals && filters.metals.length > 0) {
+    query = query.in("metal_type", filters.metals);
+  }
+  if (filters.karats && filters.karats.length > 0) {
+    query = query.in("gold_karat", filters.karats);
+  }
+  {
+    const orClause = await resolveMarketplaceSearchOrClause(supabase, filters.search);
+    if (orClause) query = query.or(orClause);
+  }
+  if (filters.onSale) {
+    query = query.eq("discount_active", true);
+  }
+
+  const { count, error } = await query;
+  if (error || count == null) return 0;
+  return count;
 }
 
 /** Single public product by id; null if not found or not visible (draft, deleted, or store inactive). */

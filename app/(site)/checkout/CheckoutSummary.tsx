@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/components/CurrencyProvider";
 import { useI18n } from "@/components/useI18n";
+import { FREE_DELIVERY_THRESHOLD_USD } from "@/lib/currency";
 
 export type CartSummaryItem = {
   productId: string;
@@ -25,6 +26,7 @@ export function CheckoutSummary({ cartItems, subtotal, appliedPromo }: CheckoutS
   const { t } = useI18n();
   const discountAmount = appliedPromo?.discountAmount ?? 0;
   const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
+  const qualifiesForFreeDelivery = subtotal >= FREE_DELIVERY_THRESHOLD_USD;
   const shipping = 0;
   const total = Math.round((subtotalAfterDiscount + shipping) * 100) / 100;
 
@@ -55,7 +57,11 @@ export function CheckoutSummary({ cartItems, subtotal, appliedPromo }: CheckoutS
           )}
           <div className="flex justify-between">
             <span className="text-masa-gray">{t("checkout.shipping", "Delivery")}</span>
-            <span className="text-green-600">{t("checkout.free", "Free")}</span>
+            <span className={qualifiesForFreeDelivery ? "text-green-600" : "text-masa-gray"}>
+              {qualifiesForFreeDelivery
+                ? t("checkout.free", "Free")
+                : t("checkout.calculatedAtCheckout", "Calculated at checkout")}
+            </span>
           </div>
           <div className="pt-4 border-t border-primary/10">
             <div className="flex justify-between text-xl">
