@@ -1,0 +1,9 @@
+export { HomeHeroSection } from './HomeHeroSection';
+export { HomeExclusiveOffersSection } from './HomeExclusiveOffersSection';
+export { HomeSmartFeaturesSection } from './HomeSmartFeaturesSection';
+export { HomeTrustSection } from './HomeTrustSection';
+export { HomeFeaturesStrip } from './HomeFeaturesStrip';
+export { HomeFeaturedProductsSection } from './HomeFeaturedProductsSection';
+export { HomeBrandsSection } from './HomeBrandsSection';
+export { HomeSellerCtaSection } from './HomeSellerCtaSection';
+export { HomeReviewsSection } from './HomeReviewsSection';
