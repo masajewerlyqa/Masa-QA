@@ -41,17 +41,17 @@ function wrap(inner: string, preheader: string | undefined, lang: Language): str
   const contentFont =
     lang === "ar"
       ? `font-family: ${ALILATO_EMAIL_STACK}`
-      : "font-family: 'Cinzel Decorative', Georgia, 'Times New Roman', serif";
+      : "font-family: 'Playfair Display', Georgia, 'Times New Roman', serif";
   const bodyFont =
     lang === "ar"
       ? `margin:0;background:${BRAND.light};font-family:${ALILATO_EMAIL_STACK};color:${BRAND.dark};`
-      : `margin:0;background:${BRAND.light};font-family:'Cinzel Decorative',Georgia,'Times New Roman',serif;color:${BRAND.dark};`;
+      : `margin:0;background:${BRAND.light};font-family:'Playfair Display',Georgia,'Times New Roman',serif;color:${BRAND.dark};`;
   const footerLine =
     lang === "ar" ? "سوق المجوهرات الفاخرة · قطر" : "Luxury jewelry marketplace · Qatar";
   const fontLink =
     lang === "ar"
       ? alilatoFace
-      : `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative&display=swap"/>`;
+      : `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap"/>`;
   return `<!DOCTYPE html>
 <html lang="${htmlLang}" dir="${dir}">
 <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/><title>${escapeHtmlText(b)}</title>${fontLink}</head>

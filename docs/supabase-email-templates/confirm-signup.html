@@ -1,0 +1,116 @@
+<!--
+  Supabase → Authentication → Email Templates → "Confirm signup"
+  Paste this into the template body (HTML editor). Subject line suggestion below.
+
+  Subject: Your MASA verification code / رمز التحقق من حسابك في ماسا
+
+  Variables used: {{ .Token }} (6-digit code), {{ .ConfirmationURL }} (fallback link).
+  Bilingual (EN + AR) in one email since Supabase templates don't branch per-user language.
+  Uses web-safe fonts only (Georgia/Times New Roman) — most email clients strip <link> fonts.
+-->
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>MASA</title>
+</head>
+<body style="margin:0; padding:0; background:#f7f3ee; font-family: Georgia, 'Times New Roman', serif; color:#1a1a1a;">
+  <div style="display:none; max-height:0; overflow:hidden;">
+    Your MASA verification code · رمز التحقق من حسابك في ماسا
+  </div>
+
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7f3ee; padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width:480px; border:1px solid rgba(83,28,36,0.12); background:#ffffff; border-radius:4px;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:28px 32px 8px; font-size:22px; letter-spacing:0.08em; color:#531c24; text-align:center;">
+              MASA
+            </td>
+          </tr>
+
+          <!-- English -->
+          <tr>
+            <td style="padding:24px 32px 4px; font-size:18px; color:#531c24;">
+              Verify your email
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 32px 16px; font-size:15px; line-height:1.6; color:#1a1a1a;">
+              Use the code below to confirm your MASA account. It expires in 1 hour.
+            </td>
+          </tr>
+
+          <!-- Code box -->
+          <tr>
+            <td style="padding:8px 32px 8px;" align="center">
+              <div style="display:inline-block; background:#f7f3ee; border:1px solid rgba(83,28,36,0.2); border-radius:6px; padding:16px 28px; font-size:32px; font-weight:bold; letter-spacing:0.35em; color:#531c24;">
+                {{ .Token }}
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:16px 32px 0; font-size:13px; line-height:1.6; color:#635c5c;">
+              Didn't request this? You can safely ignore this email.
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:24px 32px 0;">
+              <div style="border-top:1px solid rgba(83,28,36,0.1);"></div>
+            </td>
+          </tr>
+
+          <!-- Arabic -->
+          <tr>
+            <td style="padding:24px 32px 4px; font-size:18px; color:#531c24; text-align:right; direction:rtl;">
+              تحقق من بريدك الإلكتروني
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 32px 16px; font-size:15px; line-height:1.8; color:#1a1a1a; text-align:right; direction:rtl;">
+              استخدم الرمز أدناه لتفعيل حساب ماسا. ينتهي خلال ساعة واحدة.
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:8px 32px 8px;" align="center">
+              <div style="display:inline-block; background:#f7f3ee; border:1px solid rgba(83,28,36,0.2); border-radius:6px; padding:16px 28px; font-size:32px; font-weight:bold; letter-spacing:0.35em; color:#531c24;">
+                {{ .Token }}
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:16px 32px 0; font-size:13px; line-height:1.8; color:#635c5c; text-align:right; direction:rtl;">
+              لم تطلب هذا؟ يمكنك تجاهل هذا البريد بأمان.
+            </td>
+          </tr>
+
+          <!-- Fallback link -->
+          <tr>
+            <td style="padding:24px 32px 0; font-size:12px; line-height:1.6; color:#635c5c; text-align:center;">
+              Or confirm instantly via this link / أو فعّل حسابك مباشرة عبر هذا الرابط:<br />
+              <a href="{{ .ConfirmationURL }}" style="color:#531c24;">{{ .ConfirmationURL }}</a>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 32px 28px; border-top:1px solid rgba(83,28,36,0.08); font-size:12px; color:#635c5c; text-align:center; margin-top:16px;">
+              Luxury jewelry marketplace · Qatar<br />
+              سوق المجوهرات الفاخرة · قطر
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

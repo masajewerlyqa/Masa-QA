@@ -51,6 +51,11 @@ export function RegisterForm({ intent, selectedSellerPlan, onBack }: RegisterFor
   const [error, setError] = useState<string | null>(null);
   /** Email confirmation required before a session exists (Supabase “Confirm email”). */
   const [awaitingEmailVerification, setAwaitingEmailVerification] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const [resendMsg, setResendMsg] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -166,25 +171,72 @@ export function RegisterForm({ intent, selectedSellerPlan, onBack }: RegisterFor
           return;
         }
 
-        try {
-          await fetch("/api/auth/welcome", { method: "POST" });
-        } catch {
-          /* non-blocking */
-        }
-        router.refresh();
-        if (intent === "seller") {
-          router.push("/apply");
-        } else {
-          const res = await fetch("/api/auth/me", { cache: "no-store" });
-          const me = await res.json();
-          const redirectPath = me?.redirectPath ?? "/account";
-          router.push(redirectPath);
-        }
+        await finishAuthRedirect();
       }
     } catch (err) {
       setError(normalizeAuthError(err instanceof Error ? err.message : null, isArabic ? "ar" : "en"));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function finishAuthRedirect(): Promise<void> {
+    try {
+      await fetch("/api/auth/welcome", { method: "POST" });
+    } catch {
+      /* non-blocking */
+    }
+    router.refresh();
+    if (intent === "seller") {
+      router.push("/apply");
+    } else {
+      const res = await fetch("/api/auth/me", { cache: "no-store" });
+      const me = await res.json();
+      const redirectPath = me?.redirectPath ?? "/account";
+      router.push(redirectPath);
+    }
+  }
+
+  async function handleVerifyCode(e: React.FormEvent): Promise<void> {
+    e.preventDefault();
+    setVerifyError(null);
+    const code = verificationCode.trim();
+    if (!code) return;
+    setVerifying(true);
+    try {
+      const supabase = createClient();
+      const { error: verifyErr } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: code,
+        type: "signup",
+      });
+      if (verifyErr) {
+        setVerifyError(t("auth.register.invalidCode"));
+        setVerifying(false);
+        return;
+      }
+      await finishAuthRedirect();
+    } catch {
+      setVerifyError(t("auth.register.invalidCode"));
+      setVerifying(false);
+    }
+  }
+
+  async function handleResendCode(): Promise<void> {
+    setResendMsg(null);
+    setVerifyError(null);
+    setResending(true);
+    try {
+      const supabase = createClient();
+      const { error: resendErr } = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim(),
+      });
+      setResendMsg(resendErr ? resendErr.message : t("auth.register.codeResent"));
+    } catch (e) {
+      setResendMsg(e instanceof Error ? e.message : t("common.somethingWentWrong"));
+    } finally {
+      setResending(false);
     }
   }
 
@@ -199,9 +251,45 @@ export function RegisterForm({ intent, selectedSellerPlan, onBack }: RegisterFor
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <form onSubmit={handleVerifyCode} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="verificationCode">{t("auth.register.verificationCodeLabel")}</Label>
+              <Input
+                id="verificationCode"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                placeholder={t("auth.register.verificationCodePlaceholder")}
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, ""))}
+                disabled={verifying}
+                className="text-center text-lg tracking-[0.5em] font-sans"
+                required
+              />
+            </div>
+            {verifyError && (
+              <div role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 font-sans">
+                {verifyError}
+              </div>
+            )}
+            <Button type="submit" className="w-full font-sans" disabled={verifying || verificationCode.trim().length === 0}>
+              {verifying ? t("auth.register.verifyingCode") : t("auth.register.verifyCode")}
+            </Button>
+          </form>
           <p className="text-sm text-masa-gray font-sans">
             {t("auth.register.didntReceiveEmail")}
           </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-fit border-primary/20 font-sans"
+            onClick={() => void handleResendCode()}
+            disabled={resending}
+          >
+            {resending ? t("auth.register.resendingCode") : t("auth.register.resendCode")}
+          </Button>
+          {resendMsg && <p className="text-sm text-masa-gray font-sans">{resendMsg}</p>}
           <Button variant="outline" className="w-full border-primary/20 font-sans" asChild>
             <Link href="/login?registered=1">{t("auth.register.continueToSignIn")}</Link>
           </Button>
