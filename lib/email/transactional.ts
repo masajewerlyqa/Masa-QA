@@ -8,6 +8,9 @@ import {
   accountSecurityNoticeHtml,
   sellerApplicationReceivedHtml,
   sellerApplicationApprovedHtml,
+  sellerPaymentInstructionsHtml,
+  sellerPaymentProofReceivedHtml,
+  sellerPaymentRejectedHtml,
 } from "./templates";
 import type { SellerPlanId } from "@/lib/seller-plans";
 import { resolveEmailLanguage } from "./email-language";
@@ -26,6 +29,66 @@ export async function sendSellerApplicationReceivedEmail(
     subject: lang === "ar" ? "تم استلام طلب الانضمام كبائع — ماسا" : "MASA Seller Application Received",
     html: sellerApplicationReceivedHtml(planId, contactName, lang),
     tags: [{ name: "category", value: "seller_application_received" }],
+  });
+}
+
+/** Bank-transfer instructions, sent as soon as an application is submitted. */
+export async function sendSellerPaymentInstructionsEmail(args: {
+  to: string;
+  contactName: string | null;
+  planId: SellerPlanId;
+  amountQar: number;
+  paymentReference: string;
+  bank: { bankName: string; accountName: string; iban: string } | null;
+  language?: unknown;
+}): Promise<SendEmailResult> {
+  const lang = resolveEmailLanguage(args.language ?? "en");
+  return sendEmailWithRetry({
+    to: args.to,
+    subject:
+      lang === "ar"
+        ? "طلب الانضمام كبائع — تعليمات الدفع — ماسا"
+        : "MASA Seller Application — Payment Instructions",
+    html: sellerPaymentInstructionsHtml({ ...args, language: lang }),
+    tags: [{ name: "category", value: "seller_payment_instructions" }],
+  });
+}
+
+/** Confirms the proof landed and that review is pending. */
+export async function sendSellerPaymentProofReceivedEmail(args: {
+  to: string;
+  amountQar: number | null;
+  paymentReference: string | null;
+  language?: unknown;
+}): Promise<SendEmailResult> {
+  const lang = resolveEmailLanguage(args.language ?? "en");
+  return sendEmailWithRetry({
+    to: args.to,
+    subject:
+      lang === "ar"
+        ? "طلب الانضمام كبائع — تم استلام إثبات الدفع — ماسا"
+        : "MASA Seller Application — Payment Proof Received",
+    html: sellerPaymentProofReceivedHtml({ ...args, language: lang }),
+    tags: [{ name: "category", value: "seller_payment_proof_received" }],
+  });
+}
+
+/** Payment could not be verified; tells the seller what to correct. */
+export async function sendSellerPaymentRejectedEmail(args: {
+  to: string;
+  contactName: string | null;
+  reason: string;
+  language?: unknown;
+}): Promise<SendEmailResult> {
+  const lang = resolveEmailLanguage(args.language ?? "en");
+  return sendEmailWithRetry({
+    to: args.to,
+    subject:
+      lang === "ar"
+        ? "طلب الانضمام كبائع — مطلوب إجراء — ماسا"
+        : "MASA Seller Application — Action Required",
+    html: sellerPaymentRejectedHtml({ ...args, language: lang }),
+    tags: [{ name: "category", value: "seller_payment_rejected" }],
   });
 }
 

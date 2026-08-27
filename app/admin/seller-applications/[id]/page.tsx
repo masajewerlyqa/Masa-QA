@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireServiceClient } from "@/lib/supabase/service";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { ApplicationActions } from "../ApplicationActions";
+import { getPaymentProofSignedUrl } from "../payment-proof";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
 import { formatDateTime } from "@/lib/date-format";
@@ -33,6 +34,12 @@ type ApplicationRow = {
   created_at: string;
   reviewed_at: string | null;
   review_notes: string | null;
+  rejection_reason: string | null;
+  payment_reference: string | null;
+  payment_amount_qar: number | null;
+  payment_proof_path: string | null;
+  payment_proof_submitted_at: string | null;
+  payment_verified_at: string | null;
   profiles: { full_name: string | null; email: string | null } | null;
   reviewer: { full_name: string | null; email: string | null } | null;
 };
@@ -55,7 +62,9 @@ export default async function SellerApplicationDetailPage({
     .select(
       "id, user_id, status, business_name, business_description, contact_email, contact_phone, " +
         "contact_full_name, store_location, seller_plan, license_path, logo_path, social_links, " +
-        "created_at, reviewed_at, review_notes, " +
+        "created_at, reviewed_at, review_notes, rejection_reason, " +
+        "payment_reference, payment_amount_qar, payment_proof_path, " +
+        "payment_proof_submitted_at, payment_verified_at, " +
         "profiles:profiles!seller_applications_user_id_fkey(full_name, email), " +
         "reviewer:profiles!seller_applications_reviewed_by_fkey(full_name, email)"
     )
@@ -67,6 +76,8 @@ export default async function SellerApplicationDetailPage({
   }
 
   const row = app as unknown as ApplicationRow;
+  // Private bucket: proofs are only reachable through a short-lived signed URL.
+  const proofUrl = await getPaymentProofSignedUrl(row.payment_proof_path);
 
   // Signed URLs for private storage (admin only, via service role)
   let logoUrl: string | null = null;
@@ -115,11 +126,79 @@ export default async function SellerApplicationDetailPage({
           >
             {t(language, `order.statuses.${row.status}`, row.status.replace(/_/g, " "))}
           </Badge>
-          {row.status === "pending" && <ApplicationActions applicationId={row.id} />}
+          {row.status !== "approved" && <ApplicationActions applicationId={row.id} />}
         </div>
       </div>
 
       <div className="space-y-6">
+        {/* Bank transfer — what the admin checks before approving. */}
+        <Card className="border-primary/10 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-luxury text-primary">Payment</CardTitle>
+            <p className="text-xs text-masa-gray font-sans">
+              Verify the transfer arrived before approving. Approving activates the seller.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3 font-sans text-sm">
+            <dl className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <dt className="text-xs text-masa-gray">Amount due</dt>
+                <dd className="font-medium text-masa-dark">
+                  {row.payment_amount_qar != null
+                    ? `${row.payment_amount_qar.toLocaleString("en-US")} QAR`
+                    : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-masa-gray">Payment reference</dt>
+                <dd className="font-medium text-masa-dark font-mono">
+                  {row.payment_reference ?? "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-masa-gray">Proof submitted</dt>
+                <dd className="font-medium text-masa-dark">
+                  {row.payment_proof_submitted_at
+                    ? new Date(row.payment_proof_submitted_at).toLocaleString()
+                    : "Not yet submitted"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-masa-gray">Payment verified</dt>
+                <dd className="font-medium text-masa-dark">
+                  {row.payment_verified_at
+                    ? new Date(row.payment_verified_at).toLocaleString()
+                    : "Not verified"}
+                </dd>
+              </div>
+            </dl>
+
+            {proofUrl ? (
+              <a
+                href={proofUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block rounded border border-primary/30 px-4 py-2 text-primary hover:bg-primary/5"
+              >
+                View payment proof
+              </a>
+            ) : (
+              <p className="text-masa-gray">
+                {row.payment_proof_path
+                  ? "Could not open the payment proof. Please retry."
+                  : "The seller has not uploaded a payment proof yet."}
+              </p>
+            )}
+
+            {row.rejection_reason && (
+              <div className="rounded border border-red-200 bg-red-50 p-3">
+                <p className="text-xs text-red-900 font-medium">Last rejection reason</p>
+                <p className="text-red-800">{row.rejection_reason}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Contact & business – from seller_applications */}
         <Card className="border-primary/10 shadow-sm">
           <CardHeader>

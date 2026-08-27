@@ -5,8 +5,12 @@ import { getCurrentUserWithProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { requireServiceClient } from "@/lib/supabase/service";
 import { notifyApplicantApplicationApproved, notifyApplicantApplicationRejected } from "@/lib/notifications";
-import { sendSellerApplicationApprovedEmail } from "@/lib/email/transactional";
+import {
+  sendSellerApplicationApprovedEmail,
+  sendSellerPaymentRejectedEmail,
+} from "@/lib/email/transactional";
 import { resolveEmailLanguage } from "@/lib/email/email-language";
+import { getProfileEmailLanguage } from "@/lib/email/profile-language";
 import { ensureStoreAndOwnerMembership } from "@/lib/seller/ensure-store-from-application";
 
 export type ActionResult = { ok: boolean; error?: string };
@@ -25,6 +29,8 @@ type SellerApplicationApproveRow = {
 type SellerApplicationRejectRow = {
   user_id: string;
   status: string;
+  contact_email: string | null;
+  contact_full_name: string | null;
 };
 
 export async function approveApplication(applicationId: string): Promise<ActionResult> {
@@ -47,17 +53,31 @@ export async function approveApplication(applicationId: string): Promise<ActionR
   if (fetchError || !app) {
     return { ok: false, error: "Application not found" };
   }
-  if (app.status !== "pending") {
-    return { ok: false, error: "Application is not pending" };
+  // Approving means "we have seen the money arrive", so it is only valid once
+  // the seller has actually submitted a proof. "pending" covers applications
+  // created before the payment flow existed.
+  const APPROVABLE = new Set(["payment_proof_submitted", "under_review", "pending"]);
+  if (!APPROVABLE.has(app.status)) {
+    return {
+      ok: false,
+      error:
+        app.status === "approved"
+          ? "This seller is already active."
+          : "This application has no payment proof to verify yet.",
+    };
   }
 
+  const reviewedAt = new Date().toISOString();
   const { error: updateAppError } = await supabase
     .from("seller_applications")
     .update({
       status: "approved",
       reviewed_by: user.id,
-      reviewed_at: new Date().toISOString(),
+      reviewed_at: reviewedAt,
+      // Attributable record that a human confirmed the transfer landed.
+      payment_verified_at: reviewedAt,
       review_notes: null,
+      rejection_reason: null,
     })
     .eq("id", applicationId);
 
@@ -126,10 +146,17 @@ export async function rejectApplication(
     return { ok: false, error: "Unauthorized" };
   }
 
+  // A rejection has to tell the seller what to fix, otherwise they cannot act
+  // on it. The database enforces this too.
+  const reason = reviewNotes?.trim();
+  if (!reason) {
+    return { ok: false, error: "Please give a reason so the seller knows what to correct." };
+  }
+
   const supabase = await createClient();
   const { data, error: fetchError } = await supabase
     .from("seller_applications")
-    .select("status, user_id")
+    .select("status, user_id, contact_email, contact_full_name")
     .eq("id", applicationId)
     .single();
 
@@ -137,8 +164,8 @@ export async function rejectApplication(
   if (fetchError || !app) {
     return { ok: false, error: "Application not found" };
   }
-  if (app.status !== "pending") {
-    return { ok: false, error: "Application is not pending" };
+  if (app.status === "approved") {
+    return { ok: false, error: "This seller is already active." };
   }
 
   const { error: updateError } = await supabase
@@ -147,12 +174,29 @@ export async function rejectApplication(
       status: "rejected",
       reviewed_by: user.id,
       reviewed_at: new Date().toISOString(),
-      review_notes: reviewNotes ?? null,
+      review_notes: reason,
+      rejection_reason: reason,
+      // Not verified, so any earlier verification must not linger.
+      payment_verified_at: null,
     })
     .eq("id", applicationId);
 
   if (updateError) {
     return { ok: false, error: updateError.message };
+  }
+
+  // Tell the seller why and how to resubmit.
+  if (app.contact_email) {
+    try {
+      await sendSellerPaymentRejectedEmail({
+        to: app.contact_email,
+        contactName: app.contact_full_name ?? null,
+        reason,
+        language: await getProfileEmailLanguage(app.user_id),
+      });
+    } catch (e) {
+      console.error("[admin] seller rejection email failed", e);
+    }
   }
 
   const service = requireServiceClient();

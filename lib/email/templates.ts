@@ -381,3 +381,179 @@ export function contactSupportNotificationHtml(fields: {
     "en"
   );
 }
+
+/** Label/value row used by the payment summary blocks below. */
+function detailRow(label: string, value: string, lang: Language): string {
+  const align = lang === "ar" ? "right" : "left";
+  return `<tr>
+      <td style="padding:6px 0;font-size:13px;color:${BRAND.muted};text-align:${align};">${escapeHtmlText(label)}</td>
+      <td style="padding:6px 0;font-size:14px;font-weight:bold;color:${BRAND.dark};text-align:${align};">${escapeHtmlText(value)}</td>
+    </tr>`;
+}
+
+function planLabel(planId: SellerPlanId, lang: Language): string {
+  if (lang === "ar") return planId === "basic" ? "الأساسية" : "بريميوم";
+  return planId === "basic" ? "Basic" : "Premium";
+}
+
+function proofUploadUrl(): string {
+  return `${getSiteUrl().replace(/\/$/, "")}/apply/payment`;
+}
+
+function ctaButton(label: string, href: string): string {
+  return `<p style="margin:0 0 20px;"><a href="${href}" style="display:inline-block;background:${BRAND.primary};color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:4px;font-size:14px;">${escapeHtmlText(label)}</a></p>`;
+}
+
+/**
+ * Sent once an application is submitted: everything needed to make the
+ * transfer, including the reference that lets an admin match the payment.
+ */
+export function sellerPaymentInstructionsHtml(args: {
+  contactName: string | null;
+  planId: SellerPlanId;
+  amountQar: number;
+  paymentReference: string;
+  bank: { bankName: string; accountName: string; iban: string } | null;
+  language?: unknown;
+}): string {
+  const lang = resolveEmailLanguage(args.language ?? "en");
+  const ar = lang === "ar";
+  const b = brandName(lang);
+  const safeName = escapeHtmlText((args.contactName ?? "").trim() || (ar ? "صديقنا البائع" : "there"));
+
+  const bankRows = args.bank
+    ? [
+        detailRow(ar ? "البنك" : "Bank", args.bank.bankName, lang),
+        detailRow(ar ? "اسم الحساب" : "Account name", args.bank.accountName, lang),
+        detailRow("IBAN", args.bank.iban, lang),
+      ].join("")
+    : "";
+
+  const summary = `<table role="presentation" width="100%" style="margin:0 0 20px;padding:16px 18px;background:${BRAND.light};border-radius:6px;border:1px solid rgba(83,28,36,0.08);">
+      ${detailRow(ar ? "الخطة" : "Plan", planLabel(args.planId, lang), lang)}
+      ${detailRow(ar ? "المبلغ المستحق" : "Amount due", `${args.amountQar.toLocaleString("en-US")} QAR`, lang)}
+      ${detailRow(ar ? "نوع الرسوم" : "Billing", ar ? "رسوم تسجيل لمرة واحدة" : "One-time registration fee", lang)}
+      ${bankRows}
+      ${detailRow(ar ? "مرجع الدفع" : "Payment reference", args.paymentReference, lang)}
+    </table>`;
+
+  // Better to say the details are coming than to render an empty table.
+  const missingBank = args.bank
+    ? ""
+    : `<p style="margin:0 0 16px;font-size:14px;color:${BRAND.muted};">${
+        ar
+          ? "سنرسل تفاصيل الحساب البنكي في رسالة منفصلة قريباً."
+          : "We will send the bank account details in a separate message shortly."
+      }</p>`;
+
+  if (ar) {
+    return wrap(
+      `<p style="margin:0 0 16px;">مرحباً ${safeName}،</p>
+    <p style="margin:0 0 16px;">شكراً لتقديمك طلب الانضمام كبائع على <strong style="color:${BRAND.primary};">${escapeHtmlText(b)}</strong>. لإكمال طلبك، يرجى تحويل رسوم التسجيل عبر حوالة بنكية.</p>
+    ${summary}
+    ${missingBank}
+    <p style="margin:0 0 12px;">يرجى كتابة <strong>مرجع الدفع</strong> ضمن ملاحظات التحويل حتى نتمكن من مطابقة الدفعة بطلبك.</p>
+    <p style="margin:0 0 20px;">بعد إتمام التحويل، ارفع إثبات الدفع:</p>
+    ${ctaButton("رفع إثبات الدفع", proofUploadUrl())}
+    <p style="margin:0 0 12px;font-size:14px;">تتم مراجعة الطلبات عادةً خلال 24 ساعة من استلام الإثبات. لا يتم تفعيل الحساب قبل تأكيد وصول الحوالة.</p>
+    <p style="margin:0;color:${BRAND.muted};font-size:13px;">هل تحتاج مساعدة؟ راسلنا عبر صفحة الدعم.</p>`,
+      "تعليمات دفع رسوم التسجيل",
+      lang
+    );
+  }
+
+  return wrap(
+    `<p style="margin:0 0 16px;">Hi ${safeName},</p>
+    <p style="margin:0 0 16px;">Thank you for applying to sell on <strong style="color:${BRAND.primary};">${escapeHtmlText(b)}</strong>. To complete your application, please pay the registration fee by bank transfer.</p>
+    ${summary}
+    ${missingBank}
+    <p style="margin:0 0 12px;">Please quote the <strong>payment reference</strong> on your transfer so we can match it to your application.</p>
+    <p style="margin:0 0 20px;">Once you have made the transfer, upload your proof of payment:</p>
+    ${ctaButton("Upload payment proof", proofUploadUrl())}
+    <p style="margin:0 0 12px;font-size:14px;">Applications are normally reviewed within 24 hours of receiving your proof. Your account is not activated until we confirm the transfer has arrived.</p>
+    <p style="margin:0;color:${BRAND.muted};font-size:13px;">Need help? Contact us through the support page.</p>`,
+    "Seller registration payment instructions",
+    lang
+  );
+}
+
+/** Acknowledges the uploaded proof and sets the review expectation. */
+export function sellerPaymentProofReceivedHtml(args: {
+  amountQar: number | null;
+  paymentReference: string | null;
+  language?: unknown;
+}): string {
+  const lang = resolveEmailLanguage(args.language ?? "en");
+  const ar = lang === "ar";
+  const b = brandName(lang);
+  const rows = [
+    args.paymentReference ? detailRow(ar ? "مرجع الدفع" : "Payment reference", args.paymentReference, lang) : "",
+    args.amountQar != null
+      ? detailRow(ar ? "المبلغ" : "Amount", `${args.amountQar.toLocaleString("en-US")} QAR`, lang)
+      : "",
+  ].join("");
+  const summary = rows
+    ? `<table role="presentation" width="100%" style="margin:0 0 20px;padding:16px 18px;background:${BRAND.light};border-radius:6px;border:1px solid rgba(83,28,36,0.08);">${rows}</table>`
+    : "";
+
+  if (ar) {
+    return wrap(
+      `<p style="margin:0 0 16px;">استلمنا إثبات الدفع الخاص بك.</p>
+    ${summary}
+    <p style="margin:0 0 12px;">طلبك الآن <strong>قيد المراجعة</strong>. يتحقق فريق ${escapeHtmlText(b)} من وصول الحوالة، وتتم المراجعة عادةً خلال 24 ساعة.</p>
+    <p style="margin:0 0 12px;">لا حاجة لإرسال الإثبات مرة أخرى ما لم نطلب ذلك.</p>
+    <p style="margin:0;color:${BRAND.muted};font-size:13px;">سنراسلك فور اكتمال المراجعة.</p>`,
+      "تم استلام إثبات الدفع",
+      lang
+    );
+  }
+
+  return wrap(
+    `<p style="margin:0 0 16px;">We have received your payment proof.</p>
+    ${summary}
+    <p style="margin:0 0 12px;">Your application is now <strong>under review</strong>. The ${escapeHtmlText(b)} team is confirming the transfer has arrived, which is normally done within 24 hours.</p>
+    <p style="margin:0 0 12px;">There is no need to send your proof again unless we ask you to.</p>
+    <p style="margin:0;color:${BRAND.muted};font-size:13px;">We will email you as soon as the review is complete.</p>`,
+    "Payment proof received",
+    lang
+  );
+}
+
+/** Sent when an admin cannot verify the payment; must say what to fix. */
+export function sellerPaymentRejectedHtml(args: {
+  contactName: string | null;
+  reason: string;
+  language?: unknown;
+}): string {
+  const lang = resolveEmailLanguage(args.language ?? "en");
+  const ar = lang === "ar";
+  const safeName = escapeHtmlText((args.contactName ?? "").trim() || (ar ? "صديقنا البائع" : "there"));
+  const reasonBlock = `<div style="margin:0 0 20px;padding:16px 18px;background:${BRAND.light};border-radius:6px;border:1px solid rgba(83,28,36,0.08);">
+      <p style="margin:0 0 6px;font-size:13px;color:${BRAND.muted};">${ar ? "السبب" : "Reason"}</p>
+      <p style="margin:0;font-size:14px;line-height:1.55;color:${BRAND.dark};">${escapeHtmlText(args.reason)}</p>
+    </div>`;
+
+  if (ar) {
+    return wrap(
+      `<p style="margin:0 0 16px;">مرحباً ${safeName}،</p>
+    <p style="margin:0 0 16px;">لم نتمكن من تأكيد دفعتك، ويحتاج طلبك إلى إجراء منك.</p>
+    ${reasonBlock}
+    <p style="margin:0 0 20px;">بعد معالجة ما ورد أعلاه، يمكنك رفع إثبات دفع جديد:</p>
+    ${ctaButton("رفع إثبات جديد", proofUploadUrl())}
+    <p style="margin:0;color:${BRAND.muted};font-size:13px;">لم يتم خصم أي مبلغ من قبلنا. إن كنت قد أتممت التحويل فعلاً، أرفق نسخة أوضح من إيصال البنك.</p>`,
+      "طلب البائع — مطلوب إجراء",
+      lang
+    );
+  }
+
+  return wrap(
+    `<p style="margin:0 0 16px;">Hi ${safeName},</p>
+    <p style="margin:0 0 16px;">We could not confirm your payment, so your application needs an action from you.</p>
+    ${reasonBlock}
+    <p style="margin:0 0 20px;">Once you have addressed the above, you can upload a new proof of payment:</p>
+    ${ctaButton("Upload new proof", proofUploadUrl())}
+    <p style="margin:0;color:${BRAND.muted};font-size:13px;">We have not taken any money from you. If you have already made the transfer, please attach a clearer copy of the bank receipt.</p>`,
+    "Seller application — action required",
+    lang
+  );
+}

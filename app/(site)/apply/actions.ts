@@ -6,7 +6,12 @@ import { getCurrentUserWithProfile } from "@/lib/auth";
 import { notifyAdminsNewSellerApplication } from "@/lib/notifications";
 import { finalizeSellerApplicationSchema, socialLinksFromForm } from "@/lib/validations/seller-application";
 import { parseSellerPlanId, type SellerPlanId } from "@/lib/seller-plans";
-import { sendSellerApplicationReceivedEmail } from "@/lib/email/transactional";
+import {
+  buildPaymentReference,
+  getBankTransferDetails,
+  getPlanAmountQar,
+} from "@/lib/seller/bank-transfer";
+import { sendSellerPaymentInstructionsEmail } from "@/lib/email/transactional";
 
 export type NotifyResult = { ok: boolean; error?: string };
 
@@ -84,26 +89,46 @@ export async function finalizeSellerApplicationAction(raw: unknown): Promise<Fin
   const data = parsed.data;
   const socialLinks = socialLinksFromForm(data);
 
-  const { error: upsertError } = await supabase.from("seller_applications").upsert(
-    {
-      user_id: user.id,
-      status: "pending",
-      business_name: data.brand_store_name,
-      business_description: data.store_description || null,
-      contact_email: data.email,
-      contact_phone: data.phone || null,
-      contact_full_name: data.contact_full_name,
-      store_location: data.store_location,
-      license_path: data.license_path,
-      logo_path: data.logo_path,
-      social_links: socialLinks,
-      seller_plan: planId,
-    },
-    { onConflict: "user_id" }
-  );
+  // Submitting does not activate anything: the application enters the payment
+  // stage and only an admin who has seen the transfer can move it forward.
+  const { data: application, error: upsertError } = await supabase
+    .from("seller_applications")
+    .upsert(
+      {
+        user_id: user.id,
+        status: "pending_payment",
+        business_name: data.brand_store_name,
+        business_description: data.store_description || null,
+        contact_email: data.email,
+        contact_phone: data.phone || null,
+        contact_full_name: data.contact_full_name,
+        store_location: data.store_location,
+        license_path: data.license_path,
+        logo_path: data.logo_path,
+        social_links: socialLinks,
+        seller_plan: planId,
+        // Snapshot the fee so a later price change cannot alter what an
+        // already-submitted applicant was told to pay.
+        payment_amount_qar: getPlanAmountQar(planId),
+      },
+      { onConflict: "user_id" }
+    )
+    .select("id")
+    .single();
 
-  if (upsertError) {
-    return { ok: false, error: upsertError.message };
+  if (upsertError || !application) {
+    return { ok: false, error: upsertError?.message ?? "Could not save your application." };
+  }
+
+  // Derived from the id, so it needs the row to exist first.
+  const { error: referenceError } = await supabase
+    .from("seller_applications")
+    .update({ payment_reference: buildPaymentReference(application.id) })
+    .eq("id", application.id)
+    .is("payment_reference", null);
+
+  if (referenceError) {
+    return { ok: false, error: referenceError.message };
   }
 
   const { error: profileUpdateError } = await supabase
@@ -128,9 +153,20 @@ export async function finalizeSellerApplicationAction(raw: unknown): Promise<Fin
   const to = profile?.email ?? user.email ?? "";
   if (to) {
     try {
-      await sendSellerApplicationReceivedEmail(to, planId, data.contact_full_name?.trim() || null, profile?.preferred_language ?? "en");
+      // Payment instructions replace the generic acknowledgement: the seller
+      // cannot progress without the amount, IBAN and reference, so that is the
+      // one email they actually need at this point.
+      await sendSellerPaymentInstructionsEmail({
+        to,
+        contactName: data.contact_full_name?.trim() || null,
+        planId,
+        amountQar: getPlanAmountQar(planId),
+        paymentReference: buildPaymentReference(application.id),
+        bank: getBankTransferDetails(),
+        language: profile?.preferred_language ?? "en",
+      });
     } catch (e) {
-      console.error("[apply] confirmation email failed", e);
+      console.error("[apply] payment instructions email failed", e);
     }
   }
 
