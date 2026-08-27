@@ -29,14 +29,18 @@ export type FormatPriceOptions = {
   language?: "en" | "ar";
 };
 
+/** Unicode left-to-right isolate / pop directional isolate — keeps the symbol-then-number order fixed in RTL contexts. */
+const LRI = "⁦";
+const PDI = "⁩";
+
 /** Format: USD "$ 120"; QAR uses "QAR" in English and "ر.ق" in Arabic. Rounded to whole units — no cents/fils. */
 export function formatPrice(priceUSD: number, currency: Currency, options?: FormatPriceOptions): string {
   const amount = currency === "USD" ? priceUSD : convertPrice(priceUSD, "QAR");
   const formatted = Math.round(amount).toLocaleString("en-US");
-  if (currency === "USD") return `$ ${formatted}`;
+  if (currency === "USD") return `${LRI}$ ${formatted}${PDI}`;
   const lang = options?.language ?? "en";
   const qarPrefix = lang === "ar" ? "ر.ق" : "QAR";
-  return `${qarPrefix} ${formatted}`;
+  return `${LRI}${qarPrefix} ${formatted}${PDI}`;
 }
 
 export const CURRENCY_STORAGE_KEY = "masa-currency";
