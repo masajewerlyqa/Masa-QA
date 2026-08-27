@@ -54,13 +54,20 @@ export function Hero({
           sizes="100vw"
         />
       </div>
+      {/*
+        Scrim sits under the copy so the words stay legible over the photo. Direction is
+        language-aware: the text block flows to the start edge, which is the right in Arabic,
+        so the scrim has to follow it or the copy lands on the bare photo.
+        Fades to transparent `masa-light` (not `transparent`, which is transparent *black* and
+        interpolates through grey) so the sunset side of the photo stays clean.
+      */}
       <div
-        className="absolute inset-0 bg-gradient-to-r from-masa-light/95 via-masa-light/80 to-masa-light/25 md:to-transparent pointer-events-none"
+        className={`absolute inset-0 ${isArabic ? "bg-gradient-to-l" : "bg-gradient-to-r"} from-masa-light/90 via-masa-light/70 to-masa-light/45 md:to-masa-light/0 pointer-events-none`}
         aria-hidden
       />
 
       <div className="relative max-w-content mx-auto px-4 md:px-6 flex flex-col justify-center min-h-[500px] md:min-h-[600px] lg:min-h-[700px]">
-        <div className="w-full max-w-2xl z-10 py-12 lg:py-16 lg:pr-8">
+        <div className={`w-full max-w-2xl z-10 py-12 lg:py-16 ${isArabic ? "lg:pl-8" : "lg:pr-8"}`}>
           {badge && (
             <span className="inline-block mb-4 px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded font-sans">
               {badge}

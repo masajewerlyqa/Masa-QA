@@ -77,14 +77,16 @@ function buildHistories(
   };
 }
 
-// Fallback baseline prices (QAR) when GOLDAPI_KEY is not set or the live call fails.
-// These are NOT live — they drift from the real market over time and must be refreshed
-// periodically by hand. Set GOLDAPI_KEY in the environment to use real, always-current prices
-// instead of relying on this fallback. (Last manually refreshed 2026-07-27, ~$4,089/oz gold,
-// ~$59/oz silver.)
-const GOLD_24K_BASE = 478.5;
-const SILVER_BASE = 6.93;
-const DIAMOND_1CT_BASE = 19200;
+// Last-resort baselines (QAR) used only if BOTH the keyed GoldAPI call and the keyless
+// fallback fail. These are NOT live and drift from the real market, so they are a
+// degraded mode, not a normal one. (Last refreshed 2026-08-27: ~$4,586/oz gold,
+// ~$68/oz silver.)
+const GOLD_24K_BASE = 536.75;
+const SILVER_BASE = 7.97;
+
+// Diamonds have no public spot feed (Rapaport is licensed), so this is an editorial
+// index, not a market quote. Override without a redeploy via DIAMOND_1CT_QAR.
+const DIAMOND_1CT_FALLBACK_QAR = 19200;
 
 /** Gold: 24K per gram. GoldAPI.io when GOLDAPI_KEY set; else mock. Scraper only if GOLD_PRICE_USE_SCRAPER=true. */
 export async function getGoldPrice(): Promise<GoldMarketData> {
@@ -102,13 +104,13 @@ export async function getGoldPrice(): Promise<GoldMarketData> {
 
   const api = await fetchGoldFromApi();
   if (api == null) {
-    console.warn("[getGoldPrice] GOLDAPI_KEY missing or fetch failed — using stale fallback price.");
+    console.warn("[getGoldPrice] all live gold sources failed — using stale fallback price.");
   }
   const price24K =
     api != null
       ? usdPerOzToQarPerGram(api.pricePerOzUsd, USD_TO_QAR)
       : GOLD_24K_BASE;
-  const changePercent = api?.changePercent ?? 0.42;
+  const changePercent = api?.changePercent ?? 0;
 
   const { historyByRange, weeklyChangePercent } = buildHistories(price24K, 0.04, 0.008);
   const price22K = Math.round(price24K * 0.9167 * 100) / 100;
@@ -166,13 +168,13 @@ function buildGoldMarketDataFrom24kGram(
 export async function getSilverPrice(): Promise<SilverMarketData> {
   const api = await fetchSilverFromApi();
   if (api == null) {
-    console.warn("[getSilverPrice] GOLDAPI_KEY missing or fetch failed — using stale fallback price.");
+    console.warn("[getSilverPrice] all live silver sources failed — using stale fallback price.");
   }
   const pricePerGram =
     api != null
       ? usdPerOzToQarPerGram(api.pricePerOzUsd, USD_TO_QAR)
       : SILVER_BASE;
-  const changePercent = api?.changePercent ?? -0.18;
+  const changePercent = api?.changePercent ?? 0;
 
   const { historyByRange } = buildHistories(pricePerGram, -0.02, 0.014);
   const pricePerKg = Math.round(pricePerGram * 1000 * 100) / 100;
@@ -189,11 +191,16 @@ export async function getSilverPrice(): Promise<SilverMarketData> {
   };
 }
 
-/** Diamond: average 1ct in QAR. */
+/**
+ * Diamond: average 1ct in QAR. Editorial index, not a live quote — there is no public
+ * diamond spot feed. Set DIAMOND_1CT_QAR to update it without a redeploy.
+ */
 export function getDiamondIndex(): DiamondMarketData {
-  const { historyByRange } = buildHistories(DIAMOND_1CT_BASE, 0.03, 0.006);
+  const configured = Number(process.env.DIAMOND_1CT_QAR);
+  const avg1Ct =
+    Number.isFinite(configured) && configured > 0 ? configured : DIAMOND_1CT_FALLBACK_QAR;
+  const { historyByRange } = buildHistories(avg1Ct, 0.03, 0.006);
   const h1D = historyByRange["1D"];
-  const avg1Ct = DIAMOND_1CT_BASE;
   const first1D = h1D?.[0]?.value ?? avg1Ct;
   const changePercent = h1D?.length ? ((avg1Ct - first1D) / first1D) * 100 : 0.15;
   const investmentIndex = 68;
