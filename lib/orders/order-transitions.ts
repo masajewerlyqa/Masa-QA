@@ -16,7 +16,7 @@ export const SELLER_STATUS_ORDER = [
 ] as const;
 
 const SELLER_ALLOWED_NEXT: Record<string, string[]> = {
-  /** Stripe payment received; seller fulfills next. */
+  /** Legacy online-paid orders; seller fulfils next. */
   paid: ["accepted", "processing", "cancelled"],
   /** New checkout: seller must accept/reject within SLA window. */
   awaiting_seller: ["accepted", "cancelled"],

@@ -1,6 +1,6 @@
 import { CHECKOUT_PROMO_CODE_STORAGE_KEY } from "@/lib/checkout-promo-storage";
 
-/** Client-side cart cache (guest cart or Stripe checkout flow). */
+/** Client-side cart cache (guest cart or checkout flow). */
 export const CART_LOCAL_STORAGE_KEY = "masa-cart";
 
 /** Removes cart and checkout promo data from browser storage. */

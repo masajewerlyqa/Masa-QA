@@ -67,13 +67,4 @@ export const env = {
    * OTP flows are not implemented yet; this only drives messaging and future checks.
    */
   enforcePhoneVerification: process.env.NEXT_PUBLIC_ENFORCE_PHONE_VERIFICATION === "true",
-
-  /** Stripe secret key — server-only; use sk_live_... in production for real charges. */
-  stripeSecretKey: process.env.STRIPE_SECRET_KEY?.trim() || null,
-
-  /** Stripe webhook signing secret — POST /api/webhooks/stripe */
-  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET?.trim() || null,
-
-  /** True when STRIPE_SECRET_KEY is a live key (sk_live_...). */
-  stripeLiveMode: process.env.STRIPE_SECRET_KEY?.trim().startsWith("sk_live_") ?? false,
 } as const;
