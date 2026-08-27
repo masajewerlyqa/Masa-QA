@@ -125,14 +125,16 @@ export async function getRecommendations(
     };
   });
 
-  const scored = allProducts
+  const scoredAll = allProducts
     .map((product) => {
       const { score, reasons } = scoreProduct(product, preferences);
       return { product, score, reasons };
     })
-    .filter((item) => item.score >= 20)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 8);
+    .sort((a, b) => b.score - a.score);
+
+  const strongMatches = scoredAll.filter((item) => item.score >= 20).slice(0, 8);
+  const scored = strongMatches.length > 0 ? strongMatches : scoredAll.slice(0, 4);
+  const isFallback = strongMatches.length === 0 && scored.length > 0;
 
   const recommendations: ProductRecommendation[] = scored.map((item) => ({
     productId: item.product.id,
@@ -145,13 +147,16 @@ export async function getRecommendations(
       ? 'jewelry'
       : (OCCASIONS.find((o) => o.value === preferences.occasion)?.label ?? preferences.occasion);
   const style = STYLES.find((s) => s.value === preferences.style)?.label ?? preferences.style;
+  const styleClause = preferences.style === 'any' ? '' : ` with a ${String(style).toLowerCase()} aesthetic`;
   const summary =
     recommendations.length === 0
       ? `We couldn't find close matches for your ${String(occasion).toLowerCase()} preferences. Try adjusting your choices.`
-      : `Based on your preferences for ${String(occasion).toLowerCase()} with a ${String(style).toLowerCase()} aesthetic, we found ${recommendations.length} recommendation(s).`;
+      : isFallback
+        ? `We couldn't find an exact match for your ${String(occasion).toLowerCase()} preferences${styleClause}, but here are some of our closest pieces.`
+        : `Based on your preferences for ${String(occasion).toLowerCase()}${styleClause}, we found ${recommendations.length} recommendation(s).`;
 
   return {
-    response: { products: recommendations, stores: [], summary },
+    response: { products: recommendations, stores: [], summary, isFallback },
     products: scored.map((s) => s.product),
   };
 }

@@ -252,10 +252,12 @@ function generateSummary(
       : (BUDGET_RANGES.find((b) => b.value === preferences.budget)?.label ?? preferences.budget);
   const style = STYLES.find((s) => s.value === preferences.style)?.label ?? preferences.style;
   const cats = preferences.categories ?? [];
-  const typePhrase =
-    cats.length === 0
-      ? (isArabic ? "المجوهرات" : "jewelry")
-      : `${cats.join(", ").toLowerCase()}${cats.length > 1 ? " pieces" : ""}`;
+  const hasCategories = cats.length > 0;
+  const categoryPhrase = hasCategories
+    ? `${cats.join(", ").toLowerCase()}${cats.length > 1 ? " pieces" : ""}`
+    : null;
+  const typeSuffix = categoryPhrase ? ` (${categoryPhrase})` : "";
+  const typeSuffixAr = categoryPhrase ? ` (${categoryPhrase})` : "";
 
   if (matchCount === 0) {
     const occ =
@@ -266,26 +268,29 @@ function generateSummary(
       preferences.budget === "any" ? "" : ` in the ${String(budget)} range`;
     if (isArabic) {
       return isFallback
-        ? `لم نجد تطابقًا دقيقًا لتفضيلاتك (${typePhrase})${preferences.budget === "any" ? "" : ` ضمن نطاق ${String(budget)}`}، لكن إليك بعض القطع الأقرب إلى ذوقك من مجموعتنا.`
-        : `لم نتمكن من إيجاد تطابق قريب لتفضيلاتك (${typePhrase})${preferences.budget === "any" ? "" : ` ضمن نطاق ${String(budget)}`}. جرّب تعديل اختياراتك أو تصفح مجموعتنا الكاملة.`;
+        ? `لم نجد تطابقًا دقيقًا لتفضيلاتك${typeSuffixAr}${preferences.budget === "any" ? "" : ` ضمن نطاق ${String(budget)}`}، لكن إليك بعض القطع الأقرب إلى ذوقك من مجموعتنا.`
+        : `لم نتمكن من إيجاد تطابق قريب لتفضيلاتك${typeSuffixAr}${preferences.budget === "any" ? "" : ` ضمن نطاق ${String(budget)}`}. جرّب تعديل اختياراتك أو تصفح مجموعتنا الكاملة.`;
     }
     return isFallback
-      ? `We couldn't find an exact match for your ${occ} preferences (${typePhrase})${budgetSuffix}, but here are some of our closest pieces.`
-      : `We couldn't find close matches for your ${occ} preferences (${typePhrase})${budgetSuffix}. Try adjusting your choices or explore our full collection.`;
+      ? `We couldn't find an exact match for your ${occ} preferences${typeSuffix}${budgetSuffix}, but here are some of our closest pieces.`
+      : `We couldn't find close matches for your ${occ} preferences${typeSuffix}${budgetSuffix}. Try adjusting your choices or explore our full collection.`;
   }
 
   const occPhrase =
     preferences.occasion === "any" ? "jewelry" : `${String(occasion).toLowerCase()} jewelry`;
+  const styleClause =
+    preferences.style === "any" ? "" : ` with a ${String(style).toLowerCase()} aesthetic`;
   const budgetClause =
     preferences.budget === "any"
       ? `, across a flexible budget`
       : ` in the ${String(budget)} range`;
   if (isArabic) {
+    const styleClauseAr = preferences.style === "any" ? "" : ` بأسلوب ${String(style).toLowerCase()}`;
     const budgetClauseAr =
       preferences.budget === "any" ? "" : `، ضمن نطاق ${String(budget)}`;
-    return `بناءً على تفضيلاتك لـ ${occPhrase} (${typePhrase}) بأسلوب ${String(style).toLowerCase()}${budgetClauseAr}، وجدنا ${matchCount} ${matchCount > 1 ? "توصية" : "توصية"} قد تكون مثالية لك.`;
+    return `بناءً على تفضيلاتك لـ ${occPhrase}${typeSuffixAr}${styleClauseAr}${budgetClauseAr}، وجدنا ${matchCount} ${matchCount > 1 ? "توصية" : "توصية"} قد تكون مثالية لك.`;
   }
-  return `Based on your preferences for ${occPhrase} (${typePhrase}) with a ${String(style).toLowerCase()} aesthetic${budgetClause}, we found ${matchCount} recommendation${matchCount > 1 ? "s" : ""} that may be perfect for you.`;
+  return `Based on your preferences for ${occPhrase}${typeSuffix}${styleClause}${budgetClause}, we found ${matchCount} recommendation${matchCount > 1 ? "s" : ""} that may be perfect for you.`;
 }
 
 /**

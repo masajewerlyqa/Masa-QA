@@ -93,4 +93,5 @@ export type AdvisorResponse = {
   products: ProductRecommendation[];
   stores: StoreRecommendation[];
   summary: string;
+  isFallback?: boolean;
 };
