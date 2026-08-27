@@ -19,6 +19,11 @@ const AUTH_ERROR_MAP: Array<{ match: RegExp; en: string; ar: string }> = [
     en: "Too many attempts. Please try again in a moment.",
     ar: "محاولات كثيرة جداً. يرجى المحاولة بعد قليل.",
   },
+  {
+    match: /error sending confirmation email|error sending magic link|error sending recovery email/i,
+    en: "We couldn't send the verification email right now. Please try again in a few minutes.",
+    ar: "تعذّر إرسال بريد التحقق الآن. يرجى المحاولة مرة أخرى بعد دقائق قليلة.",
+  },
 ];
 
 export function normalizeAuthError(message: string | null | undefined, language: Language): string {

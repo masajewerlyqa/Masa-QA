@@ -171,7 +171,7 @@ export const en = {
     reviewsWord: "reviews",
     offSuffix: "OFF",
     defaultDescription:
-      "A timeless symbol of eternal love, this exquisite piece features exceptional craftsmanship and luxury materials.",
+      "A timeless piece that features exceptional craftsmanship and luxury materials.",
     specifications: "Specifications",
     share: "Share",
     lifetimeWarranty: "Premium experience",
@@ -181,7 +181,7 @@ export const en = {
     reviewsTab: "Reviews",
     shippingTab: "Delivery",
     longDescriptionFallback:
-      "The Eternal Diamond Engagement Ring represents the pinnacle of fine jewelry craftsmanship. Each piece is meticulously handcrafted by master jewelers, ensuring every detail meets exacting standards.",
+      "This piece represents the pinnacle of fine jewelry craftsmanship. Each item is meticulously handcrafted by master jewelers, ensuring every detail meets exacting standards.",
     metalDetails: "Metal Details",
     otherDetails: "Other Details",
     metalTypeLabel: "Metal Type:",

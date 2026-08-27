@@ -246,7 +246,7 @@ export function MarketPricesContent({
                 [t('tools.market.labels.perOunce'), format(gold.pricePerOunceQAR)],
                 [
                   t('tools.market.labels.weeklyChange'),
-                  `${gold.weeklyChangePercent >= 0 ? '+' : ''}${gold.weeklyChangePercent}%`,
+                  `${gold.weeklyChangePercent >= 0 ? '+' : ''}${gold.weeklyChangePercent.toFixed(2)}%`,
                 ],
                 [t('tools.market.labels.monthlyTrend'), gold.monthlyTrend],
                 [t('tools.market.labels.qatarPremium'), `${gold.qatarPremiumEstimatePercent}%`],

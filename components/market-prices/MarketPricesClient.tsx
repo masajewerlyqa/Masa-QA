@@ -367,7 +367,7 @@ export function MarketPricesClient({ gold, silver, diamond }: MarketPricesClient
                     <dt className="text-masa-gray">{t("tools.market.labels.weeklyChange")}</dt>
                     <dd className={gold.weeklyChangePercent >= 0 ? "text-green-600" : "text-red-600"}>
                       {gold.weeklyChangePercent >= 0 ? "+" : ""}
-                      {gold.weeklyChangePercent}%
+                      {gold.weeklyChangePercent.toFixed(2)}%
                     </dd>
                   </div>
                   <div>
