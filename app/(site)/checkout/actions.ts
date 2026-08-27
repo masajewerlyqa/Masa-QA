@@ -1,10 +1,11 @@
 "use server";
 
 /**
- * Checkout order creation — payment-ready placeholder architecture.
- * - Receives payment_method (card | apple_pay) and optional promo_code from the form.
+ * Checkout order creation — payment is collected on delivery.
+ * - Receives payment_method (cash_on_delivery | card_on_delivery) and optional promo_code.
  * - Validates promo code if provided; applies discount; saves promo_code and discount_amount on order; increments used_count.
- * - No real payment processing; order is created and flow continues as today.
+ * - The order is created with payment_status "pending"; it only becomes "paid"
+ *   once the courier reports collecting cash or running the card terminal.
  */
 
 import { revalidatePath } from "next/cache";
@@ -14,6 +15,7 @@ import { getCartWithProducts, clearCart } from "@/lib/customer";
 import { sendOrderConfirmationEmail } from "@/lib/email/transactional";
 import { resolveEmailLanguage } from "@/lib/email/email-language";
 import { recordOrderPlacedEvent } from "@/lib/orders/lifecycle";
+import { isDeliveryPaymentMethod } from "@/lib/orders/payment-methods";
 import { notifySellersNewOrder } from "@/lib/notifications";
 import { validatePromoCode } from "@/lib/promo";
 import { computeCommission } from "@/lib/commission";
@@ -72,15 +74,14 @@ export async function createOrder(formData: FormData): Promise<CheckoutActionRes
   const deliveryLng = lngStr ? parseFloat(lngStr) : null;
   const deliveryMapUrl = String(formData.get("delivery_map_url") ?? "").trim() || null;
   const notes = deliveryLandmark;
+  // Both methods are collected by the courier at the door, so neither settles
+  // here. The order is created unpaid and only becomes paid once delivery
+  // actually happens -- see markOrderPaymentCollected.
   const paymentMethodRaw = String(formData.get("payment_method") ?? "").trim().toLowerCase();
-  if (["card", "apple_pay"].includes(paymentMethodRaw)) {
-    return {
-      ok: false,
-      error:
-        "Online card payments are processed securely through Stripe. Please use the checkout page payment button.",
-    };
+  if (!isDeliveryPaymentMethod(paymentMethodRaw)) {
+    return { ok: false, error: "Please choose how you would like to pay on delivery." };
   }
-  const _paymentMethod = paymentMethodRaw || "card";
+  const _paymentMethod = paymentMethodRaw;
   const promoCodeInput = String(formData.get("promo_code") ?? "").trim() || null;
 
   if (!firstName) {
@@ -214,6 +215,8 @@ export async function createOrder(formData: FormData): Promise<CheckoutActionRes
       shipping_address,
       notes,
       payment_method: _paymentMethod,
+      // Collected by the courier at delivery, never here.
+      payment_status: "pending",
       promo_code: appliedPromoCode,
       discount_amount: discountAmount,
       commission_amount: commissionAmount,

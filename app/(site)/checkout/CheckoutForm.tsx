@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { CreditCard, Lock, Wallet, Check, MapPin, Info, ShieldCheck } from "lucide-react";
+import { CreditCard, Banknote, Check, MapPin, Info, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,16 +15,12 @@ import {
 } from "@/components/ui/select";
 import { CheckoutMapPicker } from "@/components/checkout/CheckoutMapPicker";
 import { useI18n } from "@/components/useI18n";
-import {
-  createCheckoutSession,
-  toCheckoutLineItems,
-  type CartProductLine,
-} from "@/lib/stripe/checkout-client";
+import { createOrder } from "./actions";
 import type { CartSummaryItem } from "./CheckoutSummary";
 
 const PAYMENT_METHODS = [
-  { value: "card", label: "Credit / Debit Card", icon: CreditCard },
-  { value: "apple_pay", label: "Apple Pay", icon: Wallet },
+  { value: "cash_on_delivery", icon: Banknote },
+  { value: "card_on_delivery", icon: CreditCard },
 ] as const;
 
 type PaymentMethod = (typeof PAYMENT_METHODS)[number]["value"];
@@ -55,8 +51,13 @@ export function CheckoutForm({
 }: CheckoutFormProps) {
   const { isArabic, t } = useI18n();
   const paymentLabels: Record<PaymentMethod, string> = {
-    card: t("checkout.paymentLabels.card"),
-    apple_pay: t("checkout.paymentLabels.applePay"),
+    cash_on_delivery: t("checkout.paymentLabels.cashOnDelivery"),
+    card_on_delivery: t("checkout.paymentLabels.cardOnDelivery"),
+  };
+  // Spelled out so nobody mistakes card-on-delivery for paying online now.
+  const paymentHints: Record<PaymentMethod, string> = {
+    cash_on_delivery: t("checkout.paymentLabels.cashOnDeliveryHint"),
+    card_on_delivery: t("checkout.paymentLabels.cardOnDeliveryHint"),
   };
   const buildingLabels: Record<string, string> = {
     house_villa: t("checkout.buildingTypes.houseVilla"),
@@ -66,7 +67,7 @@ export function CheckoutForm({
     public_place: t("checkout.buildingTypes.publicPlace"),
     other: t("checkout.buildingTypes.other"),
   };
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash_on_delivery");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isPaying, setIsPaying] = useState(false);
   const [buildingType, setBuildingType] = useState("");
@@ -126,8 +127,7 @@ export function CheckoutForm({
       return;
     }
 
-    const lines = toCheckoutLineItems(cartItems as CartProductLine[]);
-    if (lines.length === 0) {
+    if (cartItems.length === 0) {
       setSubmitError(t("cart.empty"));
       return;
     }
@@ -149,17 +149,27 @@ export function CheckoutForm({
       deliveryMapUrl: mapUrl || null,
     };
 
+    // Nothing is charged here: the order is placed unpaid and the courier
+    // collects on delivery, so this submits straight to order creation.
+    fd.set("payment_method", paymentMethod);
+    fd.set("delivery_building_type", buildingType);
+    fd.set("delivery_lat", String(deliveryLat));
+    fd.set("delivery_lng", String(deliveryLng));
+    fd.set("delivery_map_url", mapUrl);
+    if (appliedPromo?.code) {
+      fd.set("promo_code", appliedPromo.code);
+    }
+
     setIsPaying(true);
     try {
-      const result = await createCheckoutSession(lines, shipping, {
-        promoCode: appliedPromo?.code,
-      });
-      if (!result.ok) {
+      const result = await createOrder(fd);
+      // On success the action redirects, so reaching here means it failed.
+      if (result && !result.ok) {
         setSubmitError(result.error ?? t("checkout.placeOrderFailed"));
-        return;
       }
-      window.location.assign(result.url);
-    } catch {
+    } catch (err) {
+      // A Next.js redirect surfaces as a thrown error; let it through.
+      if (err && typeof err === "object" && "digest" in err) throw err;
       setSubmitError(t("checkout.placeOrderFailed"));
     } finally {
       setIsPaying(false);
@@ -305,10 +315,10 @@ export function CheckoutForm({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            {PAYMENT_METHODS.map(({ value, label, icon: Icon }) => (
+            {PAYMENT_METHODS.map(({ value, icon: Icon }) => (
               <label
                 key={value}
-                className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer font-sans transition-colors ${
+                className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer font-sans transition-colors ${
                   paymentMethod === value
                     ? "border-primary bg-primary/5 ring-1 ring-primary/20"
                     : "border-primary/10 hover:border-primary/20 hover:bg-masa-light/50"
@@ -320,10 +330,13 @@ export function CheckoutForm({
                   value={value}
                   checked={paymentMethod === value}
                   onChange={() => setPaymentMethod(value)}
-                  className="rounded-full border-primary text-primary focus:ring-primary"
+                  className="mt-1 rounded-full border-primary text-primary focus:ring-primary"
                 />
-                <Icon className="w-5 h-5 text-primary shrink-0" aria-hidden />
-                <span className="font-medium text-masa-dark">{paymentLabels[value] ?? label}</span>
+                <Icon className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden />
+                <span className="flex flex-col gap-0.5">
+                  <span className="font-medium text-masa-dark">{paymentLabels[value]}</span>
+                  <span className="text-sm text-masa-gray">{paymentHints[value]}</span>
+                </span>
               </label>
             ))}
           </div>
@@ -334,9 +347,9 @@ export function CheckoutForm({
           >
             <p className="flex items-start gap-2 text-sm text-masa-dark">
               <ShieldCheck className="w-5 h-5 shrink-0 text-primary mt-0.5" aria-hidden />
-              <span>{t("checkout.stripeSecureHint")}</span>
+              <span>{t("checkout.payOnDeliveryBanner")}</span>
             </p>
-            <p className="text-xs text-masa-gray leading-relaxed">{t("checkout.stripeDeclinedHint")}</p>
+            <p className="text-xs text-masa-gray leading-relaxed">{t("checkout.payOnDeliveryNote")}</p>
           </div>
         </CardContent>
       </Card>
@@ -352,8 +365,8 @@ export function CheckoutForm({
         className="w-full bg-primary hover:bg-primary/90 h-12"
         disabled={submitDisabled}
       >
-        <Lock className={`w-5 h-5 ${isArabic ? "ml-2" : "mr-2"}`} />
-        {isPaying ? t("checkout.redirectingToStripe") : t("checkout.continueToStripe")}
+        <Check className={`w-5 h-5 ${isArabic ? "ml-2" : "mr-2"}`} />
+        {isPaying ? t("checkout.placingOrder") : t("checkout.placeOrder")}
       </Button>
     </form>
   );
