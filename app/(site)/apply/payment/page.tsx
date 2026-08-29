@@ -97,6 +97,9 @@ export default async function SellerPaymentPage() {
                 <dl className="divide-y divide-primary/10">
                   <Row label="Bank" value={bank.bankName} />
                   <Row label="Account name" value={bank.accountName} />
+                  {bank.accountNumber && (
+                    <Row label="Account number" value={bank.accountNumber} mono />
+                  )}
                   <Row label="IBAN" value={formatIban(bank.iban)} mono />
                 </dl>
                 <p className="text-sm text-masa-gray">

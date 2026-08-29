@@ -17,6 +17,8 @@ export type BankTransferDetails = {
   bankName: string;
   accountName: string;
   iban: string;
+  /** Optional: the IBAN already encodes it, but some payers ask for it directly. */
+  accountNumber: string | null;
 };
 
 /**
@@ -30,7 +32,12 @@ export function getBankTransferDetails(): BankTransferDetails | null {
 
   if (!bankName || !accountName || !iban) return null;
 
-  return { bankName, accountName, iban };
+  return {
+    bankName,
+    accountName,
+    iban,
+    accountNumber: process.env.MASA_BANK_ACCOUNT_NUMBER?.trim() || null,
+  };
 }
 
 /** Grouped in fours, the way banks print them, so it can be transcribed. */

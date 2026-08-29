@@ -39,7 +39,12 @@ export async function sendSellerPaymentInstructionsEmail(args: {
   planId: SellerPlanId;
   amountQar: number;
   paymentReference: string;
-  bank: { bankName: string; accountName: string; iban: string } | null;
+  bank: {
+    bankName: string;
+    accountName: string;
+    iban: string;
+    accountNumber?: string | null;
+  } | null;
   language?: unknown;
 }): Promise<SendEmailResult> {
   const lang = resolveEmailLanguage(args.language ?? "en");

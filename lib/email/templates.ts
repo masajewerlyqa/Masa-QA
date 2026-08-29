@@ -413,7 +413,12 @@ export function sellerPaymentInstructionsHtml(args: {
   planId: SellerPlanId;
   amountQar: number;
   paymentReference: string;
-  bank: { bankName: string; accountName: string; iban: string } | null;
+  bank: {
+    bankName: string;
+    accountName: string;
+    iban: string;
+    accountNumber?: string | null;
+  } | null;
   language?: unknown;
 }): string {
   const lang = resolveEmailLanguage(args.language ?? "en");
@@ -425,6 +430,9 @@ export function sellerPaymentInstructionsHtml(args: {
     ? [
         detailRow(ar ? "البنك" : "Bank", args.bank.bankName, lang),
         detailRow(ar ? "اسم الحساب" : "Account name", args.bank.accountName, lang),
+        args.bank.accountNumber
+          ? detailRow(ar ? "رقم الحساب" : "Account number", args.bank.accountNumber, lang)
+          : "",
         detailRow("IBAN", args.bank.iban, lang),
       ].join("")
     : "";
