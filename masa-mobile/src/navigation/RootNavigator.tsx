@@ -3,7 +3,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AdvisorScreen } from '../screens/AdvisorScreen';
 import { AuthScreen } from '../screens/AuthScreen';
 import { CheckoutScreen } from '../screens/CheckoutScreen';
-import { PaymentCancelScreen } from '../screens/PaymentCancelScreen';
 import { PaymentSuccessScreen } from '../screens/PaymentSuccessScreen';
 import { SellerApplicationScreen } from '../screens/seller/SellerApplicationScreen';
 import { SellerApplicationSuccessScreen } from '../screens/seller/SellerApplicationSuccessScreen';
@@ -42,7 +41,6 @@ export function RootNavigator(): React.JSX.Element {
       <Stack.Screen component={MarketPricesScreen} name="MarketPrices" />
       <Stack.Screen component={CheckoutScreen} name="Checkout" />
       <Stack.Screen component={PaymentSuccessScreen} name="PaymentSuccess" />
-      <Stack.Screen component={PaymentCancelScreen} name="PaymentCancel" />
     </Stack.Navigator>
   );
 }

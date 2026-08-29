@@ -133,15 +133,13 @@ export function goCheckout(): void {
   });
 }
 
-export function goPaymentSuccess(sessionId: string): void {
+/**
+ * Order placed, not paid: the courier collects at delivery, so this confirms
+ * the order rather than a payment.
+ */
+export function goOrderPlaced(orderId: string): void {
   navigateWhenReady(() => {
-    navigationRef.navigate('PaymentSuccess', { sessionId });
-  });
-}
-
-export function goPaymentCancel(): void {
-  navigateWhenReady(() => {
-    navigationRef.navigate('PaymentCancel');
+    navigationRef.navigate('PaymentSuccess', { orderId });
   });
 }
 

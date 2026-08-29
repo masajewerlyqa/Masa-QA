@@ -1,4 +1,3 @@
-import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import {
   Alert,
@@ -19,11 +18,12 @@ import { textStyle } from '../constants/typography';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../hooks/useAuth';
 import {
-  createCheckoutSession,
-  toCheckoutLineItems,
-  type CheckoutShippingPayload,
-} from '../lib/stripe/checkout-client';
-import { goAuth, goCart } from '../navigation/routes';
+  DELIVERY_PAYMENT_METHODS,
+  placeOrder,
+  type DeliveryPaymentMethod,
+  type OrderShippingPayload,
+} from '../services/orderService';
+import { goAuth, goCart, goOrderPlaced } from '../navigation/routes';
 import { useCartStore } from '../stores/cartStore';
 import { formatCurrencyFromUsd, parseUsdPrice } from '../utils/currency';
 
@@ -44,6 +44,7 @@ export function CheckoutScreen(): React.JSX.Element {
   const { currency, language, t, isArabic } = useSettings();
   const items = useCartStore((s) => s.items);
   const refresh = useCartStore((s) => s.refresh);
+  const reset = useCartStore((s) => s.reset);
   const luxury = fontFamily(isArabic, 'luxury');
 
   const [firstName, setFirstName] = useState('');
@@ -61,6 +62,7 @@ export function CheckoutScreen(): React.JSX.Element {
   const [deliveryLng, setDeliveryLng] = useState<number | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isPaying, setIsPaying] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<DeliveryPaymentMethod>('cash_on_delivery');
 
   useEffect(() => {
     if (user) void refresh();
@@ -113,13 +115,12 @@ export function CheckoutScreen(): React.JSX.Element {
       return;
     }
 
-    const lines = toCheckoutLineItems(items);
-    if (lines.length === 0) {
+    if (items.length === 0) {
       setSubmitError(t('cart.empty'));
       return;
     }
 
-    const shipping: CheckoutShippingPayload = {
+    const shipping: OrderShippingPayload = {
       firstName: firstName.trim(),
       deliveryPhone: phone.trim(),
       country: 'Qatar',
@@ -138,21 +139,18 @@ export function CheckoutScreen(): React.JSX.Element {
 
     setIsPaying(true);
     try {
-      const result = await createCheckoutSession(lines, shipping, {
+      const result = await placeOrder({
+        paymentMethod,
+        shipping,
         promoCode: promoCode.trim() || undefined,
-        customerId: user.id,
       });
       if (!result.ok) {
-        setSubmitError(
-          ('error' in result && result.error) || t('checkout.placeOrderFailed'),
-        );
+        setSubmitError(result.error || t('checkout.placeOrderFailed'));
         return;
       }
-      if (!result.url) {
-        setSubmitError(t('checkout.placeOrderFailed'));
-        return;
-      }
-      await WebBrowser.openBrowserAsync(result.url);
+      // Nothing was charged; the courier collects on delivery.
+      reset();
+      goOrderPlaced(result.orderId);
     } catch {
       setSubmitError(t('checkout.placeOrderFailed'));
     } finally {
@@ -259,6 +257,33 @@ export function CheckoutScreen(): React.JSX.Element {
 
         <MasaCard style={styles.section}>
           <Text style={[styles.sectionTitle, { fontFamily: luxury }]}>
+            {t('checkout.paymentMethod')}
+          </Text>
+          {DELIVERY_PAYMENT_METHODS.map((method) => (
+            <Pressable
+              key={method}
+              onPress={() => setPaymentMethod(method)}
+              style={[styles.payOption, paymentMethod === method && styles.payOptionActive]}
+            >
+              <Text style={[textStyle(isArabic, 'body'), styles.payOptionLabel]}>
+                {method === 'cash_on_delivery'
+                  ? t('checkout.paymentLabels.cashOnDelivery')
+                  : t('checkout.paymentLabels.cardOnDelivery')}
+              </Text>
+              <Text style={textStyle(isArabic, 'caption')}>
+                {method === 'cash_on_delivery'
+                  ? t('checkout.paymentLabels.cashOnDeliveryHint')
+                  : t('checkout.paymentLabels.cardOnDeliveryHint')}
+              </Text>
+            </Pressable>
+          ))}
+          <Text style={[textStyle(isArabic, 'caption'), styles.payNote]}>
+            {t('checkout.payOnDeliveryBanner')}
+          </Text>
+        </MasaCard>
+
+        <MasaCard style={styles.section}>
+          <Text style={[styles.sectionTitle, { fontFamily: luxury }]}>
             {t('checkout.orderSummary')}
           </Text>
           <View style={styles.summaryLine}>
@@ -289,8 +314,8 @@ export function CheckoutScreen(): React.JSX.Element {
           label={
             isPaying
               ? isArabic
-                ? 'جارٍ التوجيه إلى الدفع...'
-                : 'Redirecting to payment...'
+                ? 'جارٍ تنفيذ طلبك...'
+                : 'Placing your order...'
               : t('checkout.placeSecureOrder')
           }
           onPress={() => void handlePay()}
@@ -349,6 +374,20 @@ const styles = StyleSheet.create({
   },
   chipText: { color: theme.colors.masaDark, fontSize: 12 },
   chipTextActive: { color: theme.colors.white },
+  payOption: {
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 2,
+    marginTop: 8,
+    padding: 12,
+  },
+  payOptionActive: {
+    backgroundColor: theme.colors.masaLight,
+    borderColor: theme.colors.primary,
+  },
+  payOptionLabel: { fontWeight: '600' },
+  payNote: { marginTop: 10 },
   grid: { flexDirection: 'row', gap: 8 },
   gridItem: { flex: 1 },
   summaryLine: {

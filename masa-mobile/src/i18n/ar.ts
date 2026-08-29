@@ -384,6 +384,7 @@ export const ar = {
     placeSecureOrder: "تأكيد الطلب الآمن",
     mapPinRequired: "يرجى تحديد موقع التوصيل بدقة على الخريطة.",
     placeOrderFailed: "تعذر تنفيذ الطلب. يرجى المحاولة مرة أخرى.",
+    payOnDeliveryBanner: "لن يتم خصم أي مبلغ الآن — تدفع عند وصول طلبك.",
     deliveryAddress: "عنوان التوصيل",
     fullNameRequired: "الاسم الكامل *",
     yourFullName: "الاسم الكامل",
@@ -425,6 +426,11 @@ export const ar = {
     promoApplied: "تم تطبيق الرمز:",
     applyPromoFailed: "تعذّر تطبيق رمز الخصم.",
     paymentLabels: {
+      cashOnDelivery: "الدفع نقداً عند الاستلام",
+      cashOnDeliveryHint: "ادفع نقداً عند وصول طلبك.",
+      cardOnDelivery: "الدفع بالبطاقة عند الاستلام",
+      cardOnDeliveryHint:
+        "ادفع بأمان باستخدام بطاقتك البنكية عند وصول طلبك، عبر جهاز الدفع لدى المندوب.",
       card: "بطاقة ائتمان / خصم",
       /** Legacy orders */
       cod: "الدفع عند الاستلام",

@@ -32,8 +32,7 @@ export type RootStackParamList = {
   Info: { pageKey: InfoPageKey };
   MarketPrices: undefined;
   Checkout: undefined;
-  PaymentSuccess: { sessionId: string };
-  PaymentCancel: undefined;
+  PaymentSuccess: { orderId: string };
 };
 
 declare global {

@@ -1,8 +1,8 @@
 import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import { CheckCircle2 } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { MasaButton } from '../components/MasaButton';
 import { MasaCard } from '../components/MasaCard';
@@ -11,108 +11,61 @@ import { MOBILE_CONTENT_PADDING_X, MOBILE_SCROLL_BOTTOM_PADDING } from '../const
 import { fontFamily, theme } from '../constants/theme';
 import { textStyle } from '../constants/typography';
 import { useSettings } from '../context/SettingsContext';
-import { verifyCheckoutSession } from '../lib/stripe/checkout-client';
 import type { RootStackParamList } from '../navigation/types';
 import { goDiscover, goHome } from '../navigation/routes';
 import { useCartStore } from '../stores/cartStore';
 
-type VerifyStatus = 'loading' | 'confirmed' | 'processing' | 'failed';
-
+/**
+ * Order confirmation.
+ *
+ * There is nothing to verify here any more: payment is collected by the
+ * courier at delivery, so the order is already placed by the time we arrive.
+ * The screen confirms the order rather than claiming a payment succeeded.
+ */
 export function PaymentSuccessScreen(): React.JSX.Element {
   const route = useRoute<RouteProp<RootStackParamList, 'PaymentSuccess'>>();
-  const sessionId = route.params.sessionId;
+  const orderId = route.params.orderId;
   const { isArabic, t } = useSettings();
   const luxury = fontFamily(isArabic, 'luxury');
   const refreshCart = useCartStore((s) => s.refresh);
-  const [status, setStatus] = useState<VerifyStatus>('loading');
-  const [orderNumber, setOrderNumber] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    let attempts = 0;
-
-    async function poll(): Promise<void> {
-      const result = await verifyCheckoutSession(sessionId);
-      if (cancelled) return;
-
-      if (result.status === 'confirmed') {
-        setStatus('confirmed');
-        setOrderNumber(result.orderNumber ?? result.orderId ?? null);
-        void refreshCart();
-        return;
-      }
-
-      if (
-        result.status === 'payment_failed' ||
-        result.status === 'invalid' ||
-        result.status === 'not_found'
-      ) {
-        setStatus('failed');
-        return;
-      }
-
-      attempts += 1;
-      if (attempts < 15) {
-        setStatus('processing');
-        setTimeout(() => void poll(), 2000);
-      } else {
-        setStatus('failed');
-      }
-    }
-
-    void poll();
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionId, refreshCart]);
+    void refreshCart();
+  }, [refreshCart]);
 
   return (
     <SiteShell>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.content}>
         <MasaCard style={styles.card}>
-          {status === 'loading' || status === 'processing' ? (
-            <>
-              <ActivityIndicator color={theme.colors.primary} size="large" />
-              <Text style={[styles.title, { fontFamily: luxury }]}>
-                {isArabic ? 'جارٍ تأكيد الدفع...' : 'Confirming your payment...'}
-              </Text>
-              <Text style={textStyle(isArabic, 'body')}>
-                {isArabic
-                  ? 'يرجى الانتظار بينما نتحقق من عملية الدفع.'
-                  : 'Please wait while we verify your payment with Stripe.'}
-              </Text>
-            </>
-          ) : null}
+          <View style={styles.iconWrap}>
+            <CheckCircle2 color={theme.colors.primary} size={44} />
+          </View>
 
-          {status === 'confirmed' ? (
-            <>
-              <CheckCircle2 color={theme.colors.primary} size={48} />
-              <Text style={[styles.title, { fontFamily: luxury }]}>
-                {t('checkout.success.thankYou')}
-              </Text>
-              {orderNumber ? (
-                <Text style={textStyle(isArabic, 'body')}>
-                  {isArabic ? `رقم الطلب: ${orderNumber}` : `Order #${orderNumber}`}
-                </Text>
-              ) : null}
-              <MasaButton label={t('cart.continueShopping')} onPress={() => goDiscover()} />
-              <MasaButton label={isArabic ? 'الرئيسية' : 'Home'} onPress={() => goHome()} variant="outline" />
-            </>
-          ) : null}
+          <Text style={[styles.title, { fontFamily: luxury }]}>
+            {isArabic ? 'تم تأكيد طلبك' : 'Your order is confirmed'}
+          </Text>
 
-          {status === 'failed' ? (
-            <>
-              <Text style={[styles.title, { fontFamily: luxury }]}>
-                {isArabic ? 'تعذّر تأكيد الدفع' : 'Payment not confirmed'}
-              </Text>
-              <Text style={textStyle(isArabic, 'body')}>
-                {isArabic
-                  ? 'لم نتمكن من تأكيد الدفع بعد. إذا تم خصم المبلغ، تواصل مع الدعم.'
-                  : 'We could not confirm payment yet. If you were charged, contact support.'}
-              </Text>
-              <MasaButton label={t('cart.continueShopping')} onPress={() => goDiscover()} />
-            </>
-          ) : null}
+          <Text style={[textStyle(isArabic, 'body'), styles.centerText]}>
+            {t('checkout.payOnDeliveryBanner')}
+          </Text>
+
+          <View style={styles.orderRow}>
+            <Text style={textStyle(isArabic, 'caption')}>
+              {isArabic ? 'رقم الطلب' : 'Order reference'}
+            </Text>
+            <Text style={[textStyle(isArabic, 'bodySm'), styles.orderId]}>
+              {orderId.slice(0, 8).toUpperCase()}
+            </Text>
+          </View>
+
+          <Text style={[textStyle(isArabic, 'caption'), styles.centerText]}>
+            {isArabic
+              ? 'سنراسلك بتفاصيل الطلب، وسيتواصل معك المندوب قبل التوصيل.'
+              : 'We have emailed your order details. The courier will contact you before delivery.'}
+          </Text>
+
+          <MasaButton label={t('common.continueShopping')} onPress={() => goDiscover()} />
+          <MasaButton label={t('common.home')} onPress={() => goHome()} variant="ghost" />
         </MasaCard>
       </ScrollView>
     </SiteShell>
@@ -120,21 +73,22 @@ export function PaymentSuccessScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  card: { alignItems: 'center', gap: 12, padding: 24 },
+  centerText: { textAlign: 'center' },
   content: {
-    flexGrow: 1,
-    justifyContent: 'center',
     paddingBottom: MOBILE_SCROLL_BOTTOM_PADDING,
     paddingHorizontal: MOBILE_CONTENT_PADDING_X,
-    paddingTop: 48,
+    paddingTop: 24,
   },
-  card: {
+  iconWrap: { marginBottom: 4 },
+  orderId: { fontWeight: '600', letterSpacing: 1 },
+  orderRow: {
     alignItems: 'center',
-    gap: 16,
-    padding: 32,
+    backgroundColor: theme.colors.masaLight,
+    borderRadius: 8,
+    gap: 2,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
-  title: {
-    color: theme.colors.primary,
-    fontSize: 24,
-    textAlign: 'center',
-  },
+  title: { color: theme.colors.primary, fontSize: 22, textAlign: 'center' },
 });

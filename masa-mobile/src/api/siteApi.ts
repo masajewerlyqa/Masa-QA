@@ -96,7 +96,7 @@ async function authHeaders(): Promise<Record<string, string> | null> {
   return { Authorization: `Bearer ${token}` };
 }
 
-/** Authenticated JSON fetch (Stripe checkout, verify-session). */
+/** Authenticated JSON fetch. */
 export async function siteFetchJsonAuthed<T>(
   path: string,
   init?: RequestInit & { timeoutMs?: number },

@@ -389,6 +389,7 @@ export const en = {
     placeSecureOrder: "Place Secure Order",
     mapPinRequired: "Please pin your exact delivery location on the map.",
     placeOrderFailed: "Failed to place order. Please try again.",
+    payOnDeliveryBanner: "No payment is taken now — you pay when your order arrives.",
     deliveryAddress: "Delivery Address",
     fullNameRequired: "Full Name *",
     yourFullName: "Your full name",
@@ -431,6 +432,11 @@ export const en = {
     promoApplied: "Code applied:",
     applyPromoFailed: "Could not apply promo code.",
     paymentLabels: {
+      cashOnDelivery: "Cash on Delivery",
+      cashOnDeliveryHint: "Pay in cash when your order is delivered.",
+      cardOnDelivery: "Card on Delivery",
+      cardOnDeliveryHint:
+        "Pay securely by bank card when your order is delivered, using the courier's card terminal.",
       card: "Credit / Debit Card",
       /** Legacy orders */
       cod: "Cash on Delivery",

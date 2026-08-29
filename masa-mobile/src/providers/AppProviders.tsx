@@ -5,7 +5,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SettingsProvider } from '../context/SettingsContext';
 import { AuthBootstrap } from './AuthBootstrap';
 import { AuthSync } from './AuthSync';
-import { CheckoutLinking } from './CheckoutLinking';
 import { OAuthLinking } from './OAuthLinking';
 
 export function AppProviders({ children }: PropsWithChildren): React.JSX.Element {
@@ -15,9 +14,7 @@ export function AppProviders({ children }: PropsWithChildren): React.JSX.Element
         <AuthSync>
           <SettingsProvider>
             <AuthBootstrap>
-              <OAuthLinking>
-                <CheckoutLinking>{children}</CheckoutLinking>
-              </OAuthLinking>
+              <OAuthLinking>{children}</OAuthLinking>
             </AuthBootstrap>
           </SettingsProvider>
         </AuthSync>

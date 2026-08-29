@@ -50,7 +50,10 @@ export async function applyPromoCode(codeInput: string): Promise<ApplyPromoResul
   return { ok: true, code: result.code, discountAmount: result.discountAmount };
 }
 
-export async function createOrder(formData: FormData): Promise<CheckoutActionResult> {
+export async function createOrder(
+  formData: FormData,
+  options?: { redirect?: boolean }
+): Promise<CheckoutActionResult> {
   const { user, profile } = await getCurrentUserWithProfile();
   if (!user) return { ok: false, error: "Sign in to place an order" };
 
@@ -289,5 +292,13 @@ export async function createOrder(formData: FormData): Promise<CheckoutActionRes
   revalidatePath("/checkout");
   revalidatePath("/seller/orders");
   revalidatePath("/seller");
+
+  // The mobile app calls this through an API route and navigates itself, so it
+  // opts out of the redirect and reads the id from the result instead. Keeping
+  // one code path means promo, commission, stock and email handling cannot
+  // drift between web and mobile.
+  if (options?.redirect === false) {
+    return { ok: true, orderId: placed.id };
+  }
   redirect(`/checkout/success?orderId=${placed.id}`);
 }
