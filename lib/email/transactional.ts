@@ -134,13 +134,15 @@ export async function sendOrderConfirmationEmail(
   orderNumber: string | null,
   /** Total in USD (matches `orders.total` in the database). */
   totalUsd: number,
-  language: unknown = "en"
+  language: unknown = "en",
+  /** How the courier will collect, so the email can say nothing is charged yet. */
+  paymentMethod?: string | null
 ): Promise<SendEmailResult> {
   const lang = resolveEmailLanguage(language);
   return sendEmailWithRetry({
     to,
     subject: lang === "ar" ? "تم تأكيد طلبك — ماسا" : "Your MASA order is confirmed",
-    html: orderConfirmationHtml(orderId, orderNumber, totalUsd, lang),
+    html: orderConfirmationHtml(orderId, orderNumber, totalUsd, lang, paymentMethod),
     tags: [{ name: "category", value: "order_confirmation" }],
   });
 }

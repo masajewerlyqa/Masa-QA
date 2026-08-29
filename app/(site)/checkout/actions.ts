@@ -277,7 +277,8 @@ export async function createOrder(
       placed.id,
       placed.order_number,
       total,
-      resolveEmailLanguage(profile?.preferred_language)
+      resolveEmailLanguage(profile?.preferred_language),
+      _paymentMethod
     );
     if (!mailResult.ok) {
       console.warn("[checkout] order confirmation email failed:", mailResult.error, { orderId: placed.id });

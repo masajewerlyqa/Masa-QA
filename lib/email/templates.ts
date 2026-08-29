@@ -106,19 +106,42 @@ export function orderConfirmationHtml(
   orderNumber: string | null,
   /** Order total in USD (same as database). */
   totalUsd: number,
-  language: unknown = "en"
+  language: unknown = "en",
+  /** How the courier will collect. Omitted for legacy orders paid online. */
+  paymentMethod?: string | null
 ): string {
   const lang = resolveEmailLanguage(language);
   const base = getSiteUrl();
   const ref = formatOrderDisplayRef({ id: orderId, order_number: orderNumber });
   const usd = formatPrice(totalUsd, "USD");
   const qar = formatPrice(totalUsd, "QAR", { language: lang });
+
+  // Say plainly that nothing has been charged yet, so nobody expects a receipt
+  // or thinks their card was taken during checkout.
+  const paymentLine =
+    paymentMethod === "cash_on_delivery"
+      ? lang === "ar"
+        ? "سيتم تحصيل المبلغ نقداً عند التوصيل."
+        : "Payment will be collected in cash at delivery."
+      : paymentMethod === "card_on_delivery"
+        ? lang === "ar"
+          ? "سيتم تحصيل المبلغ بالبطاقة عند التوصيل عبر جهاز الدفع لدى المندوب."
+          : "Payment will be collected by card at delivery, using the courier's card terminal."
+        : null;
+
+  const paymentBlock = paymentLine
+    ? `<p style="margin:0 0 16px;padding:12px 14px;background:${BRAND.light};border-radius:6px;border:1px solid rgba(83,28,36,0.08);"><strong>${escapeHtmlText(
+        lang === "ar" ? "طريقة الدفع" : "Payment method"
+      )}:</strong> ${escapeHtmlText(paymentLine)}</p>`
+    : "";
+
   if (lang === "ar") {
     return wrap(
       `<p>شكراً لطلبك.</p>
     <p>تم استلام طلبك رقم <strong>${ref}</strong>.</p>
     <p>الإجمالي: <strong>${usd}</strong> · <strong>${qar}</strong></p>
     <p style="font-size:13px;color:${BRAND.muted};">سعر التحويل المعروض: 1 دولار أمريكي = ${USD_TO_QAR} ريال قطري.</p>
+    ${paymentBlock}
     <p>سنُعلمك عند كل خطوة — التأكيد، التجهيز، والتوصيل.</p>
     <p style="margin-top:20px;"><a href="${base}/account/orders/${orderId}" style="color:${BRAND.primary};">عرض الطلب</a></p>`,
       "تأكيد الطلب",
@@ -130,6 +153,7 @@ export function orderConfirmationHtml(
     <p>Your order <strong>${ref}</strong> has been received.</p>
     <p>Total: <strong>${usd}</strong> · <strong>${qar}</strong></p>
     <p style="font-size:13px;color:${BRAND.muted};">Conversion shown at 1 USD = ${USD_TO_QAR} QAR.</p>
+    ${paymentBlock}
     <p>We’ll notify you at each step — confirmation, processing, and delivery.</p>
     <p style="margin-top:20px;"><a href="${base}/account/orders/${orderId}" style="color:${BRAND.primary};">View order</a></p>`,
     "Order confirmation",
