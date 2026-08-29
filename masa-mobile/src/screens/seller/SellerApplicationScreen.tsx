@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,7 +15,9 @@ import { MasaButton } from '../../components/MasaButton';
 import { MasaCard } from '../../components/MasaCard';
 import { SiteShell } from '../../components/layout/SiteShell';
 import { MOBILE_CONTENT_PADDING_X, MOBILE_SCROLL_BOTTOM_PADDING } from '../../constants/layout';
+import { sellerApplicationStatusCopy } from '../../constants/sellerApplicationStatus';
 import { parseSellerPlanId } from '../../constants/sellerPlans';
+import { resolveSiteUrl } from '../../config/env';
 import { fontFamily, theme } from '../../constants/theme';
 import { textStyle } from '../../constants/typography';
 import { useSettings } from '../../context/SettingsContext';
@@ -140,7 +143,7 @@ export function SellerApplicationScreen(): React.JSX.Element {
   }
 
   if (existingStatus) {
-    const isPending = existingStatus === 'pending';
+    const statusCopy = sellerApplicationStatusCopy(existingStatus, isArabic);
     return (
       <SiteShell>
         <View style={styles.centered}>
@@ -148,23 +151,26 @@ export function SellerApplicationScreen(): React.JSX.Element {
             <Text style={[styles.title, { fontFamily: luxury }]}>
               {isArabic ? 'طلب البائع' : 'Seller application'}
             </Text>
-            <Text style={textStyle(isArabic, 'body')}>
-              {isArabic ? 'لقد قمت بإرسال طلب سابقًا.' : 'You have already submitted an application.'}
-            </Text>
             <Text style={textStyle(isArabic, 'bodySm')}>
               {isArabic ? 'الحالة:' : 'Status:'}{' '}
-              <Text style={{ fontWeight: '600' }}>{existingStatus.replace(/_/g, ' ')}</Text>
+              <Text style={{ fontWeight: '600' }}>{statusCopy.label}</Text>
             </Text>
-            <Text style={textStyle(isArabic, 'body')}>
-              {isPending
-                ? isArabic
-                  ? 'سيقوم المشرف بمراجعة طلبك، وسيصلك إشعار عند اتخاذ القرار.'
-                  : 'An admin will review your application. You will be notified once a decision is made.'
-                : isArabic
-                  ? 'إذا كانت لديك أسئلة، يرجى التواصل مع الدعم.'
-                  : 'If you have questions, please contact support.'}
-            </Text>
-            <MasaButton label={isArabic ? 'العودة للرئيسية' : 'Back to home'} onPress={() => goSellerPlans()} variant="outline" />
+            <Text style={textStyle(isArabic, 'body')}>{statusCopy.detail}</Text>
+            {statusCopy.needsAction ? (
+              // Proof upload lives on the site; sending them there beats leaving
+              // them on a dead end with no way to finish paying.
+              <MasaButton
+                label={isArabic ? 'إكمال الدفع' : 'Complete payment'}
+                onPress={() => {
+                  void Linking.openURL(`${resolveSiteUrl()}/apply/payment`);
+                }}
+              />
+            ) : null}
+            <MasaButton
+              label={isArabic ? 'العودة للرئيسية' : 'Back to home'}
+              onPress={() => goSellerPlans()}
+              variant="outline"
+            />
           </MasaCard>
         </View>
       </SiteShell>

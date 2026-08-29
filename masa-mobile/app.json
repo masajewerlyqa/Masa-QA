@@ -43,11 +43,6 @@
               "scheme": "https",
               "host": "masajewelry.com",
               "pathPrefix": "/auth/callback"
-            },
-            {
-              "scheme": "https",
-              "host": "masajewelry.com",
-              "pathPrefix": "/checkout"
             }
           ],
           "category": [

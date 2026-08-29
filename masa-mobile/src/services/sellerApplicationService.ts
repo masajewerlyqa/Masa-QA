@@ -2,6 +2,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 
 import { getSupabase } from '../api/client';
+import { sitePostJsonAuthed } from '../api/siteApi';
 import { parseSellerPlanId, type SellerPlanId } from '../constants/sellerPlans';
 import {
   finalizeSellerApplicationSchema,
@@ -230,42 +231,20 @@ export async function finalizeSellerApplication(
     };
   }
 
-  const data = parsed.data;
-  const socialLinks = socialLinksFromForm(data);
-
-  const { error: upsertError } = await getSupabase().from('seller_applications').upsert(
-    {
-      user_id: user.id,
-      status: 'pending',
-      business_name: data.brand_store_name,
-      business_description: data.store_description || null,
-      contact_email: data.email,
-      contact_phone: data.phone || null,
-      contact_full_name: data.contact_full_name,
-      store_location: data.store_location,
-      license_path: data.license_path,
-      logo_path: data.logo_path,
-      social_links: socialLinks,
-      seller_plan: planId,
-    },
-    { onConflict: 'user_id' },
+  // Submitted through the web action rather than written here directly: it
+  // snapshots the fee, assigns the payment reference and sends the payment
+  // instructions email. Writing the row from the app skipped all of that, so a
+  // mobile applicant could never reach the payment step.
+  const submitted = await sitePostJsonAuthed<{ ok: boolean; error?: string }>(
+    '/api/seller/apply',
+    parsed.data,
   );
 
-  if (upsertError) {
-    return { ok: false, error: upsertError.message };
+  if (!submitted.ok) {
+    return { ok: false, error: submitted.error };
   }
-
-  const { error: profileUpdateError } = await getSupabase()
-    .from('profiles')
-    .update({
-      full_name: data.contact_full_name,
-      pending_seller_plan: null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', user.id);
-
-  if (profileUpdateError) {
-    return { ok: false, error: profileUpdateError.message };
+  if (!submitted.data?.ok) {
+    return { ok: false, error: submitted.data?.error ?? 'Could not submit your application.' };
   }
 
   return { ok: true, planId };
