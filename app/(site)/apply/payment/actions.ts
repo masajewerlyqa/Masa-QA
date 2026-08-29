@@ -12,6 +12,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { requireServiceClient } from "@/lib/supabase/service";
 import { sendSellerPaymentProofReceivedEmail } from "@/lib/email/transactional";
 import { getProfileEmailLanguage } from "@/lib/email/profile-language";
 
@@ -89,7 +90,12 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Uplo
     return { ok: false, error: "We could not upload that file. Please try again." };
   }
 
-  const { error: updateError } = await supabase
+  // Status is a decision about the applicant, so it is written server-side with
+  // the service client rather than from the caller's session. Ownership and the
+  // current status were both checked above, and the update is pinned to that
+  // row and status, so this cannot touch anyone else's application.
+  const service = requireServiceClient();
+  const { data: updated, error: updateError } = await service
     .from("seller_applications")
     .update({
       payment_proof_path: path,
@@ -99,7 +105,15 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Uplo
       rejection_reason: null,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", application.id);
+    .eq("id", application.id)
+    .eq("user_id", user.id)
+    .eq("status", application.status)
+    .select("id")
+    .maybeSingle();
+
+  if (!updateError && !updated) {
+    return { ok: false, error: "Your application changed while uploading. Please refresh." };
+  }
 
   if (updateError) {
     return { ok: false, error: updateError.message };

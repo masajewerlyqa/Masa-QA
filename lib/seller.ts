@@ -518,6 +518,8 @@ export async function getSellerOrderById(orderId: string, storeId: string): Prom
     shipping_address: orderRow.shipping_address as Record<string, unknown> | null,
     notes: orderRow.notes as string | null,
     payment_method: orderRow.payment_method as string | null,
+    payment_status: (orderRow.payment_status as string | null) ?? null,
+    payment_collected_at: (orderRow.payment_collected_at as string | null) ?? null,
     tracking_number: orderRow.tracking_number as string | null,
     shipping_company: orderRow.shipping_company as string | null,
     estimated_delivery: orderRow.estimated_delivery as string | null,

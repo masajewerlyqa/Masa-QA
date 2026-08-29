@@ -47,8 +47,28 @@ export default async function SellerApplySuccessPage({ searchParams }: PageProps
             </Badge>
           </div>
           <p className="text-sm text-masa-dark leading-relaxed">{t(language, "sellerOnboarding.successReviewNote")}</p>
+          {/*
+            The application is not finished until the registration fee is paid.
+            We email the instructions, but an email can be missed or filtered,
+            and without this the seller has no route to the payment page at all.
+          */}
+          <div className="rounded-xl border border-primary/20 bg-white px-4 py-4 space-y-2">
+            <p className="text-sm font-medium text-masa-dark">
+              {isArabic ? "الخطوة التالية: الدفع" : "Next step: payment"}
+            </p>
+            <p className="text-sm text-masa-gray leading-relaxed">
+              {isArabic
+                ? "أكمل رسوم التسجيل عبر حوالة بنكية وارفع الإيصال حتى نتمكن من مراجعة طلبك."
+                : "Pay the registration fee by bank transfer and upload your receipt so we can review your application."}
+            </p>
+            <Button asChild className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
+              <Link href="/apply/payment">
+                {isArabic ? "عرض تعليمات الدفع" : "View payment instructions"}
+              </Link>
+            </Button>
+          </div>
           <div className={`flex flex-col sm:flex-row gap-3 ${isArabic ? "sm:flex-row-reverse" : ""}`}>
-            <Button asChild className="bg-primary hover:bg-primary/90 flex-1">
+            <Button asChild variant="outline" className="border-primary/25 flex-1">
               <Link href="/">{t(language, "sellerOnboarding.successBackHome")}</Link>
             </Button>
             <Button asChild variant="outline" className="border-primary/25 flex-1">

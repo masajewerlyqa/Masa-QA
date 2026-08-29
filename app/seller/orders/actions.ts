@@ -63,6 +63,14 @@ export async function updateOrderStatus(
     orderUpdate.cancellation_source = "seller";
     orderUpdate.platform_cancellation_reason = null;
   }
+  // A refunded order is no longer paid, and an order cancelled before anyone
+  // collected was never paid — leaving either as "pending" would keep them
+  // showing up as money still owed.
+  if (newStatus === "refunded") {
+    orderUpdate.payment_status = "refunded";
+  } else if (newStatus === "cancelled" && order.payment_status === "pending") {
+    orderUpdate.payment_status = "failed";
+  }
 
   const { data: updated } = await supabase
     .from("orders")
@@ -125,6 +133,63 @@ export async function updateOrderStatus(
   revalidatePath("/seller/orders");
   revalidatePath(`/seller/orders/${orderId}`);
   revalidatePath("/seller");
+  revalidatePath("/account/orders");
+  revalidatePath(`/account/orders/${orderId}`);
+  return { ok: true };
+}
+
+/**
+ * Records that the courier actually collected the money.
+ *
+ * Deliberately separate from the delivery status: a parcel can be handed over
+ * and the payment still fail, so marking an order delivered must not claim we
+ * have been paid. Nothing else in the app sets payment_status to "paid".
+ */
+export async function markOrderPaymentCollected(orderId: string): Promise<OrderActionResult> {
+  const { user, profile } = await getCurrentUserWithProfile();
+  if (!user || profile?.role !== "seller") return { ok: false, error: "Unauthorized" };
+
+  const store = await getSellerStore();
+  if (!store) return { ok: false, error: "Store not found" };
+
+  const order = await getSellerOrderById(orderId, store.id);
+  if (!order) return { ok: false, error: "Order not found or not for your store" };
+
+  if (order.payment_status === "paid") return { ok: true };
+  if (order.payment_status === "refunded") {
+    return { ok: false, error: "This order was refunded and cannot be marked as paid." };
+  }
+
+  // Money changes hands at the door, so there is nothing to collect until the
+  // parcel is actually with the customer.
+  if (order.status !== "delivered" && order.status !== "out_for_delivery") {
+    return {
+      ok: false,
+      error: "Mark the order as out for delivery or delivered before recording payment.",
+    };
+  }
+
+  const supabase = await createClient();
+  const collectedAt = new Date().toISOString();
+
+  // Guarded on the previous payment_status so two people confirming at once
+  // cannot both write a collection timestamp.
+  const { data: updated } = await supabase
+    .from("orders")
+    .update({ payment_status: "paid", payment_collected_at: collectedAt, updated_at: collectedAt })
+    .eq("id", orderId)
+    .eq("payment_status", "pending")
+    .select("id")
+    .maybeSingle();
+
+  if (!updated) {
+    const fresh = await getSellerOrderById(orderId, store.id);
+    if (fresh?.payment_status === "paid") return { ok: true };
+    return { ok: false, error: "Order was updated elsewhere — refresh the page." };
+  }
+
+  revalidatePath("/seller/orders");
+  revalidatePath(`/seller/orders/${orderId}`);
   revalidatePath("/account/orders");
   revalidatePath(`/account/orders/${orderId}`);
   return { ok: true };

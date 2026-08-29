@@ -104,6 +104,9 @@ export type SellerOrderDetail = {
   shipping_address: Record<string, unknown> | null;
   notes: string | null;
   payment_method: string | null;
+  /** Independent of `status`: an order can be delivered but not yet collected. */
+  payment_status: string | null;
+  payment_collected_at: string | null;
   tracking_number: string | null;
   shipping_company: string | null;
   estimated_delivery: string | null;

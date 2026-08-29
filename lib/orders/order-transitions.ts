@@ -10,6 +10,7 @@ export const SELLER_STATUS_ORDER = [
   "accepted",
   "processing",
   "shipped",
+  "out_for_delivery",
   "delivered",
   "cancelled",
   "refunded",
@@ -23,7 +24,9 @@ const SELLER_ALLOWED_NEXT: Record<string, string[]> = {
   pending: ["accepted", "processing", "cancelled", "refunded"],
   accepted: ["processing", "shipped", "cancelled", "refunded"],
   processing: ["shipped", "cancelled", "refunded"],
-  shipped: ["delivered", "cancelled", "refunded"],
+  /** Courier has it; out_for_delivery is the hop where payment gets collected. */
+  shipped: ["out_for_delivery", "delivered", "cancelled", "refunded"],
+  out_for_delivery: ["delivered", "cancelled", "refunded"],
   delivered: ["refunded"],
   cancelled: [],
   refunded: [],

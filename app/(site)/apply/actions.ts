@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { requireServiceClient } from "@/lib/supabase/service";
 import { getCurrentUserWithProfile } from "@/lib/auth";
 import { notifyAdminsNewSellerApplication } from "@/lib/notifications";
 import { finalizeSellerApplicationSchema, socialLinksFromForm } from "@/lib/validations/seller-application";
@@ -91,7 +92,11 @@ export async function finalizeSellerApplicationAction(raw: unknown): Promise<Fin
 
   // Submitting does not activate anything: the application enters the payment
   // stage and only an admin who has seen the transfer can move it forward.
-  const { data: application, error: upsertError } = await supabase
+  // Service client because this sets status and seller_plan, which the trigger
+  // in 054 pins for non-admins -- a resubmitted application would otherwise
+  // silently keep its old status. user_id comes from the verified session, so
+  // the row is still scoped to the caller.
+  const { data: application, error: upsertError } = await requireServiceClient()
     .from("seller_applications")
     .upsert(
       {
@@ -120,8 +125,10 @@ export async function finalizeSellerApplicationAction(raw: unknown): Promise<Fin
     return { ok: false, error: upsertError?.message ?? "Could not save your application." };
   }
 
-  // Derived from the id, so it needs the row to exist first.
-  const { error: referenceError } = await supabase
+  // Derived from the id, so it needs the row to exist first. Written with the
+  // service client because payment_reference is ours to assign, not the
+  // applicant's to choose -- see 054_protect_seller_application_review_fields.
+  const { error: referenceError } = await requireServiceClient()
     .from("seller_applications")
     .update({ payment_reference: buildPaymentReference(application.id) })
     .eq("id", application.id)

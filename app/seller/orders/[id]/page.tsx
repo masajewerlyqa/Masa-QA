@@ -12,6 +12,7 @@ import { PrintOrderButton } from "@/components/seller/PrintOrderButton";
 import { TrackingInfoForm } from "@/components/seller/TrackingInfoForm";
 import { FormattedPrice } from "@/components/FormattedPrice";
 import { DeliveryAddressCard } from "@/components/order/DeliveryAddressCard";
+import { MarkPaymentCollected } from "./MarkPaymentCollected";
 import { brandName } from "@/lib/brand";
 import { getServerLanguage } from "@/lib/language-server";
 import { t } from "@/lib/i18n";
@@ -25,6 +26,10 @@ import { SellerOrderQuickActions } from "@/components/seller/SellerOrderQuickAct
 function formatPaymentMethod(method: string | null, language: "en" | "ar") {
   if (!method) return t(language, "common.notSpecified", "Not specified");
   switch (method) {
+    case "cash_on_delivery": return t(language, "checkout.paymentLabels.cashOnDelivery");
+    case "card_on_delivery": return t(language, "checkout.paymentLabels.cardOnDelivery");
+    /** Retired online card payments; kept so old orders still read correctly. */
+    case "card_online_legacy":
     case "card": return t(language, "checkout.paymentLabels.card");
     case "apple_pay": return t(language, "checkout.paymentLabels.applePay");
     case "cod": return t(language, "checkout.paymentLabels.cod");
@@ -377,6 +382,24 @@ export default async function SellerOrderDetailPage({ params }: PageProps) {
                 <Badge variant="outline" className="font-medium">
                   {formatPaymentMethod(order.payment_method, language)}
                 </Badge>
+              </div>
+              {/* Payment is tracked apart from delivery, so it needs its own control. */}
+              <div className="pb-3 border-b border-primary/10">
+                <MarkPaymentCollected
+                  orderId={order.id}
+                  paymentStatus={order.payment_status}
+                  orderStatus={order.status}
+                  collectedAt={order.payment_collected_at}
+                  labels={{
+                    paid: isArabic ? "تم تحصيل المبلغ" : "Payment collected",
+                    pending: isArabic ? "لم يتم التحصيل بعد" : "Not collected yet",
+                    action: isArabic ? "تأكيد تحصيل المبلغ" : "Mark payment collected",
+                    working: isArabic ? "جارٍ الحفظ…" : "Saving…",
+                    notYet: isArabic
+                      ? "يمكن تأكيد التحصيل عندما يكون الطلب خارج للتوصيل أو تم توصيله."
+                      : "Available once the order is out for delivery or delivered.",
+                  }}
+                />
               </div>
               <div className="flex justify-between">
                 <span className="text-masa-gray">{t(language, "admin.orders.subtotal")}</span>
