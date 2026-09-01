@@ -17,7 +17,6 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.masajewelry.app",
       "usesAppleSignIn": true,
-      "buildNumber": "1",
       "associatedDomains": [
         "applinks:masajewelry.com",
         "webcredentials:masajewelry.com"
@@ -33,7 +32,6 @@
         "backgroundColor": "#531C24"
       },
       "package": "com.masajewelry.app",
-      "versionCode": 1,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -55,26 +53,20 @@
     "plugins": [
       "expo-apple-authentication",
       "expo-secure-store",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/icon.png",
-          "color": "#531C24"
-        }
-      ],
       "expo-font"
     ],
     "updates": {
-      "url": "https://u.expo.dev/FILL_IN_PROJECT_ID"
+      "url": "https://u.expo.dev/ec139dfe-8d59-4efb-8824-2f5210e83d19"
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "extra": {
+      "privacyPolicyUrl": "https://masajewelry.com/privacy",
       "eas": {
-        "projectId": "FILL_IN_PROJECT_ID"
-      },
-      "privacyPolicyUrl": "https://masajewelry.com/privacy"
-    }
+        "projectId": "ec139dfe-8d59-4efb-8824-2f5210e83d19"
+      }
+    },
+    "owner": "masajewelryqa"
   }
 }
