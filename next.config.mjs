@@ -56,7 +56,9 @@ const nextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com data:",
-              "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.googleusercontent.com https://unpkg.com",
+              // *.tile.openstreetmap.org serves the checkout map tiles; without it
+              // Leaflet renders an empty grey box. unpkg.com is its marker icons.
+              "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.googleusercontent.com https://unpkg.com https://*.tile.openstreetmap.org",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://goldapi.io https://api.gold-api.com https://api.resend.com",
               "frame-src https://accounts.google.com",
               "object-src 'none'",
