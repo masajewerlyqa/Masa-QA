@@ -163,17 +163,37 @@ export async function finalizeSellerApplicationAction(raw: unknown): Promise<Fin
       // Payment instructions replace the generic acknowledgement: the seller
       // cannot progress without the amount, IBAN and reference, so that is the
       // one email they actually need at this point.
-      await sendSellerPaymentInstructionsEmail({
+      const bank = getBankTransferDetails();
+      if (!bank) {
+        // The seller cannot pay without an IBAN, so this is worth noticing even
+        // though the email still goes out saying details will follow.
+        console.warn(
+          "[apply] MASA_BANK_* not configured — payment instructions sent without bank details",
+          { applicationId: application.id }
+        );
+      }
+
+      const mailResult = await sendSellerPaymentInstructionsEmail({
         to,
         contactName: data.contact_full_name?.trim() || null,
         planId,
         amountQar: getPlanAmountQar(planId),
         paymentReference: buildPaymentReference(application.id),
-        bank: getBankTransferDetails(),
+        bank,
         language: profile?.preferred_language ?? "en",
       });
+
+      // sendEmailWithRetry reports failure by returning, not throwing, so
+      // without this check a rejected send left no trace anywhere.
+      if (!mailResult.ok) {
+        console.error("[apply] payment instructions email failed", {
+          error: mailResult.error,
+          to,
+          applicationId: application.id,
+        });
+      }
     } catch (e) {
-      console.error("[apply] payment instructions email failed", e);
+      console.error("[apply] payment instructions email threw", e);
     }
   }
 

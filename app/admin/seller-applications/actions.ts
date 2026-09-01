@@ -114,14 +114,21 @@ export async function approveApplication(applicationId: string): Promise<ActionR
     const storeDisplayName = (app.business_name ?? "").trim() || null;
     const contactName = (prof?.full_name ?? "").trim() || null;
     try {
-      await sendSellerApplicationApprovedEmail(
+      const mailResult = await sendSellerApplicationApprovedEmail(
         mailTo,
         contactName,
         storeDisplayName,
         resolveEmailLanguage(prof?.preferred_language)
       );
+      // Reports failure by returning, not throwing.
+      if (!mailResult.ok) {
+        console.error("[admin] seller approval email failed", {
+          error: mailResult.error,
+          applicationId,
+        });
+      }
     } catch (e) {
-      console.error("[admin] seller approval email failed", e);
+      console.error("[admin] seller approval email threw", e);
     }
   }
 
@@ -188,14 +195,22 @@ export async function rejectApplication(
   // Tell the seller why and how to resubmit.
   if (app.contact_email) {
     try {
-      await sendSellerPaymentRejectedEmail({
+      const mailResult = await sendSellerPaymentRejectedEmail({
         to: app.contact_email,
         contactName: app.contact_full_name ?? null,
         reason,
         language: await getProfileEmailLanguage(app.user_id),
       });
+      // Reports failure by returning, not throwing. The seller cannot act on a
+      // rejection they were never told about, so this must not stay silent.
+      if (!mailResult.ok) {
+        console.error("[admin] seller rejection email failed", {
+          error: mailResult.error,
+          applicationId,
+        });
+      }
     } catch (e) {
-      console.error("[admin] seller rejection email failed", e);
+      console.error("[admin] seller rejection email threw", e);
     }
   }
 

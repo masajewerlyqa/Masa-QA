@@ -120,12 +120,19 @@ export async function uploadPaymentProofAction(formData: FormData): Promise<Uplo
   }
 
   try {
-    await sendSellerPaymentProofReceivedEmail({
+    const mailResult = await sendSellerPaymentProofReceivedEmail({
       to: application.contact_email,
       language: await getProfileEmailLanguage(user.id),
       paymentReference: application.payment_reference,
       amountQar: application.payment_amount_qar,
     });
+    // Reports failure by returning, not throwing.
+    if (!mailResult.ok) {
+      console.error("[seller-payment] proof received email failed", {
+        error: mailResult.error,
+        applicationId: application.id,
+      });
+    }
   } catch (e) {
     // The proof is stored; a failed confirmation email must not fail the upload.
     console.error("[seller-payment] proof received email failed", e);
