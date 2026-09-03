@@ -80,3 +80,18 @@ export function translate(language: AppLanguage, key: string): string | undefine
 export function t(language: AppLanguage, key: string, fallback?: string): string {
   return translate(language, key) ?? fallback ?? key;
 }
+
+/** For array-shaped dictionary entries (e.g. feature lists) that `t()` cannot return. */
+export function translateList(language: AppLanguage, key: string): string[] {
+  const resolvedKey = legacyKeyMap[key] ?? key;
+  const dict = dictionaries[language] as Record<string, unknown>;
+  const value = getByPath(dict, resolvedKey);
+  if (Array.isArray(value)) return value as string[];
+
+  if (language !== 'en') {
+    const enValue = getByPath(dictionaries.en as Record<string, unknown>, resolvedKey);
+    if (Array.isArray(enValue)) return enValue as string[];
+  }
+
+  return [];
+}

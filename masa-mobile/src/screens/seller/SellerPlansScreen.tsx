@@ -59,14 +59,14 @@ function PlanCard({
           : styles.planCard
       }
     >
-      <Text style={[styles.planBadge, textStyle(isArabic, 'caption')]}>{badge}</Text>
+      <Text style={[textStyle(isArabic, 'caption'), styles.planBadge]}>{badge}</Text>
       <Text style={[styles.planName, { fontFamily: luxury }]}>{name}</Text>
       <Text style={textStyle(isArabic, 'body')}>{description}</Text>
       <View style={styles.featureList}>
         {features.map((f) => (
           <View key={f} style={styles.featureRow}>
             <Check color={theme.colors.primary} size={16} />
-            <Text style={[styles.featureText, textStyle(isArabic, 'bodySm')]}>{f}</Text>
+            <Text style={[textStyle(isArabic, 'bodySm'), styles.featureText]}>{f}</Text>
           </View>
         ))}
       </View>
@@ -100,7 +100,7 @@ function PlanCard({
 
 export function SellerPlansScreen(): React.JSX.Element {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { t, isArabic } = useSettings();
+  const { t, tList, isArabic } = useSettings();
   const { user } = useAuth();
   const luxury = fontFamily(isArabic, 'luxury');
   const [error, setError] = useState<string | null>(null);
@@ -115,10 +115,8 @@ export function SellerPlansScreen(): React.JSX.Element {
     ? t('auth.register.sellerPickPlanSubtitle')
     : t('sellerOnboarding.choosePlanSubtitle');
 
-  const basicFeatures = t('sellerOnboarding.basicFeatures') as unknown as string[];
-  const premiumFeatures = t('sellerOnboarding.premiumFeatures') as unknown as string[];
-  const basicList = Array.isArray(basicFeatures) ? basicFeatures : [];
-  const premiumList = Array.isArray(premiumFeatures) ? premiumFeatures : [];
+  const basicList = tList('sellerOnboarding.basicFeatures');
+  const premiumList = tList('sellerOnboarding.premiumFeatures');
 
   const handleSelect = (planId: SellerPlanId): void => {
     setError(null);
@@ -166,12 +164,12 @@ export function SellerPlansScreen(): React.JSX.Element {
             variant="ghost"
           />
         ) : null}
-        <Text style={[styles.eyebrow, textStyle(isArabic, 'caption')]}>
+        <Text style={[textStyle(isArabic, 'caption'), styles.eyebrow]}>
           {t('sellerOnboarding.choosePlanEyebrow')}
         </Text>
         <Text style={[styles.title, { fontFamily: luxury }]}>{title}</Text>
-        <Text style={[styles.subtitle, textStyle(isArabic, 'body')]}>{subtitle}</Text>
-        <Text style={[styles.trust, textStyle(isArabic, 'bodySm')]}>
+        <Text style={[textStyle(isArabic, 'body'), styles.subtitle]}>{subtitle}</Text>
+        <Text style={[textStyle(isArabic, 'bodySm'), styles.trust]}>
           {isRegistrationFlow
             ? t('auth.register.sellerNextStep')
             : t('sellerOnboarding.trustNote')}

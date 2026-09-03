@@ -30,7 +30,7 @@ export function PrimaryCtaBand({
       <View style={styles.pattern} />
       <View style={styles.inner}>
         <Text style={[styles.title, { fontFamily: fontFamily(isArabic, 'luxury') }]}>{title}</Text>
-        <Text style={[styles.subtitle, textStyle(isArabic, 'body')]}>{subtitle}</Text>
+        <Text style={[textStyle(isArabic, 'body'), styles.subtitle]}>{subtitle}</Text>
         <View style={styles.actions}>
           <MasaButton label={primaryLabel} onPress={onPrimary} variant="secondary" />
           {secondaryLabel && onSecondary ? (

@@ -115,7 +115,7 @@ export function MarketPricesContent({
   if (!data) {
     return (
       <View style={styles.loader}>
-        <Text style={[styles.errorText, textStyle(isArabic, 'body')]}>{error ?? t('common.somethingWentWrong')}</Text>
+        <Text style={[textStyle(isArabic, 'body'), styles.errorText]}>{error ?? t('common.somethingWentWrong')}</Text>
         {onRetry ? (
           <MasaButton
             label={isArabic ? 'حاول مرة أخرى' : 'Try again'}
@@ -139,12 +139,12 @@ export function MarketPricesContent({
     <View>
       {error ? (
         <View style={styles.warningBanner}>
-          <Text style={[styles.warningText, textStyle(isArabic, 'caption')]}>{error}</Text>
+          <Text style={[textStyle(isArabic, 'caption'), styles.warningText]}>{error}</Text>
         </View>
       ) : null}
       <View style={styles.hero}>
         <Text style={[styles.heroTitle, { fontFamily: luxury }]}>{t('tools.market.heroTitle')}</Text>
-        <Text style={[styles.heroSub, textStyle(isArabic, 'body')]}>{t('tools.market.heroSubtitle')}</Text>
+        <Text style={[textStyle(isArabic, 'body'), styles.heroSub]}>{t('tools.market.heroSubtitle')}</Text>
       </View>
 
       <View style={styles.kpiGrid}>

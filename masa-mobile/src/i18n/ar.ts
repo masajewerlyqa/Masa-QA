@@ -160,6 +160,10 @@ export const ar = {
     },
   },
   product: {
+    unavailable: "المنتج غير متاح.",
+    addToWishlist: "أضف إلى قائمة المفضلة",
+    availability: "التوفر",
+    inStock: "متوفر",
     newArrival: "وصل حديثاً",
     certifiedAuthentic: "أصالة معتمدة",
     reviewWord: "مراجعة",

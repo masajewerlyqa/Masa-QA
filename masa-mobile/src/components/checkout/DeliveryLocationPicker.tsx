@@ -134,11 +134,12 @@ const styles = StyleSheet.create({
   },
   locateText: { color: theme.colors.primary, fontSize: 14, fontWeight: '600' },
   // Explicit height: a MapView with no height collapses to zero and renders blank.
+  // Matches the web checkout map's 300px so the picker isn't cramped on mobile.
   mapBox: {
     borderColor: theme.colors.border,
     borderRadius: 10,
     borderWidth: 1,
-    height: 260,
+    height: 300,
     overflow: 'hidden',
     width: '100%',
   },

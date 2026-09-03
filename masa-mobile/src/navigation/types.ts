@@ -33,6 +33,9 @@ export type RootStackParamList = {
   MarketPrices: undefined;
   Checkout: undefined;
   PaymentSuccess: { orderId: string };
+  Orders: undefined;
+  OrderDetail: { orderId: string };
+  Settings: undefined;
 };
 
 declare global {

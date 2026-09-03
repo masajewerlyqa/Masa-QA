@@ -2,7 +2,7 @@ import { PropsWithChildren, createContext, useContext, useMemo } from 'react';
 import { useEffect } from 'react';
 import { I18nManager } from 'react-native';
 
-import { t as translateKey } from '../i18n';
+import { t as translateKey, translateList } from '../i18n';
 import {
   useSettingsStore,
   type AppCurrency,
@@ -20,6 +20,7 @@ type SettingsContextValue = {
   setCurrency: (currency: AppCurrency) => void;
   setSearchQuery: (query: string) => void;
   t: (key: string) => string;
+  tList: (key: string) => string[];
 };
 
 const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
@@ -48,6 +49,7 @@ export function SettingsProvider({
       setCurrency,
       setSearchQuery,
       t: (key: string) => translateKey(language, key),
+      tList: (key: string) => translateList(language, key),
     }),
     [language, currency, searchQuery, setLanguage, setCurrency, setSearchQuery],
   );

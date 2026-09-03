@@ -132,14 +132,14 @@ export function NotificationsScreen(): React.JSX.Element {
       >
         <MobileTopBar />
         <SectionHeader
-          subtitle={t('notifications.recentHint')}
-          title={t('notifications.title')}
+          subtitle={t('account.notifications.recentHint')}
+          title={t('account.notifications.title')}
         />
 
         {unreadCount > 0 ? (
           <Pressable onPress={() => void handleMarkAllRead()} style={styles.markAllBtn}>
             <Text style={styles.markAllText}>
-              {t('notifications.markAllRead')} ({unreadCount})
+              {t('account.notifications.markAllRead')} ({unreadCount})
             </Text>
           </Pressable>
         ) : null}
@@ -148,7 +148,7 @@ export function NotificationsScreen(): React.JSX.Element {
           <View style={styles.stateBox}>
             <ActivityIndicator color={theme.colors.primary} size="large" />
             <Text style={[textStyle(isArabic, 'body'), styles.stateText]}>
-              {t('notifications.loading')}
+              {t('account.notifications.loading')}
             </Text>
           </View>
         ) : error ? (
@@ -168,7 +168,7 @@ export function NotificationsScreen(): React.JSX.Element {
               size={32}
             />
             <Text style={[textStyle(isArabic, 'body'), styles.stateText]}>
-              {t('notifications.noneYet')}
+              {t('account.notifications.noneYet')}
             </Text>
           </View>
         ) : (
@@ -190,7 +190,7 @@ export function NotificationsScreen(): React.JSX.Element {
                   </Text>
                   {!item.read_at ? (
                     <Pressable onPress={() => void handleMarkRead(item.id)}>
-                      <Text style={styles.markReadText}>{t('notifications.markRead')}</Text>
+                      <Text style={styles.markReadText}>{t('account.notifications.markRead')}</Text>
                     </Pressable>
                   ) : null}
                 </View>

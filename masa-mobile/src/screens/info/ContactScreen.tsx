@@ -81,7 +81,7 @@ export function ContactScreen(): React.JSX.Element {
         <Text style={[styles.trustHeading, { fontFamily: luxury }]}>
           {isArabic ? `لماذا تتواصل مع ${brand}` : `Why Contact ${brand}`}
         </Text>
-        <Text style={[styles.trustSub, textStyle(isArabic, 'body')]}>
+        <Text style={[textStyle(isArabic, 'body'), styles.trustSub]}>
           {isArabic
             ? 'نمزج بين الخصوصية والأمان وسرعة الاستجابة في كل تواصل.'
             : 'We combine discretion, security and speed in every response.'}
@@ -101,7 +101,7 @@ export function ContactScreen(): React.JSX.Element {
         <Text style={[styles.trustHeading, { fontFamily: luxury }]}>
           {isArabic ? 'الأسئلة الشائعة' : 'Frequently Asked Questions'}
         </Text>
-        <Text style={[styles.trustSub, textStyle(isArabic, 'body')]}>
+        <Text style={[textStyle(isArabic, 'body'), styles.trustSub]}>
           {isArabic
             ? `إجابات سريعة حول التسوق والبيع واستخدام ${brand}.`
             : `Quick answers about shopping, selling, and using ${brand}.`}
@@ -122,7 +122,7 @@ export function ContactScreen(): React.JSX.Element {
       />
 
       <View style={styles.seoBand}>
-        <Text style={[styles.seoText, textStyle(isArabic, 'body')]}>
+        <Text style={[textStyle(isArabic, 'body'), styles.seoText]}>
           {isArabic
             ? `${brand} سوق إلكتروني موثوق للمجوهرات الفاخرة في قطر.`
             : `${brand} is a trusted online luxury jewelry marketplace in Qatar, offering secure digital services for buying, selling, valuation, and intelligent jewelry discovery powered by AI technology.`}

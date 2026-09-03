@@ -1,6 +1,7 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { Heart, MapPin, Package } from 'lucide-react-native';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { MasaButton } from '../components/MasaButton';
 import { MasaCard } from '../components/MasaCard';
@@ -12,7 +13,7 @@ import { textStyle } from '../constants/typography';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../hooks/useAuth';
 import { navigateToBecomeSeller } from '../lib/sellerNavigation';
-import { goAuth, goSellerDashboard, goWishlist } from '../navigation/routes';
+import { goAuth, goOrders, goSellerDashboard, goSettings, goWishlist } from '../navigation/routes';
 import { signOut } from '../services/authService';
 import { getProfileSummary, ProfileSummary } from '../services/profileService';
 import type { ProfileRole } from '../services/profileAuthService';
@@ -38,14 +39,19 @@ export function ProfileScreen(): React.JSX.Element {
   const [summary, setSummary] = useState<ProfileSummary | null>(null);
   const luxury = fontFamily(isArabic, 'luxury');
 
-  useEffect(() => {
-    let mounted = true;
-    if (!user) setSummary(null);
-    else getProfileSummary().then((data) => mounted && setSummary(data));
-    return () => {
-      mounted = false;
-    };
-  }, [user]);
+  // useFocusEffect (not useEffect) so returning from Settings after a save
+  // shows the updated name/phone immediately -- this screen instance is
+  // never remounted by a back-navigation, only re-focused.
+  useFocusEffect(
+    useCallback(() => {
+      let mounted = true;
+      if (!user) setSummary(null);
+      else getProfileSummary().then((data) => mounted && setSummary(data));
+      return () => {
+        mounted = false;
+      };
+    }, [user]),
+  );
 
   return (
     <SiteShell>
@@ -69,7 +75,7 @@ export function ProfileScreen(): React.JSX.Element {
                 </View>
                 <MasaButton
                   label={t('account.accountPage.settings')}
-                  onPress={() => {}}
+                  onPress={() => goSettings()}
                   variant="outline"
                 />
               </View>
@@ -134,6 +140,7 @@ export function ProfileScreen(): React.JSX.Element {
               description={t('account.accountPage.ordersDesc')}
               icon={Package}
               isArabic={isArabic}
+              onPress={() => goOrders()}
               title={t('account.accountPage.orders')}
             />
             <SidebarCard

@@ -74,7 +74,7 @@ export function CategoriesScreen(): React.JSX.Element {
       searchQuery.trim() ? searchProducts(searchQuery, 80) : getDiscoverProducts(80),
     ]).then(([categoryRows, productRows]) => {
       if (!mounted) return;
-      setCategories([{ id: 'all', name: t('filtersAll') || 'All' }, ...categoryRows]);
+      setCategories([{ id: 'all', name: t('marketplace.all') }, ...categoryRows]);
       setProducts(productRows);
       setLoading(false);
     });
@@ -223,7 +223,7 @@ export function CategoriesScreen(): React.JSX.Element {
         <View style={styles.pagination}>
           <Pressable disabled={page <= 1} onPress={() => setPage((p) => Math.max(1, p - 1))}>
             <Text style={[styles.pageText, page <= 1 ? styles.pageDisabled : null]}>
-              {t('marketplace.previous') || t('pagination.previous') || 'Previous'}
+              {t('marketplace.previous')}
             </Text>
           </Pressable>
           <Text style={[styles.pageText, styles.pageCurrent]}>{page}</Text>
@@ -232,7 +232,7 @@ export function CategoriesScreen(): React.JSX.Element {
             onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
           >
             <Text style={[styles.pageText, page >= totalPages ? styles.pageDisabled : null]}>
-              {t('marketplace.next') || t('pagination.next') || 'Next'}
+              {t('marketplace.next')}
             </Text>
           </Pressable>
         </View>
@@ -253,7 +253,7 @@ export function CategoriesScreen(): React.JSX.Element {
         ListEmptyComponent={
           loading ? null : (
             <View style={styles.emptyWrap}>
-              <Text style={styles.emptyTitle}>{t('discoverEmpty') || 'No products match'}</Text>
+              <Text style={styles.emptyTitle}>{t('marketplace.noMatchesFilters')}</Text>
               <Pressable
                 onPress={() => {
                   setSearchQuery('');
@@ -264,7 +264,7 @@ export function CategoriesScreen(): React.JSX.Element {
                   setMaxPrice('');
                 }}
               >
-                <Text style={styles.emptyAction}>{t('clearFilters') || 'Clear filters'}</Text>
+                <Text style={styles.emptyAction}>{t('marketplace.clearAll')}</Text>
               </Pressable>
             </View>
           )
@@ -284,7 +284,7 @@ export function CategoriesScreen(): React.JSX.Element {
           <Pressable style={styles.drawer}>
             <Text style={styles.drawerTitle}>{t('filters')}</Text>
 
-            <Text style={styles.filterLabel}>{t('filtersOffers') || 'Offers'}</Text>
+            <Text style={styles.filterLabel}>{t('marketplace.offers')}</Text>
             <Pressable
               onPress={() => setOnSaleOnly((prev) => !prev)}
               style={[styles.filterToggle, onSaleOnly ? styles.filterToggleActive : null]}
@@ -295,11 +295,11 @@ export function CategoriesScreen(): React.JSX.Element {
                   onSaleOnly ? styles.filterToggleTextActive : null,
                 ]}
               >
-                {t('filtersOnSale') || 'On Sale'}
+                {t('marketplace.onSale')}
               </Text>
             </Pressable>
 
-            <Text style={styles.filterLabel}>{t('product.availability') || 'Availability'}</Text>
+            <Text style={styles.filterLabel}>{t('product.availability')}</Text>
             <Pressable
               onPress={() => setInStockOnly((prev) => !prev)}
               style={[styles.filterToggle, inStockOnly ? styles.filterToggleActive : null]}
@@ -310,18 +310,18 @@ export function CategoriesScreen(): React.JSX.Element {
                   inStockOnly ? styles.filterToggleTextActive : null,
                 ]}
               >
-                {t('product.inStock') || 'In stock'}
+                {t('product.inStock')}
               </Text>
             </Pressable>
 
             <Text style={styles.filterLabel}>
-              {t('filtersPrice') || 'Price'} ({currency})
+              {t('marketplace.priceRange')} ({currency})
             </Text>
             <View style={styles.priceRow}>
               <TextInput
                 keyboardType="numeric"
                 onChangeText={setMinPrice}
-                placeholder={t('filtersMin') || 'Min'}
+                placeholder={t('marketplace.priceMinShort')}
                 placeholderTextColor={theme.colors.masaGray}
                 style={styles.priceInput}
                 value={minPrice}
@@ -330,14 +330,14 @@ export function CategoriesScreen(): React.JSX.Element {
               <TextInput
                 keyboardType="numeric"
                 onChangeText={setMaxPrice}
-                placeholder={t('filtersMax') || 'Max'}
+                placeholder={t('marketplace.priceMaxShort')}
                 placeholderTextColor={theme.colors.masaGray}
                 style={styles.priceInput}
                 value={maxPrice}
               />
             </View>
 
-            <Text style={styles.filterLabel}>{t('filtersCategory') || 'Category'}</Text>
+            <Text style={styles.filterLabel}>{t('marketplace.category')}</Text>
             <FlatList
               contentContainerStyle={styles.chipsWrap}
               data={categories}
@@ -364,10 +364,10 @@ export function CategoriesScreen(): React.JSX.Element {
                   setSearchQuery('');
                 }}
               >
-                <Text style={styles.clearAction}>{t('clearAll') || 'Clear All'}</Text>
+                <Text style={styles.clearAction}>{t('marketplace.clearAll')}</Text>
               </Pressable>
               <Pressable onPress={() => setIsFilterOpen(false)} style={styles.showAction}>
-                <Text style={styles.showActionText}>{t('showResults') || 'Show Results'}</Text>
+                <Text style={styles.showActionText}>{t('marketplace.showResults')}</Text>
               </Pressable>
             </View>
           </Pressable>

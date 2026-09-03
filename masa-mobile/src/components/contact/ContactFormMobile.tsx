@@ -72,11 +72,11 @@ export function ContactFormMobile(): React.JSX.Element {
 
   return (
     <View style={styles.form}>
-      <Text style={[styles.label, textStyle(isArabic, 'bodySm')]}>
+      <Text style={[textStyle(isArabic, 'bodySm'), styles.label]}>
         {isArabic ? 'الاسم الكامل' : 'Full Name'} *
       </Text>
       <TextInput onChangeText={setName} style={styles.input} value={name} />
-      <Text style={[styles.label, textStyle(isArabic, 'bodySm')]}>
+      <Text style={[textStyle(isArabic, 'bodySm'), styles.label]}>
         {isArabic ? 'البريد الإلكتروني' : 'Email'} *
       </Text>
       <TextInput
@@ -86,11 +86,11 @@ export function ContactFormMobile(): React.JSX.Element {
         style={styles.input}
         value={email}
       />
-      <Text style={[styles.label, textStyle(isArabic, 'bodySm')]}>
+      <Text style={[textStyle(isArabic, 'bodySm'), styles.label]}>
         {isArabic ? 'الهاتف' : 'Phone'}
       </Text>
       <TextInput keyboardType="phone-pad" onChangeText={setPhone} style={styles.input} value={phone} />
-      <Text style={[styles.label, textStyle(isArabic, 'bodySm')]}>
+      <Text style={[textStyle(isArabic, 'bodySm'), styles.label]}>
         {isArabic ? 'الموضوع' : 'Subject'} *
       </Text>
       <View style={styles.subjectRow}>
@@ -104,7 +104,7 @@ export function ContactFormMobile(): React.JSX.Element {
           />
         ))}
       </View>
-      <Text style={[styles.label, textStyle(isArabic, 'bodySm')]}>
+      <Text style={[textStyle(isArabic, 'bodySm'), styles.label]}>
         {isArabic ? 'الرسالة' : 'Message'} *
       </Text>
       <TextInput

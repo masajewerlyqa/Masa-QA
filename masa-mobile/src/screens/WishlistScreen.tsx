@@ -77,7 +77,7 @@ export function WishlistScreen(): React.JSX.Element {
             <Text style={[styles.title, { fontFamily: luxury }]}>
               {isArabic ? 'المفضلة' : 'Wishlist'}
             </Text>
-            <Text style={[styles.subtitle, textStyle(isArabic, 'body')]}>{subtitle}</Text>
+            <Text style={[textStyle(isArabic, 'body'), styles.subtitle]}>{subtitle}</Text>
             {!user ? (
               <View style={styles.guestBlock}>
                 <Text style={textStyle(isArabic, 'body')}>

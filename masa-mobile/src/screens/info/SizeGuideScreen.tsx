@@ -96,7 +96,7 @@ export function SizeGuideScreen(): React.JSX.Element {
         <Text style={[styles.ctaTitle, { fontFamily: luxury }]}>
           {isArabic ? 'تحتاج مساعدة في القياس؟' : 'Need help measuring?'}
         </Text>
-        <Text style={[styles.ctaBody, textStyle(isArabic, 'body')]}>
+        <Text style={[textStyle(isArabic, 'body'), styles.ctaBody]}>
           {isArabic
             ? 'قد تختلف المقاسات بين العلامات. عند الشك، تواصل مع البائع أو فريق الدعم.'
             : 'Sizes can vary by brand. When in doubt, contact the seller or our support team for help choosing the right size.'}

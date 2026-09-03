@@ -36,7 +36,7 @@ export function LegalProseScreen({ content }: LegalProseScreenProps): React.JSX.
           />
         ))}
         {page.footerNote ? (
-          <Text style={[styles.footer, textStyle(isArabic, 'body')]}>{page.footerNote}</Text>
+          <Text style={[textStyle(isArabic, 'body'), styles.footer]}>{page.footerNote}</Text>
         ) : null}
       </ProseBand>
     </MarketingPageScroll>

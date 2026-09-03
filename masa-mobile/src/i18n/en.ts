@@ -165,6 +165,10 @@ export const en = {
     },
   },
   product: {
+    unavailable: "Product unavailable.",
+    addToWishlist: "Add to wishlist",
+    availability: "Availability",
+    inStock: "In stock",
     newArrival: "New Arrival",
     certifiedAuthentic: "Certified Authentic",
     reviewWord: "review",

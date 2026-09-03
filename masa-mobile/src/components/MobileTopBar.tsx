@@ -68,7 +68,7 @@ export function MobileTopBar({
               <Search color={theme.colors.masaDark} size={20} />
             </Pressable>
             <Pressable
-              accessibilityLabel={t('notifications.title')}
+              accessibilityLabel={t('account.notifications.title')}
               onPress={() => goNotifications()}
               style={styles.iconBtn}
             >

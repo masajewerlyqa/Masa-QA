@@ -25,7 +25,7 @@ export function FaqAccordion({ items, isArabic }: FaqAccordionProps): React.JSX.
               onPress={() => setOpenIndex(open ? null : index)}
               style={({ pressed }) => [styles.summary, pressed && styles.summaryPressed]}
             >
-              <Text style={[styles.question, textStyle(isArabic, 'bodySm')]}>{item.question}</Text>
+              <Text style={[textStyle(isArabic, 'bodySm'), styles.question]}>{item.question}</Text>
               <View style={styles.toggle}>
                 <Text style={styles.toggleText}>{open ? '−' : '+'}</Text>
               </View>

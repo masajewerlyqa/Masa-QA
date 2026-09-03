@@ -101,7 +101,7 @@ export function AboutScreen(): React.JSX.Element {
       <ProseBand>
         <View style={styles.valuesHeader}>
           <Text style={[styles.h2Center, { fontFamily: luxury }]}>{isArabic ? 'قيمنا' : 'Our values'}</Text>
-          <Text style={[styles.valuesSub, textStyle(isArabic, 'body')]}>
+          <Text style={[textStyle(isArabic, 'body'), styles.valuesSub]}>
             {isArabic
               ? 'مبادئ نلتزم بها في كل تفاعل معك ومع شركائنا.'
               : 'Principles we uphold in every interaction with you and our partners.'}
@@ -127,7 +127,7 @@ export function AboutScreen(): React.JSX.Element {
           </View>
           <View style={styles.missionBody}>
             <Text style={[styles.h2, { fontFamily: luxury }]}>{isArabic ? 'مهمتنا' : 'Our mission'}</Text>
-            <Text style={[styles.missionText, textStyle(isArabic, 'body')]}>
+            <Text style={[textStyle(isArabic, 'body'), styles.missionText]}>
               {isArabic
                 ? 'تمكين المشترين والبائعين من التواصل عبر منصة موثوقة، شفافة، ومدعومة بالذكاء الاصطناعي.'
                 : 'To empower buyers and sellers through a trustworthy, transparent, AI-enhanced platform—where authenticity is honoured, customers are respected, and lasting relationships are built.'}
@@ -143,7 +143,7 @@ export function AboutScreen(): React.JSX.Element {
         {clientBenefits.map((line) => (
           <View key={line} style={styles.bulletRow}>
             <HeartHandshake color={theme.colors.primary} size={20} />
-            <Text style={[styles.bulletText, textStyle(isArabic, 'body')]}>{line}</Text>
+            <Text style={[textStyle(isArabic, 'body'), styles.bulletText]}>{line}</Text>
           </View>
         ))}
         <MasaButton label={isArabic ? 'تسوّق الآن' : 'Shop now'} onPress={() => goDiscover()} />
@@ -188,7 +188,7 @@ export function AboutScreen(): React.JSX.Element {
           {sellerBenefits.map((line) => (
             <View key={line} style={styles.bulletRow}>
               <BadgeCheck color={theme.colors.primary} size={20} />
-              <Text style={[styles.bulletText, textStyle(isArabic, 'body')]}>{line}</Text>
+              <Text style={[textStyle(isArabic, 'body'), styles.bulletText]}>{line}</Text>
             </View>
           ))}
         </View>

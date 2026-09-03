@@ -45,7 +45,7 @@ export function FooterNewsletter(): React.JSX.Element {
           onChangeText={setEmail}
           placeholder={t('newsletter.emailPlaceholder')}
           placeholderTextColor="rgba(231,216,195,0.7)"
-          style={[styles.input, textStyle(isArabic, 'bodySm')]}
+          style={[textStyle(isArabic, 'bodySm'), styles.input]}
           value={email}
         />
         <Pressable onPress={() => void handleSubmit()} style={styles.submit}>

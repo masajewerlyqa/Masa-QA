@@ -85,7 +85,7 @@ export function MobileDrawer({
           </View>
 
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-            <Text style={[styles.sectionLabel, textStyle(isArabic, 'menuSection')]}>
+            <Text style={[textStyle(isArabic, 'menuSection'), styles.sectionLabel]}>
               {t('navbar.account')}
             </Text>
             {!user ? (
@@ -126,14 +126,14 @@ export function MobileDrawer({
 
             <View style={styles.divider} />
 
-            <Text style={[styles.sectionLabel, textStyle(isArabic, 'menuSection')]}>{t('navbar.tools')}</Text>
+            <Text style={[textStyle(isArabic, 'menuSection'), styles.sectionLabel]}>{t('navbar.tools')}</Text>
             <DrawerLink icon={Sparkles} isArabic={isArabic} label={t('navbar.aiAdvisor')} onPress={() => { onClose(); goAdvisor(); }} />
             <DrawerLink icon={Calculator} isArabic={isArabic} label={t('navbar.zakat')} onPress={() => { onClose(); goZakat(); }} />
             <DrawerLink icon={Coins} isArabic={isArabic} label={t('navbar.sellGold')} onPress={() => { onClose(); goSellGold(); }} />
 
             <View style={styles.divider} />
 
-            <Text style={[styles.sectionLabel, textStyle(isArabic, 'menuSection')]}>{t('navbar.support')}</Text>
+            <Text style={[textStyle(isArabic, 'menuSection'), styles.sectionLabel]}>{t('navbar.support')}</Text>
             <DrawerLink icon={Ruler} isArabic={isArabic} label={t('navbar.sizeGuide')} onPress={() => { onClose(); goInfo(sitePages.sizeGuide); }} />
             <DrawerLink icon={Truck} isArabic={isArabic} label={t('navbar.shipping')} onPress={() => { onClose(); goInfo(sitePages.delivery); }} />
             <DrawerLink icon={RotateCcw} isArabic={isArabic} label={t('navbar.returns')} onPress={() => { onClose(); goInfo(sitePages.returns); }} />
@@ -169,7 +169,7 @@ function DrawerLink({
   return (
     <Pressable onPress={onPress} style={styles.drawerLink}>
       <Icon color={theme.colors.primary} size={20} />
-      <Text style={[styles.drawerLinkText, textStyle(isArabic, 'menuLabel')]}>{label}</Text>
+      <Text style={[textStyle(isArabic, 'menuLabel'), styles.drawerLinkText]}>{label}</Text>
       {count != null && count > 0 ? (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{count > 99 ? '99+' : count}</Text>

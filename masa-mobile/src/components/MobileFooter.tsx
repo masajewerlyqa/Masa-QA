@@ -118,7 +118,10 @@ export function MobileFooter(): React.JSX.Element {
           <Pressable accessibilityLabel={`${brand} Home`} onPress={() => goHome()}>
             <Image resizeMode="contain" source={webAssets.logoFooter} style={styles.logo} />
           </Pressable>
-          <Text style={[styles.description, textStyle(isArabic, 'bodySm')]}>{t('footer.description')}</Text>
+          {/* textStyle() must come first: it sets its own `color`, and RN style
+              arrays let later entries win -- putting it after styles.description
+              silently overrode the white text with textStyle's masaDark. */}
+          <Text style={[textStyle(isArabic, 'bodySm'), styles.description]}>{t('footer.description')}</Text>
 
           <View style={styles.socialRow}>
             {SOCIAL_LINKS.map(({ href, Icon }) => (
@@ -130,9 +133,9 @@ export function MobileFooter(): React.JSX.Element {
 
           <Text
             style={[
+              textStyle(isArabic, 'caption'),
               styles.appLabel,
               isArabic ? styles.appLabelArabic : null,
-              textStyle(isArabic, 'caption'),
             ]}
           >
             {t('footer.getTheApp')}
@@ -174,7 +177,7 @@ export function MobileFooter(): React.JSX.Element {
 
           <View style={styles.newsletterBlock}>
             <Text style={[styles.newsletterTitle, { fontFamily: luxury }]}>{t('footer.newsletter')}</Text>
-            <Text style={[styles.newsletterHint, textStyle(isArabic, 'bodySm')]}>{t('footer.newsletterHint')}</Text>
+            <Text style={[textStyle(isArabic, 'bodySm'), styles.newsletterHint]}>{t('footer.newsletterHint')}</Text>
             <FooterNewsletter />
           </View>
         </View>

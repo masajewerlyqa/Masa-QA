@@ -74,3 +74,62 @@ export async function getProfileSummary(): Promise<ProfileSummary | null> {
     cartCount,
   };
 }
+
+export type ProfileUpdateResult = { ok: true } | { ok: false; error: string };
+
+/** Mirrors web `updateProfileAction` (app/(site)/account/settings/actions.ts). */
+export async function updateProfile(input: { fullName: string; phone: string }): Promise<ProfileUpdateResult> {
+  const fullName = input.fullName.trim();
+  if (fullName.length < 2 || fullName.length > 120) {
+    return { ok: false, error: 'Enter a name between 2 and 120 characters.' };
+  }
+  const rawPhone = input.phone.trim();
+  if (rawPhone && (rawPhone.length < 8 || !/^[\d\s+().-]+$/.test(rawPhone))) {
+    return { ok: false, error: 'Enter a valid phone number.' };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: 'Sign in required' };
+
+  let phone: string | null = rawPhone || null;
+  if (!phone) {
+    const { data: existing } = await supabase.from('profiles').select('phone').eq('id', user.id).maybeSingle();
+    if (existing?.phone?.trim()) phone = existing.phone;
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ full_name: fullName, phone, updated_at: new Date().toISOString() })
+    .eq('id', user.id);
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+/** Mirrors web `updateNewsletterOptInAction`. */
+export async function updateNewsletterOptIn(optIn: boolean): Promise<ProfileUpdateResult> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: 'Sign in required' };
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ newsletter_opt_in: optIn, updated_at: new Date().toISOString() })
+    .eq('id', user.id);
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+export async function getNewsletterOptIn(): Promise<boolean> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data } = await supabase.from('profiles').select('newsletter_opt_in').eq('id', user.id).maybeSingle();
+  return Boolean(data?.newsletter_opt_in);
+}

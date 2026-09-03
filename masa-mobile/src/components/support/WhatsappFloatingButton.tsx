@@ -1,3 +1,4 @@
+import { useRoute } from '@react-navigation/native';
 import { MessageCircle } from 'lucide-react-native';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -5,13 +6,24 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MOBILE_BOTTOM_NAV_HEIGHT } from '../../constants/layout';
 import { theme } from '../../constants/theme';
 import { useSettings } from '../../context/SettingsContext';
+import type { MainTabParamList } from '../../navigation/types';
 
 const WHATSAPP_NUMBER = '97472233141';
+
+/** Screens rendered inside the bottom Tab.Navigator -- the only ones with a visible tab bar. */
+const TAB_SCREEN_NAMES: (keyof MainTabParamList)[] = ['Home', 'Discover', 'Wishlist', 'Cart', 'Profile'];
 
 export function WhatsappFloatingButton(): React.JSX.Element {
   const { t } = useSettings();
   const insets = useSafeAreaInsets();
-  const bottom = MOBILE_BOTTOM_NAV_HEIGHT + insets.bottom + 24;
+  const route = useRoute();
+  // SiteShell (and this button) is shared by both tab screens and root-stack screens
+  // pushed on top of MainTabs. Only tab screens have a tab bar to clear; stack
+  // screens (checkout, product details, orders, settings, ...) have none, so
+  // adding the tab bar's height there left the button floating with a large,
+  // unexplained gap above the real bottom edge.
+  const isTabScreen = (TAB_SCREEN_NAMES as string[]).includes(route.name);
+  const bottom = (isTabScreen ? MOBILE_BOTTOM_NAV_HEIGHT : 0) + insets.bottom + 24;
 
   const openWhatsapp = (): void => {
     const text = encodeURIComponent(t('common.whatsappPrefill'));

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { MasaButton } from '../../components/MasaButton';
 import { MasaCard } from '../../components/MasaCard';
+import { OrderStatusBadge } from '../../components/order/OrderStatusBadge';
 import { SiteShell } from '../../components/layout/SiteShell';
 import { MOBILE_CONTENT_PADDING_X, MOBILE_SCROLL_BOTTOM_PADDING } from '../../constants/layout';
 import { fontFamily, theme } from '../../constants/theme';
@@ -12,18 +13,29 @@ import { useSettings } from '../../context/SettingsContext';
 import { navigateToBecomeSeller } from '../../lib/sellerNavigation';
 import { goHome } from '../../navigation/routes';
 import {
+  getSellerProducts,
+  getSellerRecentOrders,
   getSellerStoreForUser,
   type SellerDashboardStats,
+  type SellerOrderRow,
+  type SellerProductRow,
   type SellerStoreSummary,
 } from '../../services/sellerDashboardService';
+import { formatCurrencyFromUsd } from '../../utils/currency';
+
+type DashboardTab = 'products' | 'orders';
 
 export function SellerDashboardScreen(): React.JSX.Element {
-  const { t, isArabic } = useSettings();
+  const { t, isArabic, currency, language } = useSettings();
   const luxury = fontFamily(isArabic, 'luxury');
   const [loading, setLoading] = useState(true);
   const [store, setStore] = useState<SellerStoreSummary | null>(null);
   const [stats, setStats] = useState<SellerDashboardStats | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<DashboardTab>('products');
+  const [products, setProducts] = useState<SellerProductRow[]>([]);
+  const [orders, setOrders] = useState<SellerOrderRow[]>([]);
+  const [listsLoading, setListsLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -44,11 +56,36 @@ export function SellerDashboardScreen(): React.JSX.Element {
       // Stats come back with the store, so there is no second round trip.
       setStats(result.stats);
       setLoading(false);
+
+      if (result.store) {
+        const [productRows, orderRows] = await Promise.all([
+          getSellerProducts(result.store.id),
+          getSellerRecentOrders(result.store.id),
+        ]);
+        if (!mounted) return;
+        setProducts(productRows);
+        setOrders(orderRows);
+        setListsLoading(false);
+      } else {
+        setListsLoading(false);
+      }
     })();
     return () => {
       mounted = false;
     };
   }, []);
+
+  const formatDate = (iso: string): string => {
+    try {
+      return new Date(iso).toLocaleDateString(isArabic ? 'ar-QA' : 'en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    } catch {
+      return iso;
+    }
+  };
 
   if (loading) {
     return (
@@ -150,14 +187,82 @@ export function SellerDashboardScreen(): React.JSX.Element {
           </MasaCard>
         ))}
 
-        <MasaCard style={styles.card}>
-          <Text style={[styles.sectionTitle, { fontFamily: luxury }]}>
-            {t('seller.overview.productInventory')}
-          </Text>
-          <Text style={textStyle(isArabic, 'body')}>
-            {t('seller.overview.noProductsYet')}
-          </Text>
-        </MasaCard>
+        <View style={styles.tabRow}>
+          <Pressable
+            onPress={() => setActiveTab('products')}
+            style={[styles.tabBtn, activeTab === 'products' ? styles.tabBtnActive : null]}
+          >
+            <Text style={[styles.tabText, activeTab === 'products' ? styles.tabTextActive : null]}>
+              {t('seller.overview.productsTab')}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setActiveTab('orders')}
+            style={[styles.tabBtn, activeTab === 'orders' ? styles.tabBtnActive : null]}
+          >
+            <Text style={[styles.tabText, activeTab === 'orders' ? styles.tabTextActive : null]}>
+              {t('seller.overview.recentOrdersTab')}
+            </Text>
+          </Pressable>
+        </View>
+
+        {listsLoading ? (
+          <ActivityIndicator color={theme.colors.primary} style={styles.listLoading} />
+        ) : activeTab === 'products' ? (
+          <MasaCard style={styles.card}>
+            <Text style={[styles.sectionTitle, { fontFamily: luxury }]}>
+              {t('seller.overview.productInventory')}
+            </Text>
+            {products.length === 0 ? (
+              <Text style={textStyle(isArabic, 'body')}>{t('seller.overview.noProductsYet')}</Text>
+            ) : (
+              products.map((p) => (
+                <View key={p.id} style={styles.rowItem}>
+                  <View style={styles.rowMain}>
+                    <Text style={textStyle(isArabic, 'bodySm')} numberOfLines={1}>
+                      {p.name}
+                    </Text>
+                    <Text style={textStyle(isArabic, 'caption')}>
+                      {t('seller.overview.stock')}: {p.stockQuantity}
+                    </Text>
+                  </View>
+                  <View style={styles.rowEnd}>
+                    <Text style={[textStyle(isArabic, 'bodySm'), styles.rowPrice]}>
+                      {formatCurrencyFromUsd(p.price, currency, language)}
+                    </Text>
+                    <OrderStatusBadge status={p.status} />
+                  </View>
+                </View>
+              ))
+            )}
+          </MasaCard>
+        ) : (
+          <MasaCard style={styles.card}>
+            <Text style={[styles.sectionTitle, { fontFamily: luxury }]}>
+              {t('seller.overview.recentOrdersTab')}
+            </Text>
+            {orders.length === 0 ? (
+              <Text style={textStyle(isArabic, 'body')}>{t('seller.overview.noOrdersYet')}</Text>
+            ) : (
+              orders.map((o) => (
+                <View key={o.id} style={styles.rowItem}>
+                  <View style={styles.rowMain}>
+                    <Text style={textStyle(isArabic, 'bodySm')} numberOfLines={1}>
+                      {o.customerName}
+                    </Text>
+                    <Text style={textStyle(isArabic, 'caption')}>{formatDate(o.createdAt)}</Text>
+                  </View>
+                  <View style={styles.rowEnd}>
+                    <Text style={[textStyle(isArabic, 'bodySm'), styles.rowPrice]}>
+                      {formatCurrencyFromUsd(o.total, currency, language)}
+                    </Text>
+                    <OrderStatusBadge status={o.status} />
+                  </View>
+                </View>
+              ))
+            )}
+          </MasaCard>
+        )}
 
         <MasaButton label={t('seller.overview.backHome')} onPress={() => goHome()} variant="outline" />
       </ScrollView>
@@ -199,4 +304,37 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginLeft: 'auto',
   },
+  tabRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  tabBtn: {
+    borderBottomColor: 'transparent',
+    borderBottomWidth: 2,
+    paddingBottom: 8,
+    paddingHorizontal: 4,
+  },
+  tabBtnActive: {
+    borderBottomColor: theme.colors.primary,
+  },
+  tabText: {
+    color: theme.colors.masaGray,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  tabTextActive: {
+    color: theme.colors.primary,
+  },
+  listLoading: { marginVertical: 24 },
+  rowItem: {
+    alignItems: 'center',
+    borderTopColor: theme.colors.border,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+  },
+  rowMain: { flex: 1, gap: 2, paddingRight: 8 },
+  rowEnd: { alignItems: 'flex-end', gap: 4 },
+  rowPrice: { color: theme.colors.masaDark, fontWeight: '600' },
 });

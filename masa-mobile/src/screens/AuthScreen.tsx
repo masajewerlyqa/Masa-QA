@@ -206,7 +206,7 @@ export function AuthScreen(): React.JSX.Element {
             </View>
           ) : null}
 
-          <Text style={[styles.label, textStyle(isArabic, 'bodySm')]}>{t('common.email')}</Text>
+          <Text style={[textStyle(isArabic, 'bodySm'), styles.label]}>{t('common.email')}</Text>
           <TextInput
             autoCapitalize="none"
             autoComplete="email"
@@ -218,7 +218,7 @@ export function AuthScreen(): React.JSX.Element {
             value={email}
           />
 
-          <Text style={[styles.label, textStyle(isArabic, 'bodySm')]}>
+          <Text style={[textStyle(isArabic, 'bodySm'), styles.label]}>
             {isArabic ? 'كلمة المرور' : 'Password'}
           </Text>
           <TextInput

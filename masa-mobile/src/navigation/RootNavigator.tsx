@@ -11,8 +11,11 @@ import { SellerPlansScreen } from '../screens/seller/SellerPlansScreen';
 import { InfoPageScreen } from '../screens/InfoPageScreen';
 import { MarketPricesScreen } from '../screens/MarketPricesScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
+import { OrderDetailScreen } from '../screens/OrderDetailScreen';
+import { OrdersScreen } from '../screens/OrdersScreen';
 import { ProductDetailsScreen } from '../screens/ProductDetailsScreen';
 import { SellGoldCalculatorScreen } from '../screens/SellGoldCalculatorScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 import { SupportScreen } from '../screens/SupportScreen';
 import { ToolsScreen } from '../screens/ToolsScreen';
 import { ZakatCalculatorScreen } from '../screens/ZakatCalculatorScreen';
@@ -41,6 +44,9 @@ export function RootNavigator(): React.JSX.Element {
       <Stack.Screen component={MarketPricesScreen} name="MarketPrices" />
       <Stack.Screen component={CheckoutScreen} name="Checkout" />
       <Stack.Screen component={PaymentSuccessScreen} name="PaymentSuccess" />
+      <Stack.Screen component={OrdersScreen} name="Orders" />
+      <Stack.Screen component={OrderDetailScreen} name="OrderDetail" />
+      <Stack.Screen component={SettingsScreen} name="Settings" />
     </Stack.Navigator>
   );
 }

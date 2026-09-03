@@ -64,8 +64,8 @@ export function PaymentSuccessScreen(): React.JSX.Element {
               : 'We have emailed your order details. The courier will contact you before delivery.'}
           </Text>
 
-          <MasaButton label={t('common.continueShopping')} onPress={() => goDiscover()} />
-          <MasaButton label={t('common.home')} onPress={() => goHome()} variant="ghost" />
+          <MasaButton label={t('cart.continueShopping')} onPress={() => goDiscover()} />
+          <MasaButton label={t('mobileNav.home')} onPress={() => goHome()} variant="ghost" />
         </MasaCard>
       </ScrollView>
     </SiteShell>

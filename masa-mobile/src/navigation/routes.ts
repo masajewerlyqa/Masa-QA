@@ -156,3 +156,21 @@ export function goInfo(page: { pageKey: InfoPageKey }): void {
 export function goDashboard(): void {
   goSellerDashboard();
 }
+
+export function goOrders(): void {
+  navigateWhenReady(() => {
+    navigationRef.navigate('Orders');
+  });
+}
+
+export function goOrderDetail(orderId: string): void {
+  navigateWhenReady(() => {
+    navigationRef.navigate('OrderDetail', { orderId });
+  });
+}
+
+export function goSettings(): void {
+  navigateWhenReady(() => {
+    navigationRef.navigate('Settings');
+  });
+}

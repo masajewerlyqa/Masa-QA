@@ -49,23 +49,111 @@ export async function getSellerStoreForUser(): Promise<SellerStoreResult> {
   return { ok: true, store: result.data.store, stats: result.data.stats };
 }
 
+export type SellerProductRow = {
+  id: string;
+  name: string;
+  price: number;
+  stockQuantity: number;
+  status: string;
+};
+
+export type SellerOrderRow = {
+  id: string;
+  orderNumber: string | null;
+  status: string;
+  total: number;
+  createdAt: string;
+  customerName: string;
+};
+
+/**
+ * Products belonging to this store. `orders` has no `store_id` column -- an
+ * order can span multiple sellers -- so seller order rows come from
+ * `order_items` joined through `products`, matching the RLS policy in
+ * migration 009_seller_orders_rls.sql, not a direct `orders.store_id` filter.
+ */
+export async function getSellerProducts(storeId: string, limit = 20): Promise<SellerProductRow[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, name, price, stock_quantity, status')
+    .eq('store_id', storeId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('[sellerDashboard] products load failed:', error.message);
+    return [];
+  }
+
+  return (data ?? []).map((p) => ({
+    id: p.id as string,
+    name: p.name as string,
+    price: Number(p.price),
+    stockQuantity: Number(p.stock_quantity),
+    status: p.status as string,
+  }));
+}
+
+export async function getSellerRecentOrders(storeId: string, limit = 10): Promise<SellerOrderRow[]> {
+  const supabase = getSupabase();
+
+  const { data: items, error: itemsError } = await supabase
+    .from('order_items')
+    .select('order_id, products!inner(store_id)')
+    .eq('products.store_id', storeId);
+
+  if (itemsError || !items?.length) {
+    if (itemsError) console.error('[sellerDashboard] order_items load failed:', itemsError.message);
+    return [];
+  }
+
+  const orderIds = [...new Set(items.map((i) => i.order_id as string))];
+
+  const { data: orders, error: ordersError } = await supabase
+    .from('orders')
+    .select('id, order_number, status, total, created_at, customer_id')
+    .in('id', orderIds)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (ordersError || !orders?.length) {
+    if (ordersError) console.error('[sellerDashboard] orders load failed:', ordersError.message);
+    return [];
+  }
+
+  const customerIds = [...new Set(orders.map((o) => o.customer_id as string))];
+  const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', customerIds);
+  const nameMap = new Map((profiles ?? []).map((p) => [p.id as string, p.full_name as string | null]));
+
+  return orders.map((o) => ({
+    id: o.id as string,
+    orderNumber: (o.order_number as string | null) ?? null,
+    status: o.status as string,
+    total: Number(o.total),
+    createdAt: o.created_at as string,
+    customerName: nameMap.get(o.customer_id as string) ?? '—',
+  }));
+}
+
 export async function getSellerDashboardStats(storeId: string): Promise<SellerDashboardStats> {
   const supabase = getSupabase();
 
-  const [ordersRes, productsRes] = await Promise.all([
-    supabase.from('orders').select('total_amount').eq('store_id', storeId),
+  const [items, productsRes] = await Promise.all([
+    supabase.from('order_items').select('order_id, total_price, products!inner(store_id)').eq('products.store_id', storeId),
     supabase.from('products').select('id', { count: 'exact', head: true }).eq('store_id', storeId),
   ]);
 
-  const orders = ordersRes.data ?? [];
-  const totalRevenue = orders.reduce((sum, row) => {
-    const amount = Number(row.total_amount);
+  const rows = items.data ?? [];
+  const totalRevenue = rows.reduce((sum, row) => {
+    const amount = Number(row.total_price);
     return sum + (Number.isFinite(amount) ? amount : 0);
   }, 0);
+  const totalOrders = new Set(rows.map((row) => row.order_id)).size;
 
   return {
     totalRevenue,
-    totalOrders: orders.length,
+    totalOrders,
     productsListed: productsRes.count ?? 0,
   };
 }

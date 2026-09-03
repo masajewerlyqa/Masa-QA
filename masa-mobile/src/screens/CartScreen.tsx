@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import { Alert, FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Trash2 } from 'lucide-react-native';
 
 import { MasaButton } from '../components/MasaButton';
@@ -52,7 +52,7 @@ export function CartScreen(): React.JSX.Element {
           <View style={styles.itemBody}>
             <View style={styles.itemTop}>
               <View style={styles.itemTitles}>
-                <Text style={[styles.itemTitle, textStyle(isArabic, 'bodySm')]}>
+                <Text style={[textStyle(isArabic, 'bodySm'), styles.itemTitle]}>
                   {item.product.name}
                 </Text>
                 <Text style={textStyle(isArabic, 'caption')}>{item.product.category}</Text>
@@ -97,7 +97,7 @@ export function CartScreen(): React.JSX.Element {
 
         {!user ? (
           <MasaCard style={styles.emptyCard}>
-            <Text style={[styles.emptyText, textStyle(isArabic, 'body')]}>{t('cart.empty')}</Text>
+            <Text style={[textStyle(isArabic, 'body'), styles.emptyText]}>{t('cart.empty')}</Text>
             <MasaButton label={t('auth.register.signIn')} onPress={() => goAuth()} variant="outline" />
           </MasaCard>
         ) : null}
@@ -108,7 +108,7 @@ export function CartScreen(): React.JSX.Element {
 
         {user && items.length === 0 && !isLoading ? (
           <MasaCard style={styles.emptyCard}>
-            <Text style={[styles.emptyText, textStyle(isArabic, 'body')]}>{t('cart.empty')}</Text>
+            <Text style={[textStyle(isArabic, 'body'), styles.emptyText]}>{t('cart.empty')}</Text>
             <MasaButton
               label={t('cart.continueShopping')}
               onPress={() => goDiscover()}
@@ -139,16 +139,8 @@ export function CartScreen(): React.JSX.Element {
               <Text style={textStyle(isArabic, 'body')}>{t('checkout.shipping')}</Text>
               <Text style={textStyle(isArabic, 'body')}>{t('checkout.free')}</Text>
             </View>
-            <View style={styles.promoRow}>
-              <TextInput
-                placeholder={t('checkout.promoExample')}
-                placeholderTextColor={theme.colors.masaGray}
-                style={styles.promoInput}
-              />
-              <MasaButton label={t('checkout.apply')} variant="outline" />
-            </View>
             <View style={[styles.summaryLine, styles.totalLine]}>
-              <Text style={[styles.totalLabel, textStyle(isArabic, 'bodySm')]}>{t('checkout.total')}</Text>
+              <Text style={[textStyle(isArabic, 'bodySm'), styles.totalLabel]}>{t('checkout.total')}</Text>
               <Text style={[styles.totalValue, { fontFamily: luxury }]}>
                 {formatCurrencyFromUsd(subtotal, currency, language)}
               </Text>
@@ -235,15 +227,6 @@ const styles = StyleSheet.create({
   summaryLine: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  promoRow: { alignItems: 'center', flexDirection: 'row', gap: 8 },
-  promoInput: {
-    borderColor: theme.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flex: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
   },
   totalLine: {
     borderTopColor: theme.colors.border,

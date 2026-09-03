@@ -47,7 +47,13 @@ export const theme = {
   typography: {
     luxury: 'PlayfairDisplay_400Regular',
     luxuryAr: 'IBMPlexSansArabic_700Bold',
-    body: 'IBMPlexSansArabic_400Regular',
+    // Web's Tailwind `font-sans` (the default body font for English UI) is
+    // Playfair Display, not a sans-serif -- see app/globals.css. Arabic keeps
+    // IBM Plex Arabic: it's web's own fallback for `font-arabic` since Alilato
+    // (the primary Arabic font) ships only as .woff2, which Android/Hermes
+    // font loading does not support -- .ttf/.otf would be needed to match web
+    // exactly there.
+    body: 'PlayfairDisplay_400Regular',
     bodyAr: 'IBMPlexSansArabic_400Regular',
     sizes: {
       navLabel: 10,

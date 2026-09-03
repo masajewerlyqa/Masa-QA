@@ -32,11 +32,11 @@ export function PageHero({
       />
       <View style={[styles.inner, centered && styles.centered]}>
         {eyebrow ? (
-          <Text style={[styles.eyebrow, textStyle(isArabic, 'caption')]}>{eyebrow}</Text>
+          <Text style={[textStyle(isArabic, 'caption'), styles.eyebrow]}>{eyebrow}</Text>
         ) : null}
         <Text style={[styles.title, { fontFamily: fontFamily(isArabic, 'luxury') }]}>{title}</Text>
         <View style={styles.divider} />
-        {subtitle ? <Text style={[styles.subtitle, textStyle(isArabic, 'body')]}>{subtitle}</Text> : null}
+        {subtitle ? <Text style={[textStyle(isArabic, 'body'), styles.subtitle]}>{subtitle}</Text> : null}
       </View>
     </View>
   );
