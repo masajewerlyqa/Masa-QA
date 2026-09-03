@@ -36,6 +36,7 @@ export type RootStackParamList = {
   Orders: undefined;
   OrderDetail: { orderId: string };
   Settings: undefined;
+  AdminDashboard: undefined;
 };
 
 declare global {

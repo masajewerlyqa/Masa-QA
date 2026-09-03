@@ -5,6 +5,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
 import { getSupabase } from '../api/client';
+import { resolveSiteUrl } from '../config/env';
 import {
   CUSTOMER_TERMS_VERSION,
   MERCHANT_TERMS_VERSION,
@@ -261,6 +262,51 @@ export async function signOut(): Promise<{ error: AuthError | null }> {
 export async function refreshAuthSession(): Promise<void> {
   const { data } = await getSupabase().auth.getSession();
   useAuthStore.getState().setSession(data.session);
+}
+
+/**
+ * Password reset request, mirroring web `requestPasswordReset`
+ * (app/(site)/forgot-password/actions.ts). Mobile had no reset entry point at
+ * all before this, so "forgot password" was simply unreachable in the app.
+ *
+ * `redirectTo` points at the website rather than a `masa://` deep link on
+ * purpose: the recovery link is opened from an email client and the web
+ * `/auth/update-password` page already implements the full reset form, so
+ * there is no native screen to hand off to.
+ *
+ * Delivery itself is Supabase Auth's SMTP, not this app. If Supabase has no
+ * working sender configured this returns Supabase's "Error sending recovery
+ * email", which `normalizeAuthError` maps to the user-facing message.
+ */
+export async function requestPasswordReset(
+  email: string,
+  language: AuthLanguage,
+): Promise<{ ok: boolean; message: string }> {
+  const trimmed = email.trim().toLowerCase();
+  if (!trimmed || !trimmed.includes('@')) {
+    return {
+      ok: false,
+      message: language === 'ar' ? 'أدخل بريداً إلكترونياً صحيحاً.' : 'Enter a valid email address.',
+    };
+  }
+
+  const redirectTo = `${resolveSiteUrl()}/auth/callback?next=${encodeURIComponent(
+    '/auth/update-password',
+  )}`;
+
+  const { error } = await getSupabase().auth.resetPasswordForEmail(trimmed, { redirectTo });
+
+  if (error) {
+    return { ok: false, message: normalizeAuthError(error.message, language) };
+  }
+
+  return {
+    ok: true,
+    message:
+      language === 'ar'
+        ? 'إذا كان هناك حساب بهذا البريد، فقد أرسلنا رابطاً لإعادة تعيين كلمة المرور.'
+        : 'If an account exists for that email, we sent a password reset link.',
+  };
 }
 
 export async function createSessionFromCallbackUrl(

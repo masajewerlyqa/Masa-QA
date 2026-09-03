@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
 import { AdvisorScreen } from '../screens/AdvisorScreen';
 import { AuthScreen } from '../screens/AuthScreen';
 import { CheckoutScreen } from '../screens/CheckoutScreen';
@@ -47,6 +48,7 @@ export function RootNavigator(): React.JSX.Element {
       <Stack.Screen component={OrdersScreen} name="Orders" />
       <Stack.Screen component={OrderDetailScreen} name="OrderDetail" />
       <Stack.Screen component={SettingsScreen} name="Settings" />
+      <Stack.Screen component={AdminDashboardScreen} name="AdminDashboard" />
     </Stack.Navigator>
   );
 }

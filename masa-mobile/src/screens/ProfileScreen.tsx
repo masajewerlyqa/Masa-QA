@@ -13,7 +13,14 @@ import { textStyle } from '../constants/typography';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../hooks/useAuth';
 import { navigateToBecomeSeller } from '../lib/sellerNavigation';
-import { goAuth, goOrders, goSellerDashboard, goSettings, goWishlist } from '../navigation/routes';
+import {
+  goAdminDashboard,
+  goAuth,
+  goOrders,
+  goSellerDashboard,
+  goSettings,
+  goWishlist,
+} from '../navigation/routes';
 import { signOut } from '../services/authService';
 import { getProfileSummary, ProfileSummary } from '../services/profileService';
 import type { ProfileRole } from '../services/profileAuthService';
@@ -111,7 +118,18 @@ export function ProfileScreen(): React.JSX.Element {
                   value={roleLabel(summary?.role, t)}
                 />
               </View>
-              {summary?.role === 'seller' || summary?.role === 'admin' ? (
+              {/*
+                Admins get the admin dashboard, not the seller one. Routing them
+                to the seller dashboard sent every admin into "we could not link
+                a store to your account" -- correct behaviour from the API (an
+                admin has no store), but a dead end in the UI.
+              */}
+              {summary?.role === 'admin' ? (
+                <MasaButton
+                  label={t('admin.overview.platformOverview')}
+                  onPress={() => goAdminDashboard()}
+                />
+              ) : summary?.role === 'seller' ? (
                 <MasaButton
                   label={t('seller.overview.dashboard')}
                   onPress={() => goSellerDashboard()}

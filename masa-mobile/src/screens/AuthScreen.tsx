@@ -24,6 +24,7 @@ import {
 import type { SellerPlanId } from '../constants/sellerPlans';
 import {
   completeAuthFlow,
+  requestPasswordReset,
   signInWithPassword,
   signUpWithEmail,
   type RegistrationIntent,
@@ -48,6 +49,15 @@ export function AuthScreen(): React.JSX.Element {
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SellerPlanId | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
+
+  const handleForgotPassword = async (): Promise<void> => {
+    setMessage(null);
+    setIsResetting(true);
+    const result = await requestPasswordReset(email, language);
+    setIsResetting(false);
+    setMessage(result.message);
+  };
 
   useEffect(() => {
     if (route.params?.mode) setMode(route.params.mode);
@@ -230,6 +240,22 @@ export function AuthScreen(): React.JSX.Element {
             value={password}
           />
 
+          {/* Mirrors web LoginForm's "Forgot password?" link (sign-in only). */}
+          {isSignIn ? (
+            <Text
+              onPress={isResetting ? undefined : () => void handleForgotPassword()}
+              style={styles.forgotLink}
+            >
+              {isResetting
+                ? isArabic
+                  ? 'جاري الإرسال...'
+                  : 'Sending...'
+                : isArabic
+                  ? 'نسيت كلمة المرور؟'
+                  : 'Forgot password?'}
+            </Text>
+          ) : null}
+
           <MasaButton
             disabled={isSubmitting}
             label={
@@ -339,6 +365,14 @@ const styles = StyleSheet.create({
   label: {
     color: theme.colors.masaDark,
     marginBottom: 6,
+  },
+  forgotLink: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 4,
+    paddingVertical: 6,
+    textAlign: 'right',
   },
   input: {
     borderColor: theme.colors.border,

@@ -7,29 +7,32 @@ import { theme } from '../../constants/theme';
 import { textStyle } from '../../constants/typography';
 import { useSettings } from '../../context/SettingsContext';
 
-const SUBJECTS_EN = [
-  'General inquiry',
-  'Order support',
-  'Seller partnership',
-  'Technical issue',
-  'Other',
-] as const;
-
-const SUBJECTS_AR = [
-  'استفسار عام',
-  'دعم الطلبات',
-  'شراكة بائع',
-  'مشكلة تقنية',
-  'أخرى',
-] as const;
+/**
+ * Subject values MUST be the API's enum slugs, not display labels.
+ *
+ * `/api/contact` validates `subject` with `z.enum(CONTACT_SUBJECT_VALUES)`
+ * (lib/contact/subjects.ts). This form previously posted human-readable labels
+ * ("General inquiry", and in Arabic "استفسار عام"), so every mobile submission
+ * failed validation with HTTP 400 before an email was ever sent -- which the
+ * catch block then surfaced as the generic "something went wrong" alert.
+ * Labels are for display only; `value` is what goes on the wire.
+ */
+const SUBJECTS: { value: string; en: string; ar: string }[] = [
+  { value: 'customer-support', en: 'Customer Support', ar: 'دعم العملاء' },
+  { value: 'seller-partnership', en: 'Seller Partnership', ar: 'شراكة البائعين' },
+  { value: 'order-inquiry', en: 'Order Inquiry', ar: 'استفسار عن الطلب' },
+  { value: 'technical-issue', en: 'Technical Issue', ar: 'مشكلة تقنية' },
+  { value: 'business-collaboration', en: 'Business Collaboration', ar: 'تعاون تجاري' },
+  { value: 'complaints-feedback', en: 'Complaints & feedback', ar: 'شكاوى وملاحظات' },
+  { value: 'other', en: 'Other', ar: 'أخرى' },
+];
 
 export function ContactFormMobile(): React.JSX.Element {
   const { isArabic, language } = useSettings();
-  const subjects = isArabic ? SUBJECTS_AR : SUBJECTS_EN;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [subject, setSubject] = useState<string>(subjects[0]);
+  const [subject, setSubject] = useState<string>(SUBJECTS[0].value);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -43,7 +46,7 @@ export function ContactFormMobile(): React.JSX.Element {
     }
     setLoading(true);
     try {
-      const res = await sitePostJson<{ ok?: boolean }>('/api/contact', {
+      const res = await sitePostJson<{ ok?: boolean; error?: string }>('/api/contact', {
         fullName: name.trim(),
         email: email.trim(),
         ...(phone.trim() ? { phone: phone.trim() } : {}),
@@ -51,7 +54,23 @@ export function ContactFormMobile(): React.JSX.Element {
         message: message.trim(),
         language,
       });
-      if (!res.ok) throw new Error(res.error);
+
+      // The API's own message is shown rather than a generic string: it
+      // distinguishes validation problems, rate limiting (429) and delivery
+      // failures (503), all of which previously looked identical to the user.
+      if (!res.ok) {
+        Alert.alert(isArabic ? 'خطأ' : 'Error', res.error);
+        return;
+      }
+      if (!res.data?.ok) {
+        Alert.alert(
+          isArabic ? 'خطأ' : 'Error',
+          res.data?.error ??
+            (isArabic ? 'حدث خطأ. يرجى المحاولة مرة أخرى.' : 'Something went wrong. Please try again.'),
+        );
+        return;
+      }
+
       setName('');
       setEmail('');
       setPhone('');
@@ -60,10 +79,14 @@ export function ContactFormMobile(): React.JSX.Element {
         isArabic ? 'شكراً لك' : 'Thank you',
         isArabic ? 'استلمنا رسالتك وسنرد عليك قريباً.' : 'We received your message and will get back to you shortly.',
       );
-    } catch {
+    } catch (e) {
       Alert.alert(
         isArabic ? 'خطأ' : 'Error',
-        isArabic ? 'حدث خطأ. يرجى المحاولة مرة أخرى.' : 'Something went wrong. Please try again.',
+        e instanceof Error
+          ? e.message
+          : isArabic
+            ? 'حدث خطأ. يرجى المحاولة مرة أخرى.'
+            : 'Something went wrong. Please try again.',
       );
     } finally {
       setLoading(false);
@@ -94,13 +117,13 @@ export function ContactFormMobile(): React.JSX.Element {
         {isArabic ? 'الموضوع' : 'Subject'} *
       </Text>
       <View style={styles.subjectRow}>
-        {subjects.map((s) => (
+        {SUBJECTS.map((s) => (
           <MasaButton
-            key={s}
-            label={s}
-            onPress={() => setSubject(s)}
+            key={s.value}
+            label={isArabic ? s.ar : s.en}
+            onPress={() => setSubject(s.value)}
             style={styles.subjectChip}
-            variant={subject === s ? 'primary' : 'outline'}
+            variant={subject === s.value ? 'primary' : 'outline'}
           />
         ))}
       </View>

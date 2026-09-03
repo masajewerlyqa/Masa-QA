@@ -174,3 +174,9 @@ export function goSettings(): void {
     navigationRef.navigate('Settings');
   });
 }
+
+export function goAdminDashboard(): void {
+  navigateWhenReady(() => {
+    navigationRef.navigate('AdminDashboard');
+  });
+}

@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { theme } from '../constants/theme';
 
-type MasaButtonVariant = 'primary' | 'secondary' | 'outline' | 'outlineLight' | 'ghost';
+type MasaButtonVariant = 'primary' | 'secondary' | 'outline' | 'outlineLight' | 'ghost' | 'light';
 type VariantStyle = { button: ViewStyle; text: TextStyle };
 
 type MasaButtonProps = {
@@ -113,6 +113,14 @@ const variantStyles: Record<MasaButtonVariant, VariantStyle> = {
     button: {
       backgroundColor: theme.colors.masaLight,
       borderColor: theme.colors.border,
+    },
+    text: { color: theme.colors.primary },
+  },
+  /** Web `bg-white text-primary` — a CTA sitting on a primary-colored section. */
+  light: {
+    button: {
+      backgroundColor: theme.colors.white,
+      borderColor: theme.colors.white,
     },
     text: { color: theme.colors.primary },
   },
