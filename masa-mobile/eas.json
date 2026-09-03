@@ -20,13 +20,13 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_SITE_URL": "https://masajewelry.com"
+        "EXPO_PUBLIC_SITE_URL": "https://www.masajewelry.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_SITE_URL": "https://masajewelry.com"
+        "EXPO_PUBLIC_SITE_URL": "https://www.masajewelry.com"
       }
     }
   },

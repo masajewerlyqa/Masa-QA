@@ -1,8 +1,16 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-/** Production site used when dev localhost is unreachable from a device. */
-const DEFAULT_PRODUCTION_SITE = 'https://masajewelry.com';
+/**
+ * Production site used when dev localhost is unreachable from a device.
+ *
+ * Must be the `www` host, not the apex domain: masajewelry.com 307-redirects to
+ * www.masajewelry.com at the Vercel/DNS level, and that redirect drops the
+ * Authorization header on requests made from this app (Android's networking
+ * stack does not forward it across a host change). Using the apex here silently
+ * turned every authenticated request into an anonymous one after the redirect.
+ */
+const DEFAULT_PRODUCTION_SITE = 'https://www.masajewelry.com';
 
 export type SupabaseEnv = {
   url: string;
