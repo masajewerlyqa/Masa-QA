@@ -30,14 +30,6 @@ function SnapchatIcon({ size = 20, color = '#fff' }: { size?: number; color?: st
   );
 }
 
-function AppleLogoIcon({ size = 18, color = '#fff' }: { size?: number; color?: string }): React.JSX.Element {
-  return (
-    <Svg fill={color} height={size} viewBox="0 0 24 24" width={size}>
-      <Path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
-    </Svg>
-  );
-}
-
 function FacebookIcon({ size = 20, color = '#fff' }: { size?: number; color?: string }): React.JSX.Element {
   return <Ionicons color={color} name="logo-facebook" size={size} />;
 }
@@ -48,17 +40,6 @@ function InstagramIcon({ size = 20, color = '#fff' }: { size?: number; color?: s
 
 function TwitterIcon({ size = 20, color = '#fff' }: { size?: number; color?: string }): React.JSX.Element {
   return <Ionicons color={color} name="logo-twitter" size={size} />;
-}
-
-function GooglePlayBrandIcon(): React.JSX.Element {
-  return (
-    <Svg height={24} viewBox="0 0 28.99 31.99" width={22}>
-      <Path d="M13.54 15.28.12 29.34a3.66 3.66 0 0 0 5.33 2.16l15.1-8.6Z" fill="#ea4335" />
-      <Path d="m27.11 12.89-6.53-3.74-7.35 6.45 7.38 7.28 6.48-3.7a3.54 3.54 0 0 0 1.5-4.79 3.62 3.62 0 0 0-1.5-1.5z" fill="#fbbc04" />
-      <Path d="M.12 2.66a3.57 3.57 0 0 0-.12.92v24.84a3.57 3.57 0 0 0 .12.92L14 15.64Z" fill="#4285f4" />
-      <Path d="m13.64 16 6.94-6.85L5.5.51A3.73 3.73 0 0 0 3.63 0 3.64 3.64 0 0 0 .12 2.65Z" fill="#34a853" />
-    </Svg>
-  );
 }
 
 type SocialLink = {
@@ -73,9 +54,6 @@ const SOCIAL_LINKS: SocialLink[] = [
   { href: 'https://www.instagram.com/masajewelry.ar', Icon: InstagramIcon },
   { href: 'https://www.snapchat.com/@masajewelry.ar', Icon: SnapchatIcon },
 ];
-
-const iosAppStoreUrl = process.env.EXPO_PUBLIC_IOS_APP_STORE_URL?.trim() ?? '';
-const androidPlayStoreUrl = process.env.EXPO_PUBLIC_ANDROID_PLAY_STORE_URL?.trim() ?? '';
 
 export function MobileFooter(): React.JSX.Element {
   const { t, isArabic } = useSettings();
@@ -129,50 +107,6 @@ export function MobileFooter(): React.JSX.Element {
                 <Icon color={theme.colors.white} size={20} />
               </Pressable>
             ))}
-          </View>
-
-          <Text
-            style={[
-              textStyle(isArabic, 'caption'),
-              styles.appLabel,
-              isArabic ? styles.appLabelArabic : null,
-            ]}
-          >
-            {t('footer.getTheApp')}
-          </Text>
-          <View style={styles.appRow}>
-            {iosAppStoreUrl ? (
-              <Pressable
-                accessibilityLabel={t('footer.downloadOnAppStore')}
-                onPress={() => void Linking.openURL(iosAppStoreUrl)}
-                style={styles.socialBtn}
-              >
-                <AppleLogoIcon />
-              </Pressable>
-            ) : (
-              <View
-                accessibilityLabel={`${t('footer.downloadOnAppStore')} — ${t('footer.appLinkComingSoon')}`}
-                style={[styles.socialBtn, styles.appBtnDisabled]}
-              >
-                <AppleLogoIcon color="rgba(255,255,255,0.7)" />
-              </View>
-            )}
-            {androidPlayStoreUrl ? (
-              <Pressable
-                accessibilityLabel={t('footer.getItOnGooglePlay')}
-                onPress={() => void Linking.openURL(androidPlayStoreUrl)}
-                style={styles.socialBtn}
-              >
-                <GooglePlayBrandIcon />
-              </Pressable>
-            ) : (
-              <View
-                accessibilityLabel={`${t('footer.getItOnGooglePlay')} — ${t('footer.appLinkComingSoon')}`}
-                style={[styles.socialBtn, styles.appBtnDisabled]}
-              >
-                <GooglePlayBrandIcon />
-              </View>
-            )}
           </View>
 
           <View style={styles.newsletterBlock}>
@@ -267,25 +201,6 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     width: 40,
-  },
-  appLabel: {
-    color: 'rgba(231,216,195,0.9)',
-    letterSpacing: 2,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-  appLabelArabic: {
-    letterSpacing: 0,
-    textTransform: 'none',
-  },
-  appRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 24,
-  },
-  appBtnDisabled: {
-    opacity: 0.45,
   },
   newsletterBlock: {
     marginTop: 0,
