@@ -180,3 +180,11 @@ export function goAdminDashboard(): void {
     navigationRef.navigate('AdminDashboard');
   });
 }
+
+export function goAdminList(
+  section: 'orders' | 'products' | 'stores' | 'sellers',
+): void {
+  navigateWhenReady(() => {
+    navigationRef.navigate('AdminList', { section });
+  });
+}

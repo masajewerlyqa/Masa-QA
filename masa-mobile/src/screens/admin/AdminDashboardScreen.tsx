@@ -11,7 +11,7 @@ import { MOBILE_CONTENT_PADDING_X, MOBILE_SCROLL_BOTTOM_PADDING } from '../../co
 import { fontFamily, theme } from '../../constants/theme';
 import { textStyle } from '../../constants/typography';
 import { useSettings } from '../../context/SettingsContext';
-import { goHome } from '../../navigation/routes';
+import { goAdminList, goHome } from '../../navigation/routes';
 import {
   getAdminMetrics,
   getAdminRecentApplications,
@@ -131,16 +131,19 @@ export function AdminDashboardScreen(): React.JSX.Element {
           <StatCard
             icon="storefront-outline"
             label={t('admin.overview.totalStores')}
+            onPress={() => goAdminList('stores')}
             value={String(metrics?.totalStores ?? 0)}
           />
           <StatCard
             icon="cube-outline"
             label={t('admin.overview.totalProducts')}
+            onPress={() => goAdminList('products')}
             value={String(metrics?.totalProducts ?? 0)}
           />
           <StatCard
             icon="receipt-outline"
             label={t('admin.overview.totalOrders')}
+            onPress={() => goAdminList('orders')}
             value={String(metrics?.totalOrders ?? 0)}
           />
           <StatCard
@@ -161,6 +164,7 @@ export function AdminDashboardScreen(): React.JSX.Element {
           <StatCard
             icon="ribbon-outline"
             label={t('admin.overview.totalSellers')}
+            onPress={() => goAdminList('sellers')}
             value={String(metrics?.totalSellers ?? 0)}
           />
         </View>
