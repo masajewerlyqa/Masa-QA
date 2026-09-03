@@ -2,12 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUserWithProfile } from "@/lib/auth";
+import { getCurrentUserWithProfileOrActing } from "@/lib/auth";
 
 export type PromoActionResult = { ok: boolean; error?: string };
 
-export async function createPromoCode(formData: FormData): Promise<PromoActionResult> {
-  const { profile } = await getCurrentUserWithProfile();
+export async function createPromoCode(
+  formData: FormData,
+  options?: { actingUserId?: string }
+): Promise<PromoActionResult> {
+  const { profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (profile?.role !== "admin") return { ok: false, error: "Unauthorized" };
 
   const code = String(formData.get("code") ?? "").trim().toUpperCase();
@@ -51,8 +54,12 @@ export async function createPromoCode(formData: FormData): Promise<PromoActionRe
   return { ok: true };
 }
 
-export async function updatePromoActive(promoId: string, active: boolean): Promise<PromoActionResult> {
-  const { profile } = await getCurrentUserWithProfile();
+export async function updatePromoActive(
+  promoId: string,
+  active: boolean,
+  options?: { actingUserId?: string }
+): Promise<PromoActionResult> {
+  const { profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (profile?.role !== "admin") return { ok: false, error: "Unauthorized" };
 
   const supabase = await createClient();
@@ -63,8 +70,11 @@ export async function updatePromoActive(promoId: string, active: boolean): Promi
   return { ok: true };
 }
 
-export async function deletePromoCode(promoId: string): Promise<PromoActionResult> {
-  const { profile } = await getCurrentUserWithProfile();
+export async function deletePromoCode(
+  promoId: string,
+  options?: { actingUserId?: string }
+): Promise<PromoActionResult> {
+  const { profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (profile?.role !== "admin") return { ok: false, error: "Unauthorized" };
 
   const supabase = await createClient();

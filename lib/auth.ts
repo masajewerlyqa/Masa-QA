@@ -123,3 +123,33 @@ export async function getProfileForUserId(userId: string): Promise<Profile | nul
     return null;
   }
 }
+
+/**
+ * Same shape as `getCurrentUserWithProfile`, but for callers that already
+ * resolved a user id from a verified Bearer token (mobile API routes).
+ *
+ * `getCurrentUserWithProfile` cannot be reused directly for that: it calls
+ * `supabase.auth.getUser()` with no arguments, which reads the SDK's restored
+ * *session* -- populated from cookies, never from the `Authorization` header
+ * forwarded for PostgREST calls. A Bearer-only request has no such session, so
+ * every mobile call would silently resolve to `user: null` and every action
+ * would return "Unauthorized" no matter who called it. Passing `actingUserId`
+ * (already verified by `getUserFromRequest`) skips that broken path and reads
+ * the profile directly by id through the normal RLS-scoped client.
+ *
+ * Every "use server" action in app/seller/*\/actions.ts and
+ * app/admin/*\/actions.ts takes an optional `actingUserId` for exactly this
+ * reason, so web and mobile run the same function body -- only the identity
+ * resolution differs.
+ */
+export async function getCurrentUserWithProfileOrActing(
+  actingUserId?: string
+): Promise<GetCurrentUserResult> {
+  if (!actingUserId) return getCurrentUserWithProfile();
+
+  const profile = await getProfileForUserId(actingUserId);
+  return {
+    user: { id: actingUserId, email: profile?.email ?? undefined, emailConfirmedAt: null },
+    profile,
+  };
+}

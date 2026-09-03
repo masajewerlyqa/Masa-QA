@@ -11,7 +11,15 @@ import { fontFamily, theme } from '../../constants/theme';
 import { textStyle } from '../../constants/typography';
 import { useSettings } from '../../context/SettingsContext';
 import { navigateToBecomeSeller } from '../../lib/sellerNavigation';
-import { goHome } from '../../navigation/routes';
+import {
+  goHome,
+  goSellerAvailability,
+  goSellerOrderDetail,
+  goSellerPolicies,
+  goSellerProductForm,
+  goSellerReviews,
+  goSellerSettings,
+} from '../../navigation/routes';
 import {
   getSellerProducts,
   getSellerRecentOrders,
@@ -210,14 +218,21 @@ export function SellerDashboardScreen(): React.JSX.Element {
           <ActivityIndicator color={theme.colors.primary} style={styles.listLoading} />
         ) : activeTab === 'products' ? (
           <MasaCard style={styles.card}>
-            <Text style={[styles.sectionTitle, { fontFamily: luxury }]}>
-              {t('seller.overview.productInventory')}
-            </Text>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={[styles.sectionTitle, { fontFamily: luxury }]}>
+                {t('seller.overview.productInventory')}
+              </Text>
+              <MasaButton
+                label={t('seller.overview.addProduct')}
+                onPress={() => goSellerProductForm()}
+                style={styles.addBtn}
+              />
+            </View>
             {products.length === 0 ? (
               <Text style={textStyle(isArabic, 'body')}>{t('seller.overview.noProductsYet')}</Text>
             ) : (
               products.map((p) => (
-                <View key={p.id} style={styles.rowItem}>
+                <Pressable key={p.id} onPress={() => goSellerProductForm(p.id)} style={styles.rowItem}>
                   <View style={styles.rowMain}>
                     <Text style={textStyle(isArabic, 'bodySm')} numberOfLines={1}>
                       {p.name}
@@ -232,7 +247,7 @@ export function SellerDashboardScreen(): React.JSX.Element {
                     </Text>
                     <OrderStatusBadge status={p.status} />
                   </View>
-                </View>
+                </Pressable>
               ))
             )}
           </MasaCard>
@@ -245,7 +260,7 @@ export function SellerDashboardScreen(): React.JSX.Element {
               <Text style={textStyle(isArabic, 'body')}>{t('seller.overview.noOrdersYet')}</Text>
             ) : (
               orders.map((o) => (
-                <View key={o.id} style={styles.rowItem}>
+                <Pressable key={o.id} onPress={() => goSellerOrderDetail(o.id)} style={styles.rowItem}>
                   <View style={styles.rowMain}>
                     <Text style={textStyle(isArabic, 'bodySm')} numberOfLines={1}>
                       {o.customerName}
@@ -258,11 +273,38 @@ export function SellerDashboardScreen(): React.JSX.Element {
                     </Text>
                     <OrderStatusBadge status={o.status} />
                   </View>
-                </View>
+                </Pressable>
               ))
             )}
           </MasaCard>
         )}
+
+        <View style={styles.quickLinks}>
+          <MasaButton
+            label={t('seller.availability.title')}
+            onPress={() => goSellerAvailability()}
+            style={styles.quickLinkBtn}
+            variant="outline"
+          />
+          <MasaButton
+            label={t('seller.policies.title')}
+            onPress={() => goSellerPolicies()}
+            style={styles.quickLinkBtn}
+            variant="outline"
+          />
+          <MasaButton
+            label={t('seller.reviews.title')}
+            onPress={() => goSellerReviews()}
+            style={styles.quickLinkBtn}
+            variant="outline"
+          />
+          <MasaButton
+            label={t('seller.settings.title')}
+            onPress={() => goSellerSettings()}
+            style={styles.quickLinkBtn}
+            variant="outline"
+          />
+        </View>
 
         <MasaButton label={t('seller.overview.backHome')} onPress={() => goHome()} variant="outline" />
       </ScrollView>
@@ -271,6 +313,10 @@ export function SellerDashboardScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  addBtn: { paddingHorizontal: 12, paddingVertical: 8 },
+  quickLinkBtn: { flexBasis: '47%', flexGrow: 1 },
+  quickLinks: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  sectionHeaderRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   content: {
     gap: 16,
     paddingBottom: MOBILE_SCROLL_BOTTOM_PADDING,

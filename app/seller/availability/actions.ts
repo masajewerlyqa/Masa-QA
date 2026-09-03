@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUserWithProfile } from "@/lib/auth";
+import { getCurrentUserWithProfileOrActing } from "@/lib/auth";
 import { getSellerStore } from "@/lib/seller";
 import { createClient } from "@/lib/supabase/server";
 import { storeHoursFormSchema } from "@/lib/validations/store-hours";
@@ -14,13 +14,18 @@ function toPgTime(hhmm: string): string {
   return t;
 }
 
-export async function saveStoreAvailabilityAction(raw: unknown): Promise<SaveAvailabilityResult> {
-  const { user, profile } = await getCurrentUserWithProfile();
+export async function saveStoreAvailabilityAction(
+  raw: unknown,
+  options?: { actingUserId?: string }
+): Promise<SaveAvailabilityResult> {
+  const { user, profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (!user || profile?.role !== "seller") {
     return { ok: false, error: "Unauthorized" };
   }
 
-  const store = await getSellerStore();
+  const store = await getSellerStore(
+    options?.actingUserId ? { actingUser: { id: options.actingUserId } } : undefined
+  );
   if (!store) {
     return { ok: false, error: "No store" };
   }

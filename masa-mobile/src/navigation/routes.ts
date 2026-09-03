@@ -188,3 +188,57 @@ export function goAdminList(
     navigationRef.navigate('AdminList', { section });
   });
 }
+
+export function goSellerProductForm(productId?: string): void {
+  navigateWhenReady(() => {
+    navigationRef.navigate('SellerProductForm', { productId });
+  });
+}
+
+export function goSellerOrderDetail(orderId: string): void {
+  navigateWhenReady(() => {
+    navigationRef.navigate('SellerOrderDetail', { orderId });
+  });
+}
+
+export function goSellerSettings(): void {
+  navigateWhenReady(() => {
+    navigationRef.navigate('SellerSettings');
+  });
+}
+
+export function goSellerAvailability(): void {
+  navigateWhenReady(() => {
+    navigationRef.navigate('SellerAvailability');
+  });
+}
+
+export function goSellerPolicies(): void {
+  navigateWhenReady(() => {
+    navigationRef.navigate('SellerPolicies');
+  });
+}
+
+export function goSellerReviews(): void {
+  navigateWhenReady(() => {
+    navigationRef.navigate('SellerReviews');
+  });
+}
+
+export function goAdminApplicationDetail(applicationId: string): void {
+  navigateWhenReady(() => {
+    navigationRef.navigate('AdminApplicationDetail', { applicationId });
+  });
+}
+
+export function goAdminReviews(): void {
+  navigateWhenReady(() => {
+    navigationRef.navigate('AdminReviews');
+  });
+}
+
+export function goAdminPromo(): void {
+  navigateWhenReady(() => {
+    navigationRef.navigate('AdminPromo');
+  });
+}

@@ -55,10 +55,37 @@ export type AdminSellerRow = {
   status: 'Active' | 'Pending';
 };
 
+export type AdminReviewRow = {
+  id: string;
+  product_id: string;
+  product_name: string;
+  store_name: string | null;
+  customer_name: string | null;
+  rating: number;
+  title: string | null;
+  body: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+};
+
+export type AdminPromoRow = {
+  id: string;
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  store_name: string | null;
+  min_order_amount: number;
+  usage_limit: number | null;
+  used_count: number;
+  active: boolean;
+  starts_at: string | null;
+  expires_at: string | null;
+};
+
 export type AdminListResult<T> = { ok: true; rows: T[] } | { ok: false; error: string };
 
 async function fetchSection<T>(
-  section: 'orders' | 'products' | 'stores' | 'sellers',
+  section: 'orders' | 'products' | 'stores' | 'sellers' | 'reviews' | 'promo',
   limit?: number,
 ): Promise<AdminListResult<T>> {
   const result = await sitePostJsonAuthed<{ ok: boolean; rows?: T[]; error?: string }>(
@@ -91,4 +118,12 @@ export function getAdminStores(): Promise<AdminListResult<AdminStoreRow>> {
 
 export function getAdminSellers(): Promise<AdminListResult<AdminSellerRow>> {
   return fetchSection<AdminSellerRow>('sellers');
+}
+
+export function getAdminReviews(limit = 200): Promise<AdminListResult<AdminReviewRow>> {
+  return fetchSection<AdminReviewRow>('reviews', limit);
+}
+
+export function getAdminPromoCodes(limit = 200): Promise<AdminListResult<AdminPromoRow>> {
+  return fetchSection<AdminPromoRow>('promo', limit);
 }

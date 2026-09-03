@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUserWithProfile } from "@/lib/auth";
+import { getCurrentUserWithProfileOrActing } from "@/lib/auth";
 import { getSellerStore } from "@/lib/seller";
 import { createClient } from "@/lib/supabase/server";
 import { canEditStorePolicy, orderStatusBlocksPolicyEdit } from "@/lib/store-policy";
@@ -39,13 +39,18 @@ async function storeHasOrdersBlockingPolicyEdit(storeId: string): Promise<boolea
   return (orders ?? []).some((o) => orderStatusBlocksPolicyEdit(o.status));
 }
 
-export async function updateSellerStorePolicy(payload: StorePolicyFormPayload): Promise<PolicyActionResult> {
-  const { user, profile } = await getCurrentUserWithProfile();
+export async function updateSellerStorePolicy(
+  payload: StorePolicyFormPayload,
+  options?: { actingUserId?: string }
+): Promise<PolicyActionResult> {
+  const { user, profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (!user || profile?.role !== "seller") {
     return { ok: false, error: "Unauthorized" };
   }
 
-  const store = await getSellerStore();
+  const store = await getSellerStore(
+    options?.actingUserId ? { actingUser: { id: options.actingUserId } } : undefined
+  );
   if (!store) {
     return { ok: false, error: "Store not found" };
   }

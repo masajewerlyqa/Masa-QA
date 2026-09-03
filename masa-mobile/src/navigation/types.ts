@@ -38,6 +38,15 @@ export type RootStackParamList = {
   Settings: undefined;
   AdminDashboard: undefined;
   AdminList: { section: 'orders' | 'products' | 'stores' | 'sellers' };
+  SellerProductForm: { productId?: string };
+  SellerOrderDetail: { orderId: string };
+  SellerSettings: undefined;
+  SellerAvailability: undefined;
+  SellerPolicies: undefined;
+  SellerReviews: undefined;
+  AdminApplicationDetail: { applicationId: string };
+  AdminReviews: undefined;
+  AdminPromo: undefined;
 };
 
 declare global {

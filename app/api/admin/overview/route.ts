@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 
 import { requireAdmin } from "@/lib/auth/require-role";
-import { getAdminOrders, getAdminProducts, getAdminStores, getAdminSellers } from "@/lib/admin";
+import {
+  getAdminOrders,
+  getAdminProducts,
+  getAdminStores,
+  getAdminSellers,
+  getAdminReviews,
+  getAdminPromoCodes,
+} from "@/lib/admin";
 
 /**
  * Admin list data for the mobile app.
@@ -17,9 +24,9 @@ import { getAdminOrders, getAdminProducts, getAdminStores, getAdminSellers } fro
  */
 export const dynamic = "force-dynamic";
 
-type Section = "orders" | "products" | "stores" | "sellers";
+type Section = "orders" | "products" | "stores" | "sellers" | "reviews" | "promo";
 
-const SECTIONS: readonly Section[] = ["orders", "products", "stores", "sellers"];
+const SECTIONS: readonly Section[] = ["orders", "products", "stores", "sellers", "reviews", "promo"];
 
 export async function POST(request: Request) {
   const auth = await requireAdmin(request);
@@ -53,6 +60,10 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: true, rows: await getAdminStores() });
       case "sellers":
         return NextResponse.json({ ok: true, rows: await getAdminSellers() });
+      case "reviews":
+        return NextResponse.json({ ok: true, rows: await getAdminReviews(limit) });
+      case "promo":
+        return NextResponse.json({ ok: true, rows: await getAdminPromoCodes(limit) });
     }
   } catch (e) {
     console.error(`[api/admin/overview] ${section} failed`, e);

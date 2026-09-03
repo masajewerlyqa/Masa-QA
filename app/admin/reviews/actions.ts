@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUserWithProfile } from "@/lib/auth";
+import { getCurrentUserWithProfileOrActing } from "@/lib/auth";
 import type { AdminReviewRow } from "@/lib/admin";
 
 export type ReviewModerationResult = { ok: boolean; error?: string };
@@ -10,9 +10,10 @@ export type ReviewModerationResult = { ok: boolean; error?: string };
 export async function updateReviewStatusByAdmin(
   reviewId: string,
   status: "approved" | "rejected",
-  adminNote?: string | null
+  adminNote?: string | null,
+  options?: { actingUserId?: string }
 ): Promise<ReviewModerationResult> {
-  const { user, profile } = await getCurrentUserWithProfile();
+  const { user, profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (!user || profile?.role !== "admin") {
     return { ok: false, error: "Unauthorized" };
   }

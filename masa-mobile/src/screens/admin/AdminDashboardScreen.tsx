@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { MasaButton } from '../../components/MasaButton';
 import { MasaCard } from '../../components/MasaCard';
@@ -11,7 +11,13 @@ import { MOBILE_CONTENT_PADDING_X, MOBILE_SCROLL_BOTTOM_PADDING } from '../../co
 import { fontFamily, theme } from '../../constants/theme';
 import { textStyle } from '../../constants/typography';
 import { useSettings } from '../../context/SettingsContext';
-import { goAdminList, goHome } from '../../navigation/routes';
+import {
+  goAdminApplicationDetail,
+  goAdminList,
+  goAdminPromo,
+  goAdminReviews,
+  goHome,
+} from '../../navigation/routes';
 import {
   getAdminMetrics,
   getAdminRecentApplications,
@@ -203,7 +209,7 @@ export function AdminDashboardScreen(): React.JSX.Element {
             <Text style={textStyle(isArabic, 'body')}>{t('admin.overview.noApplicationsYet')}</Text>
           ) : (
             applications.map((a) => (
-              <View key={a.id} style={styles.row}>
+              <Pressable key={a.id} onPress={() => goAdminApplicationDetail(a.id)} style={styles.row}>
                 <View style={styles.rowMain}>
                   <Text numberOfLines={1} style={textStyle(isArabic, 'bodySm')}>
                     {a.businessName}
@@ -211,10 +217,25 @@ export function AdminDashboardScreen(): React.JSX.Element {
                   <Text style={textStyle(isArabic, 'caption')}>{formatDate(a.createdAt)}</Text>
                 </View>
                 <OrderStatusBadge status={a.status} />
-              </View>
+              </Pressable>
             ))
           )}
         </MasaCard>
+
+        <View style={styles.quickLinks}>
+          <MasaButton
+            label={t('seller.reviews.title')}
+            onPress={() => goAdminReviews()}
+            style={styles.quickLinkBtn}
+            variant="outline"
+          />
+          <MasaButton
+            label={t('admin.promo.title')}
+            onPress={() => goAdminPromo()}
+            style={styles.quickLinkBtn}
+            variant="outline"
+          />
+        </View>
 
         <MasaButton
           label={t('seller.overview.backHome')}
@@ -228,6 +249,8 @@ export function AdminDashboardScreen(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   card: { gap: 10 },
+  quickLinkBtn: { flexBasis: '47%', flexGrow: 1 },
+  quickLinks: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   content: {
     gap: 16,
     paddingBottom: MOBILE_SCROLL_BOTTOM_PADDING,

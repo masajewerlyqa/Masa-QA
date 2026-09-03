@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUserWithProfile } from "@/lib/auth";
+import { getCurrentUserWithProfileOrActing } from "@/lib/auth";
 import { getSellerStore, getSellerProductById } from "@/lib/seller";
 import { createClient } from "@/lib/supabase/server";
 import { productFormSchema, type ProductFormValues } from "@/lib/validations/product";
@@ -38,7 +38,11 @@ function uniqueSlug(base: string): string {
   return `${slug}-${Date.now().toString(36)}`;
 }
 
-export async function createProduct(formData: ProductFormValues, imageUrls: string[] = []): Promise<ActionResult> {
+export async function createProduct(
+  formData: ProductFormValues,
+  imageUrls: string[] = [],
+  options?: { actingUserId?: string }
+): Promise<ActionResult> {
   const parsed = productFormSchema.safeParse(formData);
   if (!parsed.success) {
     const first = parsed.error.flatten().fieldErrors;
@@ -48,10 +52,12 @@ export async function createProduct(formData: ProductFormValues, imageUrls: stri
     return { ok: false, error: msg };
   }
 
-  const { user, profile } = await getCurrentUserWithProfile();
+  const { user, profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (!user || profile?.role !== "seller") return { ok: false, error: "Unauthorized" };
 
-  const store = await getSellerStore();
+  const store = await getSellerStore(
+    options?.actingUserId ? { actingUser: { id: options.actingUserId } } : undefined
+  );
   if (!store) return { ok: false, error: "Store not found" };
 
   const supabase = await createClient();
@@ -122,7 +128,12 @@ export async function createProduct(formData: ProductFormValues, imageUrls: stri
   return { ok: true, productId: product.id };
 }
 
-export async function updateProduct(productId: string, formData: ProductFormValues, imageUrls: string[] = []): Promise<ActionResult> {
+export async function updateProduct(
+  productId: string,
+  formData: ProductFormValues,
+  imageUrls: string[] = [],
+  options?: { actingUserId?: string }
+): Promise<ActionResult> {
   const parsed = productFormSchema.safeParse(formData);
   if (!parsed.success) {
     const first = parsed.error.flatten().fieldErrors;
@@ -132,10 +143,12 @@ export async function updateProduct(productId: string, formData: ProductFormValu
     return { ok: false, error: msg };
   }
 
-  const { user, profile } = await getCurrentUserWithProfile();
+  const { user, profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (!user || profile?.role !== "seller") return { ok: false, error: "Unauthorized" };
 
-  const store = await getSellerStore();
+  const store = await getSellerStore(
+    options?.actingUserId ? { actingUser: { id: options.actingUserId } } : undefined
+  );
   if (!store) return { ok: false, error: "Store not found" };
 
   const existing = await getSellerProductById(productId, store.id);
@@ -198,11 +211,16 @@ export async function updateProduct(productId: string, formData: ProductFormValu
   return { ok: true, productId };
 }
 
-export async function softDeleteProduct(productId: string): Promise<ActionResult> {
-  const { user, profile } = await getCurrentUserWithProfile();
+export async function softDeleteProduct(
+  productId: string,
+  options?: { actingUserId?: string }
+): Promise<ActionResult> {
+  const { user, profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (!user || profile?.role !== "seller") return { ok: false, error: "Unauthorized" };
 
-  const store = await getSellerStore();
+  const store = await getSellerStore(
+    options?.actingUserId ? { actingUser: { id: options.actingUserId } } : undefined
+  );
   if (!store) return { ok: false, error: "Store not found" };
 
   const existing = await getSellerProductById(productId, store.id);
@@ -232,12 +250,15 @@ export type DiscountPayload = {
 /** Apply or update discount on selected products. Only seller's store products. */
 export async function applyProductDiscount(
   productIds: string[],
-  payload: DiscountPayload
+  payload: DiscountPayload,
+  options?: { actingUserId?: string }
 ): Promise<ActionResult> {
-  const { user, profile } = await getCurrentUserWithProfile();
+  const { user, profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (!user || profile?.role !== "seller") return { ok: false, error: "Unauthorized" };
 
-  const store = await getSellerStore();
+  const store = await getSellerStore(
+    options?.actingUserId ? { actingUser: { id: options.actingUserId } } : undefined
+  );
   if (!store) return { ok: false, error: "Store not found" };
 
   if (productIds.length === 0) return { ok: false, error: "Select at least one product" };
@@ -271,11 +292,16 @@ export async function applyProductDiscount(
 }
 
 /** Remove discount from selected products. Only seller's store products. */
-export async function removeProductDiscount(productIds: string[]): Promise<ActionResult> {
-  const { user, profile } = await getCurrentUserWithProfile();
+export async function removeProductDiscount(
+  productIds: string[],
+  options?: { actingUserId?: string }
+): Promise<ActionResult> {
+  const { user, profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (!user || profile?.role !== "seller") return { ok: false, error: "Unauthorized" };
 
-  const store = await getSellerStore();
+  const store = await getSellerStore(
+    options?.actingUserId ? { actingUser: { id: options.actingUserId } } : undefined
+  );
   if (!store) return { ok: false, error: "Store not found" };
 
   if (productIds.length === 0) return { ok: false, error: "Select at least one product" };

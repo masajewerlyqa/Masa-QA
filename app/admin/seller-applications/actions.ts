@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUserWithProfile } from "@/lib/auth";
+import { getCurrentUserWithProfileOrActing } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { requireServiceClient } from "@/lib/supabase/service";
 import { notifyApplicantApplicationApproved, notifyApplicantApplicationRejected } from "@/lib/notifications";
@@ -33,8 +33,11 @@ type SellerApplicationRejectRow = {
   contact_full_name: string | null;
 };
 
-export async function approveApplication(applicationId: string): Promise<ActionResult> {
-  const { user, profile } = await getCurrentUserWithProfile();
+export async function approveApplication(
+  applicationId: string,
+  options?: { actingUserId?: string }
+): Promise<ActionResult> {
+  const { user, profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (!user || profile?.role !== "admin") {
     return { ok: false, error: "Unauthorized" };
   }
@@ -146,9 +149,10 @@ export async function approveApplication(applicationId: string): Promise<ActionR
 
 export async function rejectApplication(
   applicationId: string,
-  reviewNotes?: string
+  reviewNotes?: string,
+  options?: { actingUserId?: string }
 ): Promise<ActionResult> {
-  const { user, profile } = await getCurrentUserWithProfile();
+  const { user, profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (!user || profile?.role !== "admin") {
     return { ok: false, error: "Unauthorized" };
   }

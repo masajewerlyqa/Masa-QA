@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUserWithProfile } from "@/lib/auth";
+import { getCurrentUserWithProfileOrActing } from "@/lib/auth";
 import { getSellerStore } from "@/lib/seller";
 import { createClient } from "@/lib/supabase/server";
 import { parseSellerPlanId } from "@/lib/seller-plans";
@@ -35,13 +35,18 @@ function socialLinksFromPayload(p: StoreSettingsPayload): Record<string, string>
   return Object.keys(links).length > 0 ? links : null;
 }
 
-export async function updateStoreSettings(payload: StoreSettingsPayload): Promise<ActionResult> {
-  const { user, profile } = await getCurrentUserWithProfile();
+export async function updateStoreSettings(
+  payload: StoreSettingsPayload,
+  options?: { actingUserId?: string }
+): Promise<ActionResult> {
+  const { user, profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (!user || profile?.role !== "seller") {
     return { ok: false, error: "Unauthorized" };
   }
 
-  const store = await getSellerStore();
+  const store = await getSellerStore(
+    options?.actingUserId ? { actingUser: { id: options.actingUserId } } : undefined
+  );
   if (!store) {
     return { ok: false, error: "Store not found" };
   }
@@ -74,13 +79,15 @@ export async function updateStoreSettings(payload: StoreSettingsPayload): Promis
 }
 
 /** Basic stores can request Premium; notifies MASA admins for manual review and approval. */
-export async function requestSellerPlanUpgradeAction(): Promise<ActionResult> {
-  const { user, profile } = await getCurrentUserWithProfile();
+export async function requestSellerPlanUpgradeAction(options?: { actingUserId?: string }): Promise<ActionResult> {
+  const { user, profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (!user || profile?.role !== "seller") {
     return { ok: false, error: "Unauthorized" };
   }
 
-  const store = await getSellerStore();
+  const store = await getSellerStore(
+    options?.actingUserId ? { actingUser: { id: options.actingUserId } } : undefined
+  );
   if (!store) {
     return { ok: false, error: "Store not found" };
   }

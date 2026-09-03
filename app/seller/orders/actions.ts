@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUserWithProfile } from "@/lib/auth";
+import { getCurrentUserWithProfileOrActing } from "@/lib/auth";
 import { getSellerStore, getSellerOrderById } from "@/lib/seller";
 import { appendOrderStatusEvent, deliverBuyerOrderStatusMessages } from "@/lib/orders/lifecycle";
 import { isAllowedSellerStatusTransition } from "@/lib/orders/order-transitions";
@@ -17,12 +17,15 @@ import {
 export async function updateOrderStatus(
   orderId: string,
   newStatus: string,
-  cancellationReason?: string | null
+  cancellationReason?: string | null,
+  options?: { actingUserId?: string }
 ): Promise<OrderActionResult> {
-  const { user, profile } = await getCurrentUserWithProfile();
+  const { user, profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (!user || profile?.role !== "seller") return { ok: false, error: "Unauthorized" };
 
-  const store = await getSellerStore();
+  const store = await getSellerStore(
+    options?.actingUserId ? { actingUser: { id: options.actingUserId } } : undefined
+  );
   if (!store) return { ok: false, error: "Store not found" };
 
   const order = await getSellerOrderById(orderId, store.id);
@@ -145,11 +148,16 @@ export async function updateOrderStatus(
  * and the payment still fail, so marking an order delivered must not claim we
  * have been paid. Nothing else in the app sets payment_status to "paid".
  */
-export async function markOrderPaymentCollected(orderId: string): Promise<OrderActionResult> {
-  const { user, profile } = await getCurrentUserWithProfile();
+export async function markOrderPaymentCollected(
+  orderId: string,
+  options?: { actingUserId?: string }
+): Promise<OrderActionResult> {
+  const { user, profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (!user || profile?.role !== "seller") return { ok: false, error: "Unauthorized" };
 
-  const store = await getSellerStore();
+  const store = await getSellerStore(
+    options?.actingUserId ? { actingUser: { id: options.actingUserId } } : undefined
+  );
   if (!store) return { ok: false, error: "Store not found" };
 
   const order = await getSellerOrderById(orderId, store.id);
@@ -197,12 +205,15 @@ export async function markOrderPaymentCollected(orderId: string): Promise<OrderA
 
 export async function updateOrderTracking(
   orderId: string,
-  trackingInfo: TrackingInfo
+  trackingInfo: TrackingInfo,
+  options?: { actingUserId?: string }
 ): Promise<OrderActionResult> {
-  const { user, profile } = await getCurrentUserWithProfile();
+  const { user, profile } = await getCurrentUserWithProfileOrActing(options?.actingUserId);
   if (!user || profile?.role !== "seller") return { ok: false, error: "Unauthorized" };
 
-  const store = await getSellerStore();
+  const store = await getSellerStore(
+    options?.actingUserId ? { actingUser: { id: options.actingUserId } } : undefined
+  );
   if (!store) return { ok: false, error: "Store not found" };
 
   const order = await getSellerOrderById(orderId, store.id);

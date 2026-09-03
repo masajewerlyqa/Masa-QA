@@ -1,15 +1,24 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { AdminApplicationDetailScreen } from '../screens/admin/AdminApplicationDetailScreen';
 import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
 import { AdminListScreen } from '../screens/admin/AdminListScreen';
+import { AdminPromoScreen } from '../screens/admin/AdminPromoScreen';
+import { AdminReviewsScreen } from '../screens/admin/AdminReviewsScreen';
 import { AdvisorScreen } from '../screens/AdvisorScreen';
 import { AuthScreen } from '../screens/AuthScreen';
 import { CheckoutScreen } from '../screens/CheckoutScreen';
 import { PaymentSuccessScreen } from '../screens/PaymentSuccessScreen';
 import { SellerApplicationScreen } from '../screens/seller/SellerApplicationScreen';
 import { SellerApplicationSuccessScreen } from '../screens/seller/SellerApplicationSuccessScreen';
+import { SellerAvailabilityScreen } from '../screens/seller/SellerAvailabilityScreen';
 import { SellerDashboardScreen } from '../screens/seller/SellerDashboardScreen';
+import { SellerOrderDetailScreen } from '../screens/seller/SellerOrderDetailScreen';
 import { SellerPlansScreen } from '../screens/seller/SellerPlansScreen';
+import { SellerPoliciesScreen } from '../screens/seller/SellerPoliciesScreen';
+import { SellerProductFormScreen } from '../screens/seller/SellerProductFormScreen';
+import { SellerReviewsScreen } from '../screens/seller/SellerReviewsScreen';
+import { SellerSettingsScreen } from '../screens/seller/SellerSettingsScreen';
 import { InfoPageScreen } from '../screens/InfoPageScreen';
 import { MarketPricesScreen } from '../screens/MarketPricesScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
@@ -51,6 +60,15 @@ export function RootNavigator(): React.JSX.Element {
       <Stack.Screen component={SettingsScreen} name="Settings" />
       <Stack.Screen component={AdminDashboardScreen} name="AdminDashboard" />
       <Stack.Screen component={AdminListScreen} name="AdminList" />
+      <Stack.Screen component={SellerProductFormScreen} name="SellerProductForm" />
+      <Stack.Screen component={SellerOrderDetailScreen} name="SellerOrderDetail" />
+      <Stack.Screen component={SellerSettingsScreen} name="SellerSettings" />
+      <Stack.Screen component={SellerAvailabilityScreen} name="SellerAvailability" />
+      <Stack.Screen component={SellerPoliciesScreen} name="SellerPolicies" />
+      <Stack.Screen component={SellerReviewsScreen} name="SellerReviews" />
+      <Stack.Screen component={AdminApplicationDetailScreen} name="AdminApplicationDetail" />
+      <Stack.Screen component={AdminReviewsScreen} name="AdminReviews" />
+      <Stack.Screen component={AdminPromoScreen} name="AdminPromo" />
     </Stack.Navigator>
   );
 }
