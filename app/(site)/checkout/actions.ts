@@ -10,7 +10,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getCurrentUserWithProfile } from "@/lib/auth";
+import { getCurrentUserWithProfile, getProfileForUserId } from "@/lib/auth";
 import { getCartWithProducts, clearCart } from "@/lib/customer";
 import { sendOrderConfirmationEmail } from "@/lib/email/transactional";
 import { resolveEmailLanguage } from "@/lib/email/email-language";
@@ -52,9 +52,23 @@ export async function applyPromoCode(codeInput: string): Promise<ApplyPromoResul
 
 export async function createOrder(
   formData: FormData,
-  options?: { redirect?: boolean }
+  options?: {
+    redirect?: boolean;
+    /**
+     * Caller already authenticated by a verified Bearer token (the mobile API
+     * route). Cookies are absent there, so the session cannot be re-resolved
+     * here. Must only ever come from a verified token, never the request body.
+     */
+    actingUser?: { id: string; email?: string | null };
+  }
 ): Promise<CheckoutActionResult> {
-  const { user, profile } = await getCurrentUserWithProfile();
+  const acting = options?.actingUser;
+  const { user, profile } = acting
+    ? {
+        user: { id: acting.id, email: acting.email ?? undefined },
+        profile: await getProfileForUserId(acting.id),
+      }
+    : await getCurrentUserWithProfile();
   if (!user) return { ok: false, error: "Sign in to place an order" };
 
   const cartWithProducts = await getCartWithProducts(user.id);

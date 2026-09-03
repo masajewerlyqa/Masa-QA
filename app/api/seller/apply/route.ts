@@ -26,8 +26,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Invalid request body" }, { status: 400 });
   }
 
-  // The action resolves the session itself, so it applies to the caller only.
-  const result = await finalizeSellerApplicationAction(body);
+  // Identity comes from the verified token only; a mobile request has no
+  // cookies for the action to re-resolve, and the body is never trusted for it.
+  const result = await finalizeSellerApplicationAction(body, {
+    actingUser: { id: user.id, email: user.email },
+  });
   if (!result.ok) {
     return NextResponse.json(
       { ok: false, error: result.error, code: result.code },

@@ -23,6 +23,7 @@ import {
   type DeliveryPaymentMethod,
   type OrderShippingPayload,
 } from '../services/orderService';
+import { DeliveryLocationPicker, type DeliveryCoords } from '../components/checkout/DeliveryLocationPicker';
 import { goAuth, goCart, goOrderPlaced } from '../navigation/routes';
 import { useCartStore } from '../stores/cartStore';
 import { formatCurrencyFromUsd, parseUsdPrice } from '../utils/currency';
@@ -36,8 +37,6 @@ const BUILDING_TYPES = [
   { value: 'other', en: 'Other', ar: 'أخرى' },
 ] as const;
 
-const DEFAULT_LAT = 25.2854;
-const DEFAULT_LNG = 51.531;
 
 export function CheckoutScreen(): React.JSX.Element {
   const { user } = useAuth();
@@ -85,9 +84,9 @@ export function CheckoutScreen(): React.JSX.Element {
     );
   }
 
-  const setDohaPin = (): void => {
-    setDeliveryLat(DEFAULT_LAT);
-    setDeliveryLng(DEFAULT_LNG);
+  const handleLocationChange = ({ latitude, longitude }: DeliveryCoords): void => {
+    setDeliveryLat(latitude);
+    setDeliveryLng(longitude);
     setSubmitError(null);
   };
 
@@ -242,16 +241,14 @@ export function CheckoutScreen(): React.JSX.Element {
             value={landmark}
           />
 
-          <MasaButton
-            label={
-              deliveryLat != null
-                ? isArabic
-                  ? 'تم تحديد موقع التوصيل'
-                  : 'Delivery location set'
-                : t('checkout.mapPinRequired')
+          <DeliveryLocationPicker
+            isArabic={isArabic}
+            onChange={handleLocationChange}
+            value={
+              deliveryLat != null && deliveryLng != null
+                ? { latitude: deliveryLat, longitude: deliveryLng }
+                : null
             }
-            onPress={setDohaPin}
-            variant="outline"
           />
         </MasaCard>
 

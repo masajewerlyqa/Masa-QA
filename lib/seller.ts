@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { autoEnsureStoreFromApprovedApplication } from "@/lib/seller/ensure-store-from-application";
 import { loadProductEngagementStats, zeroEngagementStats } from "@/lib/product-engagement-stats";
-import { getCurrentUserWithProfile } from "@/lib/auth";
+import { getCurrentUserWithProfile, getProfileForUserId } from "@/lib/auth";
 import { getPricingMarketSnapshot } from "@/lib/pricing";
 import { computeDynamicMarketPriceUsd } from "@/lib/pricing-engine";
 import { QAR_TO_USD } from "@/lib/market-prices";
@@ -138,8 +138,18 @@ async function loadStoreForSellerUserId(userId: string): Promise<StoreRow | null
  * First store the current user owns or is a member of.
  * If role is seller but no store exists, creates it from an approved seller application (same as admin approval).
  */
-export async function getSellerStore(): Promise<StoreRow | null> {
-  const { user, profile } = await getCurrentUserWithProfile();
+export async function getSellerStore(options?: {
+  /**
+   * Caller already authenticated by a verified Bearer token (the mobile API
+   * route). Cookies are absent there, so the session cannot be re-resolved
+   * here. Must only ever come from a verified token, never the request body.
+   */
+  actingUser?: { id: string };
+}): Promise<StoreRow | null> {
+  const acting = options?.actingUser;
+  const { user, profile } = acting
+    ? { user: { id: acting.id }, profile: await getProfileForUserId(acting.id) }
+    : await getCurrentUserWithProfile();
   if (!user || profile?.role !== "seller") return null;
 
   let store = await loadStoreForSellerUserId(user.id);

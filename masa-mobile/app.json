@@ -53,7 +53,13 @@
     "plugins": [
       "expo-apple-authentication",
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "MASA uses your location only to set your delivery address on the checkout map."
+        }
+      ]
     ],
     "updates": {
       "url": "https://u.expo.dev/ec139dfe-8d59-4efb-8824-2f5210e83d19"

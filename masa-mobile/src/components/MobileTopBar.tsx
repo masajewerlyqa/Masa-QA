@@ -1,5 +1,5 @@
-import { Menu, Search, ShoppingCart } from 'lucide-react-native';
-import { useState } from 'react';
+import { Bell, Menu, Search, ShoppingCart } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,7 +8,8 @@ import { webAssets } from '../constants/assets';
 import { theme } from '../constants/theme';
 import { textStyle } from '../constants/typography';
 import { useSettings } from '../context/SettingsContext';
-import { goCart, goHome } from '../navigation/routes';
+import { goCart, goHome, goNotifications } from '../navigation/routes';
+import { useNotificationStore } from '../stores/notificationStore';
 
 type MobileTopBarProps = {
   cartCount?: number;
@@ -23,6 +24,24 @@ export function MobileTopBar({
   const { isArabic, searchQuery, setSearchQuery, t } = useSettings();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const startNotifications = useNotificationStore((s) => s.start);
+
+  // Opens the realtime channel once and keeps the badge live. The store guards
+  // against duplicate subscriptions when several top bars mount.
+  useEffect(() => {
+    let stop: (() => void) | null = null;
+    let cancelled = false;
+    void (async () => {
+      const cleanup = await startNotifications();
+      if (cancelled) cleanup();
+      else stop = cleanup;
+    })();
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
+  }, [startNotifications]);
 
   return (
     <>
@@ -47,6 +66,20 @@ export function MobileTopBar({
               style={styles.iconBtn}
             >
               <Search color={theme.colors.masaDark} size={20} />
+            </Pressable>
+            <Pressable
+              accessibilityLabel={t('notifications.title')}
+              onPress={() => goNotifications()}
+              style={styles.iconBtn}
+            >
+              <Bell color={theme.colors.masaDark} size={20} />
+              {unreadCount > 0 ? (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              ) : null}
             </Pressable>
             <Pressable
               accessibilityLabel={t('navbar.cart')}

@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireServiceClient } from "@/lib/supabase/service";
-import { getCurrentUserWithProfile } from "@/lib/auth";
+import { getCurrentUserWithProfile, getProfileForUserId } from "@/lib/auth";
 import { notifyAdminsNewSellerApplication } from "@/lib/notifications";
 import { finalizeSellerApplicationSchema, socialLinksFromForm } from "@/lib/validations/seller-application";
 import { parseSellerPlanId, type SellerPlanId } from "@/lib/seller-plans";
@@ -59,13 +59,29 @@ export async function savePendingSellerPlanAction(planId: string): Promise<SaveP
  * Saves the seller application with `seller_plan` from the server (not client).
  * Call after license/logo uploads; clears draft plan on success.
  */
-export async function finalizeSellerApplicationAction(raw: unknown): Promise<FinalizeApplicationResult> {
+export async function finalizeSellerApplicationAction(
+  raw: unknown,
+  options?: {
+    /**
+     * Caller already authenticated by a verified Bearer token (the mobile API
+     * route). Cookies are absent there, so the session cannot be re-resolved
+     * here. Must only ever come from a verified token, never the request body.
+     */
+    actingUser?: { id: string; email?: string | null };
+  }
+): Promise<FinalizeApplicationResult> {
   const parsed = finalizeSellerApplicationSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues.map((i) => i.message).join("; ") };
   }
 
-  const { user, profile } = await getCurrentUserWithProfile();
+  const acting = options?.actingUser;
+  const { user, profile } = acting
+    ? {
+        user: { id: acting.id, email: acting.email ?? undefined },
+        profile: await getProfileForUserId(acting.id),
+      }
+    : await getCurrentUserWithProfile();
   if (!user) {
     return { ok: false, error: "Not signed in" };
   }

@@ -77,7 +77,13 @@ export async function POST(request: Request) {
     }
   }
 
-  const result = await createOrder(formData, { redirect: false });
+  // Identity comes from the verified token only. createOrder cannot re-resolve
+  // it here because a mobile request carries no cookies, and the request body is
+  // never trusted for who the caller is.
+  const result = await createOrder(formData, {
+    redirect: false,
+    actingUser: { id: user.id, email: user.email },
+  });
   if (!result.ok) {
     return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
   }

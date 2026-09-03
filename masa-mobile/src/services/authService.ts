@@ -22,6 +22,7 @@ import {
   setBrowserOAuthInFlight,
 } from './oauthCallbackCoordinator';
 import { useAuthStore } from '../stores/authStore';
+import { useNotificationStore } from '../stores/notificationStore';
 import {
   applyRegistrationIntentToProfile,
   resolveProfileRole,
@@ -251,6 +252,9 @@ export async function signUpWithEmail(
 
 export async function signOut(): Promise<{ error: AuthError | null }> {
   const { error } = await getSupabase().auth.signOut();
+  // Cleared here so a signed-out user never sees the previous account's unread
+  // badge. The realtime channel is torn down by the top bar's unmount effect.
+  useNotificationStore.getState().reset();
   return { error };
 }
 

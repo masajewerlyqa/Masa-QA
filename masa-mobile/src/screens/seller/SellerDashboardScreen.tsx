@@ -12,7 +12,6 @@ import { useSettings } from '../../context/SettingsContext';
 import { navigateToBecomeSeller } from '../../lib/sellerNavigation';
 import { goHome } from '../../navigation/routes';
 import {
-  getSellerDashboardStats,
   getSellerStoreForUser,
   type SellerDashboardStats,
   type SellerStoreSummary,
@@ -24,17 +23,26 @@ export function SellerDashboardScreen(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [store, setStore] = useState<SellerStoreSummary | null>(null);
   const [stats, setStats] = useState<SellerDashboardStats | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
     void (async () => {
-      const storeRow = await getSellerStoreForUser();
+      const result = await getSellerStoreForUser();
       if (!mounted) return;
-      setStore(storeRow);
-      if (storeRow) {
-        const s = await getSellerDashboardStats(storeRow.id);
-        if (mounted) setStats(s);
+
+      // A failed lookup is reported as an error rather than being shown as
+      // "you have no store", which is what previously hid every failure.
+      if (!result.ok) {
+        setLoadError(result.error);
+        setLoading(false);
+        return;
       }
+
+      setLoadError(null);
+      setStore(result.store);
+      // Stats come back with the store, so there is no second round trip.
+      setStats(result.stats);
       setLoading(false);
     })();
     return () => {
@@ -47,6 +55,26 @@ export function SellerDashboardScreen(): React.JSX.Element {
       <SiteShell>
         <View style={styles.centered}>
           <ActivityIndicator color={theme.colors.primary} size="large" />
+        </View>
+      </SiteShell>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <SiteShell>
+        <View style={styles.centered}>
+          <MasaCard style={styles.card}>
+            <Text style={[styles.title, { fontFamily: luxury }]}>
+              {t('seller.overview.dashboard')}
+            </Text>
+            <Text style={textStyle(isArabic, 'body')}>{loadError}</Text>
+            <MasaButton
+              label={t('seller.overview.backHome')}
+              onPress={() => goHome()}
+              variant="outline"
+            />
+          </MasaCard>
         </View>
       </SiteShell>
     );

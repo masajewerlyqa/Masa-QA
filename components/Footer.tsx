@@ -131,7 +131,7 @@ export function Footer() {
                 />
               </Link>
             </div>
-            <p className="text-secondary leading-relaxed mb-6 font-sans text-sm max-w-md">
+            <p className="text-white leading-relaxed mb-6 font-sans text-sm max-w-md">
               {t("footer.description")}
             </p>
             <div className="flex flex-wrap gap-3">
@@ -193,7 +193,7 @@ export function Footer() {
             </div>
             <div className="mt-6 font-sans">
               <h3 className="text-lg font-luxury mb-2">{t("footer.newsletter")}</h3>
-              <p className="text-secondary text-sm mb-2">{t("footer.newsletterHint")}</p>
+              <p className="text-white text-sm mb-2">{t("footer.newsletterHint")}</p>
               <FooterNewsletter />
             </div>
           </div>

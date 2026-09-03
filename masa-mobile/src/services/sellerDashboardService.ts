@@ -1,4 +1,5 @@
 import { getSupabase } from '../api/client';
+import { sitePostJsonAuthed } from '../api/siteApi';
 
 export type SellerStoreSummary = {
   id: string;
@@ -12,24 +13,40 @@ export type SellerDashboardStats = {
   productsListed: number;
 };
 
-export async function getSellerStoreForUser(): Promise<SellerStoreSummary | null> {
-  const { data: userData } = await getSupabase().auth.getUser();
-  const user = userData.user;
-  if (!user) return null;
+export type SellerStoreResult =
+  | { ok: true; store: SellerStoreSummary | null; stats: SellerDashboardStats | null }
+  | { ok: false; error: string };
 
-  const { data } = await getSupabase()
-    .from('stores')
-    .select('id, name, status')
-    .eq('owner_id', user.id)
-    .limit(1)
-    .maybeSingle();
+/**
+ * Resolves the caller's store through the web API rather than querying `stores`
+ * directly.
+ *
+ * The API applies the same role check as the web dashboard and repairs an
+ * approved seller whose store row is missing. That repair needs the service
+ * role, which must never ship in the app bundle, so it cannot be done here.
+ * Querying the table directly also meant an approved seller with no store row
+ * was shown "No store yet" permanently while the web dashboard worked.
+ */
+export async function getSellerStoreForUser(): Promise<SellerStoreResult> {
+  const result = await sitePostJsonAuthed<{
+    ok: boolean;
+    store: SellerStoreSummary | null;
+    stats: SellerDashboardStats | null;
+    error?: string;
+  }>('/api/seller/store', {});
 
-  if (!data) return null;
-  return {
-    id: data.id as string,
-    name: data.name as string,
-    status: data.status as string,
-  };
+  if (!result.ok) {
+    // Surfaced, not swallowed: a failed lookup must not look like "no store".
+    console.error('[sellerDashboard] store lookup failed:', result.error);
+    return { ok: false, error: result.error };
+  }
+  if (!result.data?.ok) {
+    const error = result.data?.error ?? 'Could not load your store.';
+    console.error('[sellerDashboard] store lookup rejected:', error);
+    return { ok: false, error };
+  }
+
+  return { ok: true, store: result.data.store, stats: result.data.stats };
 }
 
 export async function getSellerDashboardStats(storeId: string): Promise<SellerDashboardStats> {

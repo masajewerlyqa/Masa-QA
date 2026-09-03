@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     width: 200,
   },
   description: {
-    color: theme.colors.secondary,
+    color: theme.colors.white,
     lineHeight: 22,
     marginBottom: 24,
     maxWidth: 400,
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   newsletterHint: {
-    color: theme.colors.secondary,
+    color: theme.colors.white,
     lineHeight: 22,
     marginBottom: 8,
   },

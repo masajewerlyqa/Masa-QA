@@ -89,3 +89,37 @@ async function getCurrentUserWithProfileImpl(): Promise<GetCurrentUserResult> {
 }
 
 export const getCurrentUserWithProfile = cache(getCurrentUserWithProfileImpl);
+
+/**
+ * Profile lookup for a caller already authenticated by something other than
+ * cookies -- currently the mobile API route, which verifies a Bearer token.
+ *
+ * The identity must come from a verified token, never from the request body.
+ * The read goes through the normal RLS-scoped client, so it can only return the
+ * caller's own profile.
+ */
+export async function getProfileForUserId(userId: string): Promise<Profile | null> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.from("profiles").select(profileSelect).eq("id", userId).maybeSingle();
+    if (!data) return null;
+
+    const raw = data as {
+      preferred_language?: string;
+      newsletter_opt_in?: boolean;
+      pending_seller_plan?: string | null;
+    };
+    return {
+      ...data,
+      newsletter_opt_in: Boolean(raw.newsletter_opt_in),
+      preferred_language: raw.preferred_language === "ar" ? "ar" : "en",
+      pending_seller_plan:
+        raw.pending_seller_plan === "basic" || raw.pending_seller_plan === "premium"
+          ? raw.pending_seller_plan
+          : null,
+    } as Profile;
+  } catch (error) {
+    console.error("[auth] getProfileForUserId failed:", error);
+    return null;
+  }
+}
