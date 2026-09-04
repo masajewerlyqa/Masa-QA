@@ -1185,6 +1185,59 @@ export const en = {
       "Password reset links are sent to your email. Phone-based recovery can be enabled later without changing your account structure.",
     settingsPendingSellerHint:
       "Your application is pending admin review. Once approved, your account becomes Seller and you can set up your store and availability in the seller dashboard.",
+    deleteAccount: {
+      title: "Delete account",
+      sectionHint: "Permanently delete your MASA account and personal data.",
+      pageTitle: "Account and Data Deletion",
+      pageIntro:
+        "You can ask us to delete your MASA Jewelry account at any time. This page explains what is deleted, what we must keep, and how to make the request.",
+      howToTitle: "How to delete your account",
+      howToStep1: "Sign in to your MASA Jewelry account.",
+      howToStep2: "Go to My account, then Settings.",
+      howToStep3: "Open the Delete account section and confirm.",
+      howToNote:
+        "Deletion happens immediately once you confirm. You do not need to contact us first.",
+      deletedTitle: "What we delete",
+      deletedIntro: "Deleting your account permanently removes:",
+      deletedProfile: "Your profile: name, email address, phone number and profile photo.",
+      deletedAuth: "Your sign-in credentials, so the account can no longer be used to log in.",
+      deletedCart: "Your shopping cart and saved wishlist items.",
+      deletedNotifications: "Your notifications and language or newsletter preferences.",
+      deletedReviews: "Reviews and store ratings you have written.",
+      deletedSeller:
+        "Your seller application, including any uploaded logo, trade licence and payment proof documents.",
+      deletedAddresses:
+        "The delivery details on your past orders: address, phone number, map location and delivery notes.",
+      retainedTitle: "What we keep, and why",
+      retainedIntro:
+        "Some records are kept after deletion because we are required to, or because they also belong to someone else. These no longer identify you: the personal details above are erased and the records are no longer linked to your account.",
+      retainedOrders:
+        "Order records: amounts, items, dates and status. Kept for accounting, tax and audit obligations, and because each order is also the seller's business record.",
+      retainedStore:
+        "If you ran a store, the storefront and its product listings are kept so past orders stay complete. The store is closed and stops accepting new orders.",
+      retainedPeriod:
+        "Retained financial records are kept for the period required by applicable Qatari accounting and tax law, and are then removed or aggregated.",
+      afterTitle: "After deletion",
+      afterBody:
+        "You are signed out immediately and the account cannot be recovered. To use MASA Jewelry again you will need to register a new account. If you had a store, contact support before deleting so any open orders can be settled.",
+      contactTitle: "Questions",
+      contactBody: "If you need help with a deletion request, contact us and we will assist.",
+      signedOutCta: "Sign in to delete your account",
+      goToSettings: "Go to account settings",
+      buttonLabel: "Delete my account",
+      warningTitle: "This action cannot be undone.",
+      warningBody:
+        "Your account, profile and personal data will be permanently deleted, and you will be signed out. Order records are kept without your personal details, as described on our account deletion page.",
+      confirmPrompt: "Type DELETE to confirm",
+      confirmWord: "DELETE",
+      confirmCta: "Permanently delete",
+      cancel: "Cancel",
+      deleting: "Deleting your account…",
+      success: "Your account has been deleted.",
+      error: "Something went wrong. Please try again.",
+      sellerWarning:
+        "You own a store. Deleting your account closes it and it will stop accepting orders.",
+    },
     accountPage: {
       emailVerifiedBanner: "Your email is verified. Your MASA account is active.",
       passwordUpdatedBanner: "Your password was updated successfully.",

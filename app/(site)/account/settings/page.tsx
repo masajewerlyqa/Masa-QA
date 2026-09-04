@@ -5,6 +5,8 @@ import { getCurrentUserWithProfile } from "@/lib/auth";
 import { getPhoneVerificationPolicy } from "@/lib/auth/phone-verification";
 import { Button } from "@/components/ui/button";
 import { AccountSettingsForm } from "./AccountSettingsForm";
+import { DeleteAccountSection } from "./DeleteAccountSection";
+import { createClient } from "@/lib/supabase/server";
 import { getServerLanguage } from "@/lib/language-server";
 
 export default async function AccountSettingsPage() {
@@ -14,6 +16,13 @@ export default async function AccountSettingsPage() {
   if (!user || !profile) redirect("/login");
 
   const phonePolicy = getPhoneVerificationPolicy();
+
+  // Sellers get an extra warning that deleting also closes their storefront.
+  const supabase = await createClient();
+  const { count: ownedStoreCount } = await supabase
+    .from("stores")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_id", user.id);
 
   return (
     <div className="min-h-[60vh] px-4 py-8 md:py-12">
@@ -37,6 +46,7 @@ export default async function AccountSettingsPage() {
           email={user.email ?? profile.email ?? undefined}
           phonePolicy={phonePolicy}
         />
+        <DeleteAccountSection ownsStore={(ownedStoreCount ?? 0) > 0} />
       </div>
     </div>
   );

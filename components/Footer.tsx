@@ -243,6 +243,10 @@ export function Footer() {
             <Link href="/cookies" className="hover:text-white transition-colors">
               {t("footer.cookiePolicy")}
             </Link>
+            {/* Play Console requires the deletion policy to be reachable from the site. */}
+            <Link href="/delete-account" className="hover:text-white transition-colors">
+              {t("account.deleteAccount.title")}
+            </Link>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Check } from 'lucide-react-native';
+import { AlertTriangle, Check } from 'lucide-react-native';
 
 import { MasaButton } from '../components/MasaButton';
 import { MasaCard } from '../components/MasaCard';
@@ -11,6 +11,9 @@ import { fontFamily, theme } from '../constants/theme';
 import { textStyle } from '../constants/typography';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../hooks/useAuth';
+import { goHome } from '../navigation/routes';
+import { deleteOwnAccount } from '../services/accountDeletionService';
+import { signOut } from '../services/authService';
 import {
   getNewsletterOptIn,
   getProfileSummary,
@@ -32,6 +35,11 @@ export function SettingsScreen(): React.JSX.Element {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [newsletterBusy, setNewsletterBusy] = useState(false);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -73,6 +81,27 @@ export function SettingsScreen(): React.JSX.Element {
     if (!result.ok) {
       setNewsletterOptIn(!next);
     }
+  };
+
+  const confirmWord = t('account.deleteAccount.confirmWord');
+  const canDelete = deleteConfirm.trim().toUpperCase() === confirmWord.toUpperCase();
+
+  const handleDeleteAccount = async (): Promise<void> => {
+    if (!canDelete || deleting) return;
+    setDeleting(true);
+    setDeleteError(null);
+
+    const result = await deleteOwnAccount();
+    if (!result.ok) {
+      setDeleteError(result.error || t('account.deleteAccount.error'));
+      setDeleting(false);
+      return;
+    }
+
+    // The server record is gone, so clear the local session before navigating
+    // away; a stale token would only produce confusing errors on the next call.
+    await signOut();
+    goHome();
   };
 
   if (!user) {
@@ -166,6 +195,71 @@ export function SettingsScreen(): React.JSX.Element {
           </View>
           <Text style={[textStyle(isArabic, 'caption'), styles.hint]}>{t('account.passwordResetHint')}</Text>
         </MasaCard>
+
+        {/*
+          Account deletion (Google Play requirement). Two steps on purpose: the
+          panel must be opened AND the confirmation word typed, so a single tap
+          can never destroy an account.
+        */}
+        <MasaCard style={styles.dangerCard}>
+          <Text style={[styles.dangerTitle, { fontFamily: luxury }]}>
+            {t('account.deleteAccount.title')}
+          </Text>
+          <Text style={textStyle(isArabic, 'caption')}>{t('account.deleteAccount.sectionHint')}</Text>
+
+          {!deleteOpen ? (
+            <MasaButton
+              label={t('account.deleteAccount.buttonLabel')}
+              onPress={() => setDeleteOpen(true)}
+              style={styles.dangerBtn}
+              variant="outline"
+            />
+          ) : (
+            <View style={styles.dangerBody}>
+              <View style={styles.warningBox}>
+                <View style={styles.warningHeader}>
+                  <AlertTriangle color="#b91c1c" size={16} />
+                  <Text style={styles.warningTitle}>{t('account.deleteAccount.warningTitle')}</Text>
+                </View>
+                <Text style={styles.warningText}>{t('account.deleteAccount.warningBody')}</Text>
+              </View>
+
+              <Text style={styles.fieldLabel}>{t('account.deleteAccount.confirmPrompt')}</Text>
+              <TextInput
+                autoCapitalize="characters"
+                autoCorrect={false}
+                editable={!deleting}
+                onChangeText={setDeleteConfirm}
+                placeholder={confirmWord}
+                placeholderTextColor={theme.colors.masaGray}
+                style={styles.input}
+                value={deleteConfirm}
+              />
+
+              {deleteError ? <Text style={[styles.message, styles.messageErr]}>{deleteError}</Text> : null}
+
+              <MasaButton
+                disabled={!canDelete || deleting}
+                label={
+                  deleting
+                    ? t('account.deleteAccount.deleting')
+                    : t('account.deleteAccount.confirmCta')
+                }
+                onPress={() => void handleDeleteAccount()}
+              />
+              <MasaButton
+                disabled={deleting}
+                label={t('account.deleteAccount.cancel')}
+                onPress={() => {
+                  setDeleteOpen(false);
+                  setDeleteConfirm('');
+                  setDeleteError(null);
+                }}
+                variant="outline"
+              />
+            </View>
+          )}
+        </MasaCard>
       </ScrollView>
     </SiteShell>
   );
@@ -185,6 +279,21 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
   },
   checkboxLabel: { flex: 1 },
+  dangerBody: { gap: 8, marginTop: 4 },
+  dangerBtn: { marginTop: 8 },
+  dangerCard: { borderColor: '#fecaca', gap: 4 },
+  dangerTitle: { color: '#b91c1c', fontSize: 16 },
+  warningBox: {
+    backgroundColor: '#fef2f2',
+    borderColor: '#fecaca',
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 6,
+    padding: 12,
+  },
+  warningHeader: { alignItems: 'center', flexDirection: 'row', gap: 6 },
+  warningText: { color: '#7f1d1d', fontSize: 13, lineHeight: 20 },
+  warningTitle: { color: '#b91c1c', fontSize: 13, fontWeight: '700' },
   checkboxRow: {
     alignItems: 'center',
     flexDirection: 'row',

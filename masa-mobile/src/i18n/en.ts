@@ -1155,6 +1155,22 @@ export const en = {
       "Password reset links are sent to your email. Phone-based recovery can be enabled later without changing your account structure.",
     settingsPendingSellerHint:
       "Your application is pending admin review. Once approved, your account becomes Seller and you can set up your store and availability in the seller dashboard.",
+    deleteAccount: {
+      title: "Delete account",
+      sectionHint: "Permanently delete your MASA account and personal data.",
+      buttonLabel: "Delete my account",
+      warningTitle: "This action cannot be undone.",
+      warningBody:
+        "Your account, profile and personal data will be permanently deleted, and you will be signed out. Order records are kept without your personal details.",
+      confirmPrompt: "Type DELETE to confirm",
+      confirmWord: "DELETE",
+      confirmCta: "Permanently delete",
+      cancel: "Cancel",
+      deleting: "Deleting your account…",
+      success: "Your account has been deleted.",
+      error: "Something went wrong. Please try again.",
+      learnMore: "What is deleted and what is kept",
+    },
     accountPage: {
       emailVerifiedBanner: "Your email is verified. Your MASA account is active.",
       passwordUpdatedBanner: "Your password was updated successfully.",

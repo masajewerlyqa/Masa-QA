@@ -18,6 +18,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/privacy",
     "/terms",
     "/cookies",
+    // Submitted to Google Play as the "Delete account URL"; must stay crawlable.
+    "/delete-account",
   ];
 
   const localizedRoutes = routes.flatMap((route) => ([

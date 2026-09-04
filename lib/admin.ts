@@ -741,8 +741,19 @@ export async function getAdminOrders(limit: number = 200): Promise<AdminOrderRow
     return [];
   }
 
-  const customerIds = [...new Set((orderRows as { customer_id: string }[]).map((o) => o.customer_id))];
-  const { data: profilesData } = await service.from("profiles").select("id, full_name, email").in("id", customerIds);
+  // customer_id is nullable since migration 055: deleting an account leaves the
+  // order in place with no buyer link. Nulls are filtered out so they never
+  // reach the `in` filter; those orders simply render with no customer name.
+  const customerIds = [
+    ...new Set(
+      (orderRows as { customer_id: string | null }[])
+        .map((o) => o.customer_id)
+        .filter((id): id is string => Boolean(id))
+    ),
+  ];
+  const { data: profilesData } = customerIds.length
+    ? await service.from("profiles").select("id, full_name, email").in("id", customerIds)
+    : { data: [] };
   const profiles = (profilesData ?? []) as { id: string; full_name: string | null; email: string | null }[];
   const profileMap = new Map(profiles.map((p) => [p.id, { name: p.full_name ?? null, email: p.email ?? null }]));
 
