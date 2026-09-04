@@ -214,6 +214,19 @@ export async function getRelatedProducts(
   return (data as ProductRow[]).map(mapProduct);
 }
 
+/** All products for a store's public profile page. Mirrors web `getPublicProductsByStore`. */
+export async function getProductsByStore(storeId: string, limit = 60): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT)
+    .eq('store_id', storeId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+  return (data as ProductRow[]).map(mapProduct);
+}
+
 export async function getProductById(productId: string): Promise<Product | null> {
   const { data, error } = await supabase
     .from('products')

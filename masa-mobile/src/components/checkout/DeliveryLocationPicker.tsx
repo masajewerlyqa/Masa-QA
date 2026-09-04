@@ -7,38 +7,12 @@ import {
   UserLocation,
   type CameraRef,
   type LngLat,
-  type StyleSpecification,
 } from '@maplibre/maplibre-react-native';
 import * as Location from 'expo-location';
 
+import { OSM_STYLE } from '../../constants/osmMapStyle';
 import { theme } from '../../constants/theme';
 import { textStyle } from '../../constants/typography';
-
-/**
- * OpenStreetMap raster style, declared inline so the map needs no style server,
- * no API key and no billing account.
- *
- * This is the same tile source the web checkout map already uses via Leaflet
- * (`components/map/QatarLocationPicker.tsx`), so both clients now render
- * identical cartography.
- *
- * OSM's tile usage policy expects light, attributed use. If MASA's traffic
- * grows, swap `tiles` for a self-hosted or commercial OSM-compatible endpoint --
- * that is a one-line change here and needs no other code edits.
- */
-const OSM_STYLE: StyleSpecification = {
-  version: 8,
-  sources: {
-    osm: {
-      type: 'raster',
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      maxzoom: 19,
-      attribution: '© OpenStreetMap contributors',
-    },
-  },
-  layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
-};
 
 /** Doha. Only ever the initial camera position -- never a selected location. */
 const DOHA: LngLat = [51.531, 25.2854];

@@ -27,9 +27,14 @@ export type NotificationsResult =
   | { ok: true; notifications: NotificationRow[] }
   | { ok: false; error: string };
 
-const PAGE_SIZE = 50;
+/** Matches web `NOTIFICATIONS_PAGE_SIZE` (app/(site)/notifications/constants.ts). */
+export const NOTIFICATIONS_PAGE_SIZE = 20;
 
-export async function getNotifications(): Promise<NotificationsResult> {
+/** Mirrors web `getNotifications` (lib/notifications.ts): same range-based paging. */
+export async function getNotifications(
+  limit = NOTIFICATIONS_PAGE_SIZE,
+  offset = 0,
+): Promise<NotificationsResult> {
   const supabase = getSupabase();
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
@@ -40,7 +45,7 @@ export async function getNotifications(): Promise<NotificationsResult> {
     .select('id, type, title, body, data, read_at, created_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
-    .limit(PAGE_SIZE);
+    .range(offset, offset + Math.max(limit, 1) - 1);
 
   // Surfaced rather than swallowed: a failed load must not look like "no
   // notifications", which is what the mock array effectively did.

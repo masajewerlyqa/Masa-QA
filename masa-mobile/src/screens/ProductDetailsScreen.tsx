@@ -26,7 +26,7 @@ import { fontFamily } from '../constants/theme';
 import { resolveSiteUrl } from '../config/env';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../hooks/useAuth';
-import { goAuth, goProduct } from '../navigation/routes';
+import { goAuth, goProduct, goStoreProfile } from '../navigation/routes';
 import { getProductById, getRelatedProducts } from '../services/productService';
 import {
   getCustomerReviewForProduct,
@@ -251,10 +251,14 @@ export function ProductDetailsScreen(): React.JSX.Element {
 
         <View style={styles.storeRow}>
           {product.storeName ? (
-            <View style={styles.storeNameWrap}>
+            <Pressable
+              disabled={!product.storeId}
+              onPress={() => product.storeId && goStoreProfile(product.storeId)}
+              style={styles.storeNameWrap}
+            >
               <Text style={styles.store}>{product.storeName}</Text>
               <Ionicons color={theme.colors.primary} name="checkmark-circle" size={14} />
-            </View>
+            </Pressable>
           ) : null}
           {reviewStats.reviewCount > 0 ? (
             <View style={styles.ratingWrap}>

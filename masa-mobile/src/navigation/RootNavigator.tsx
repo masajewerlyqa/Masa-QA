@@ -27,6 +27,7 @@ import { OrdersScreen } from '../screens/OrdersScreen';
 import { ProductDetailsScreen } from '../screens/ProductDetailsScreen';
 import { SellGoldCalculatorScreen } from '../screens/SellGoldCalculatorScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { StoreProfileScreen } from '../screens/StoreProfileScreen';
 import { SupportScreen } from '../screens/SupportScreen';
 import { ToolsScreen } from '../screens/ToolsScreen';
 import { ZakatCalculatorScreen } from '../screens/ZakatCalculatorScreen';
@@ -69,6 +70,7 @@ export function RootNavigator(): React.JSX.Element {
       <Stack.Screen component={AdminApplicationDetailScreen} name="AdminApplicationDetail" />
       <Stack.Screen component={AdminReviewsScreen} name="AdminReviews" />
       <Stack.Screen component={AdminPromoScreen} name="AdminPromo" />
+      <Stack.Screen component={StoreProfileScreen} name="StoreProfile" />
     </Stack.Navigator>
   );
 }

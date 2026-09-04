@@ -8,21 +8,22 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Bell, CheckCheck } from 'lucide-react-native';
 
 import { MobileFooter } from '../components/MobileFooter';
 import { MobileTopBar } from '../components/MobileTopBar';
 import { MasaCard } from '../components/MasaCard';
 import { PageContainer } from '../components/PageContainer';
-import { SectionHeader } from '../components/SectionHeader';
-import { theme } from '../constants/theme';
+import { fontFamily, theme } from '../constants/theme';
 import { textStyle } from '../constants/typography';
 import { useSettings } from '../context/SettingsContext';
+import { goAdminDashboard, goOrderDetail, goSellerDashboard, goSellerOrderDetail } from '../navigation/routes';
 import {
   getNotifications,
   markAllNotificationsRead,
   markNotificationRead,
   subscribeToNotifications,
+  NOTIFICATIONS_PAGE_SIZE,
   type NotificationRow,
 } from '../services/notificationService';
 import { useNotificationStore } from '../stores/notificationStore';
@@ -39,11 +40,46 @@ function formatWhen(iso: string, isArabic: boolean): string {
   }
 }
 
+/** Mirrors web `notificationLink` (app/(site)/notifications/NotificationsList.tsx). */
+function goToNotificationTarget(n: NotificationRow): void {
+  const orderId = typeof n.data?.orderId === 'string' ? n.data.orderId : null;
+  if ((n.type === 'order_status_updated' || n.type === 'order_placed') && orderId) {
+    goOrderDetail(orderId);
+    return;
+  }
+  if (n.type === 'new_order' && orderId) {
+    goSellerOrderDetail(orderId);
+    return;
+  }
+  if (n.type === 'new_seller_application') {
+    // Mobile has no standalone application-list screen (web's /admin/seller-applications);
+    // the dashboard's recent-applications list is the closest equivalent.
+    goAdminDashboard();
+    return;
+  }
+  if (n.type === 'seller_application_approved') {
+    goSellerDashboard();
+  }
+}
+
+function hasNotificationTarget(n: NotificationRow): boolean {
+  const orderId = typeof n.data?.orderId === 'string' ? n.data.orderId : null;
+  return (
+    ((n.type === 'order_status_updated' || n.type === 'order_placed' || n.type === 'new_order') &&
+      Boolean(orderId)) ||
+    n.type === 'new_seller_application' ||
+    n.type === 'seller_application_approved'
+  );
+}
+
 export function NotificationsScreen(): React.JSX.Element {
   const { t, isArabic } = useSettings();
+  const luxury = fontFamily(isArabic, 'luxury');
   const [items, setItems] = useState<NotificationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const refreshUnread = useNotificationStore((s) => s.refresh);
 
@@ -51,6 +87,7 @@ export function NotificationsScreen(): React.JSX.Element {
     const result = await getNotifications();
     if (result.ok) {
       setItems(result.notifications);
+      setHasMore(result.notifications.length >= NOTIFICATIONS_PAGE_SIZE);
       setError(null);
     } else {
       // Distinct from "no notifications" -- a failure must never render as empty.
@@ -95,6 +132,16 @@ export function NotificationsScreen(): React.JSX.Element {
     setRefreshing(false);
   }, [load]);
 
+  const loadMore = useCallback(async () => {
+    setLoadingMore(true);
+    const result = await getNotifications(NOTIFICATIONS_PAGE_SIZE, items.length);
+    if (result.ok) {
+      setItems((prev) => [...prev, ...result.notifications]);
+      setHasMore(result.notifications.length >= NOTIFICATIONS_PAGE_SIZE);
+    }
+    setLoadingMore(false);
+  }, [items.length]);
+
   const unreadCount = items.filter((n) => !n.read_at).length;
 
   const handleMarkRead = useCallback(async (id: string) => {
@@ -131,16 +178,22 @@ export function NotificationsScreen(): React.JSX.Element {
         showsVerticalScrollIndicator={false}
       >
         <MobileTopBar />
-        <SectionHeader
-          subtitle={t('account.notifications.recentHint')}
-          title={t('account.notifications.title')}
-        />
+
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { fontFamily: luxury }]}>
+            {t('account.notifications.title')}
+          </Text>
+          <Text style={[textStyle(isArabic, 'body'), styles.headerSubtitle]}>
+            {!loading && items.length === 0
+              ? t('account.notifications.noneYet')
+              : t('account.notifications.recentHint')}
+          </Text>
+        </View>
 
         {unreadCount > 0 ? (
           <Pressable onPress={() => void handleMarkAllRead()} style={styles.markAllBtn}>
-            <Text style={styles.markAllText}>
-              {t('account.notifications.markAllRead')} ({unreadCount})
-            </Text>
+            <CheckCheck color={theme.colors.primary} size={16} />
+            <Text style={styles.markAllText}>{t('account.notifications.markAllRead')}</Text>
           </Pressable>
         ) : null}
 
@@ -153,50 +206,77 @@ export function NotificationsScreen(): React.JSX.Element {
           </View>
         ) : error ? (
           <MasaCard style={styles.card}>
-            <View style={styles.row}>
-              <Ionicons color={theme.colors.primary} name="alert-circle-outline" size={18} />
-              <View style={styles.textBlock}>
-                <Text style={[textStyle(isArabic, 'body'), styles.title]}>{error}</Text>
-              </View>
-            </View>
+            <Text style={[textStyle(isArabic, 'body'), styles.errorText]}>{error}</Text>
           </MasaCard>
         ) : items.length === 0 ? (
-          <View style={styles.stateBox}>
-            <Ionicons
-              color={theme.colors.masaGray}
-              name="notifications-off-outline"
-              size={32}
-            />
+          <MasaCard style={styles.emptyCard}>
+            <Bell color={theme.colors.masaGray} size={44} strokeWidth={1.5} style={styles.emptyIcon} />
             <Text style={[textStyle(isArabic, 'body'), styles.stateText]}>
               {t('account.notifications.noneYet')}
             </Text>
-          </View>
+          </MasaCard>
         ) : (
-          items.map((item) => (
-            <MasaCard key={item.id} style={styles.card}>
-              <View style={styles.row}>
-                <Ionicons
-                  color={item.read_at ? theme.colors.masaGray : theme.colors.primary}
-                  name={item.read_at ? 'notifications-outline' : 'notifications'}
-                  size={18}
-                />
-                <View style={styles.textBlock}>
-                  <Text style={[textStyle(isArabic, 'cardTitle'), styles.title]}>{item.title}</Text>
-                  {item.body ? (
-                    <Text style={[textStyle(isArabic, 'body'), styles.subtitle]}>{item.body}</Text>
-                  ) : null}
-                  <Text style={[textStyle(isArabic, 'caption'), styles.when]}>
-                    {formatWhen(item.created_at, isArabic)}
-                  </Text>
-                  {!item.read_at ? (
-                    <Pressable onPress={() => void handleMarkRead(item.id)}>
-                      <Text style={styles.markReadText}>{t('account.notifications.markRead')}</Text>
-                    </Pressable>
-                  ) : null}
-                </View>
-              </View>
-            </MasaCard>
-          ))
+          <>
+            {items.map((item) => {
+              const isUnread = !item.read_at;
+              const canNavigate = hasNotificationTarget(item);
+              return (
+                <MasaCard
+                  key={item.id}
+                  style={isUnread ? { ...styles.card, ...styles.cardUnread } : styles.card}
+                >
+                  <Pressable
+                    disabled={!canNavigate}
+                    onPress={() => goToNotificationTarget(item)}
+                    style={styles.row}
+                  >
+                    {isUnread ? <View style={styles.unreadDot} /> : <View style={styles.dotSpacer} />}
+                    <View style={styles.textBlock}>
+                      <Text
+                        style={[
+                          textStyle(isArabic, 'bodySm'),
+                          isUnread ? styles.titleUnread : styles.titleRead,
+                        ]}
+                      >
+                        {item.title}
+                      </Text>
+                      {item.body ? (
+                        <Text style={[textStyle(isArabic, 'caption'), styles.subtitle]}>{item.body}</Text>
+                      ) : null}
+                      <Text style={[textStyle(isArabic, 'caption'), styles.when]}>
+                        {formatWhen(item.created_at, isArabic)}
+                      </Text>
+                    </View>
+                    {isUnread ? (
+                      <Pressable
+                        hitSlop={8}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          void handleMarkRead(item.id);
+                        }}
+                      >
+                        <Text style={styles.markReadText}>{t('account.notifications.markRead')}</Text>
+                      </Pressable>
+                    ) : null}
+                  </Pressable>
+                </MasaCard>
+              );
+            })}
+
+            {hasMore ? (
+              <Pressable
+                disabled={loadingMore}
+                onPress={() => void loadMore()}
+                style={styles.loadMoreBtn}
+              >
+                {loadingMore ? (
+                  <ActivityIndicator color={theme.colors.primary} size="small" />
+                ) : (
+                  <Text style={styles.loadMoreText}>{t('account.notifications.loadOlder')}</Text>
+                )}
+              </Pressable>
+            ) : null}
+          </>
         )}
 
         <MobileFooter />
@@ -207,16 +287,60 @@ export function NotificationsScreen(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  cardUnread: {
+    backgroundColor: theme.colors.masaLight,
   },
   content: {
     paddingTop: theme.spacing.xs,
   },
+  dotSpacer: { width: 8 },
+  emptyCard: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xxl,
+  },
+  emptyIcon: {
+    marginBottom: theme.spacing.md,
+    opacity: 0.5,
+  },
+  errorText: {
+    color: theme.colors.foreground,
+  },
+  header: {
+    marginBottom: theme.spacing.lg,
+  },
+  headerSubtitle: {
+    color: theme.colors.masaGray,
+    marginTop: 4,
+  },
+  headerTitle: {
+    color: theme.colors.primary,
+    fontSize: 28,
+  },
+  loadMoreBtn: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: theme.spacing.sm,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  loadMoreText: {
+    color: theme.colors.primary,
+    fontSize: theme.typography.sizes.body,
+    fontWeight: '600',
+  },
   markAllBtn: {
-    alignSelf: 'flex-start',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
     borderColor: theme.colors.primary,
     borderRadius: 8,
     borderWidth: 1,
+    flexDirection: 'row',
+    gap: 6,
     marginBottom: theme.spacing.md,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -227,15 +351,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   markReadText: {
-    color: theme.colors.primary,
-    fontSize: theme.typography.sizes.body,
+    color: theme.colors.masaGray,
+    fontSize: theme.typography.sizes.caption,
     fontWeight: '600',
-    marginTop: 6,
+    marginLeft: 8,
   },
   row: {
     alignItems: 'flex-start',
     flexDirection: 'row',
-    gap: theme.spacing.sm,
   },
   stateBox: {
     alignItems: 'center',
@@ -253,12 +376,23 @@ const styles = StyleSheet.create({
   textBlock: {
     flex: 1,
   },
-  title: {
-    color: theme.colors.foreground,
+  titleRead: {
+    color: theme.colors.masaGray,
+    fontWeight: '500',
+  },
+  titleUnread: {
+    color: theme.colors.masaDark,
     fontWeight: '600',
+  },
+  unreadDot: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 4,
+    height: 8,
+    marginTop: 6,
+    width: 8,
   },
   when: {
     color: theme.colors.masaGray,
-    marginTop: 4,
+    marginTop: 6,
   },
 });

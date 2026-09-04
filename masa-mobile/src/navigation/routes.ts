@@ -242,3 +242,9 @@ export function goAdminPromo(): void {
     navigationRef.navigate('AdminPromo');
   });
 }
+
+export function goStoreProfile(storeId: string): void {
+  navigateWhenReady(() => {
+    navigationRef.navigate('StoreProfile', { storeId });
+  });
+}

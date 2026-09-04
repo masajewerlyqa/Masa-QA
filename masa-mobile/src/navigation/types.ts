@@ -47,6 +47,7 @@ export type RootStackParamList = {
   AdminApplicationDetail: { applicationId: string };
   AdminReviews: undefined;
   AdminPromo: undefined;
+  StoreProfile: { storeId: string };
 };
 
 declare global {
